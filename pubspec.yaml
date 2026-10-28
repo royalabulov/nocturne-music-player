@@ -1,0 +1,55 @@
+name: sonar
+description: "Sonar — offline local music player."
+publish_to: 'none'
+
+version: 0.7.11+37
+
+environment:
+  sdk: ^3.13.3
+
+dependencies:
+  audio_metadata_reader: ^1.8.0
+  audio_service: ^0.18.19
+  audio_session: ^0.2.4
+  connectivity_plus: ^7.3.1
+  crypto: ^3.0.7
+  drift: ^2.35.0
+  drift_flutter: ^0.3.1
+  file_picker: ^12.3.0
+  flutter:
+    sdk: flutter
+
+  # State / DI
+  flutter_riverpod: ^3.0.0
+
+  # Navigation
+  go_router: ^16.0.0
+  just_audio: ^0.10.6
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  permission_handler: ^12.0.1
+  rxdart: ^0.28.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.35.0
+  build_runner: ^2.16.1
+  just_audio_platform_interface: ^4.6.0
+
+flutter:
+  uses-material-design: true
+
+  # Variable fonts: all weights in one file. The google_fonts package is
+  # deliberately not used — the app must be fully offline.
+  fonts:
+    - family: Sora
+      fonts:
+        - asset: assets/fonts/Sora.ttf
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans.ttf
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono.ttf

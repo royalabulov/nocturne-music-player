@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppColors.void_ — Flutter ilk kadrı çəkənə qədər eyni fon görünsün -->
+    <color name="sonar_void">#0A0E14</color>
+    <!-- Adaptive icon fonu (design/icon.png kənar rəngi) -->
+    <color name="ic_launcher_background">#1A0A33</color>
+</resources>

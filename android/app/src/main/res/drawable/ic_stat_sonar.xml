@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status bar / notification kiçik ikonu: yalnız alpha istifadə olunur
+     (rəngli launcher ikonu burada ağ kvadrat görünərdi). MP3 player siluti. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- korpus (içi boş) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M8,2h8a3,3 0,0 1,3 3v14a3,3 0,0 1,-3 3h-8a3,3 0,0 1,-3 -3v-14a3,3 0,0 1,3 -3zM8,3.8a1.2,1.2 0,0 0,-1.2 1.2v14a1.2,1.2 0,0 0,1.2 1.2h8a1.2,1.2 0,0 0,1.2 -1.2v-14a1.2,1.2 0,0 0,-1.2 -1.2z" />
+    <!-- ekran -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M9,5.5h6a1,1 0,0 1,1 1v2.5a1,1 0,0 1,-1 1h-6a1,1 0,0 1,-1 -1v-2.5a1,1 0,0 1,1 -1z" />
+    <!-- play düyməsi -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M10.6,12.6L14.4,15L10.6,17.4z" />
+</vector>

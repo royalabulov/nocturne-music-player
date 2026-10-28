@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- audio_service notification ikonlarını adla (getIdentifier) tapır →
+     release-də resource shrinker onları "istifadəsiz" sayıb silməsin. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_mode_sequential,@drawable/ic_mode_repeat_one,@drawable/ic_mode_shuffle,@drawable/ic_stat_sonar,@mipmap/ic_launcher,@mipmap/ic_launcher_foreground" />
