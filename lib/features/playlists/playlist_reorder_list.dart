@@ -55,11 +55,13 @@ class _PlaylistReorderListState extends ConsumerState<PlaylistReorderList> {
         animation: anim,
         builder: (_, c) => Transform.scale(
           scale: 1 + .03 * Curves.easeOut.transform(anim.value),
+          // Rows are flat (no card) → the lifted row gets a surface of its own,
+          // otherwise the rows underneath show through it
           child: Material(
-            color: Colors.transparent,
+            color: Color.lerp(Colors.transparent, AppColors.surfaceHigh, anim.value),
             elevation: 8 * anim.value,
             shadowColor: AppColors.electric.withValues(alpha: .5),
-            borderRadius: BorderRadius.circular(AppRadius.xl),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             child: c,
           ),
         ),
@@ -71,10 +73,9 @@ class _PlaylistReorderListState extends ConsumerState<PlaylistReorderList> {
           key: ValueKey(t.id),
           index: i,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 0, AppSpacing.screenH, AppSpacing.sm),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH - AppSpacing.xs),
             child: TrackTile(
               track: t,
-              showChip: false,
               trailing: ReorderableDragStartListener(
                 index: i,
                 child: const Padding(

@@ -6,10 +6,14 @@ import '../core/theme/app_colors.dart';
 
 /// Heart — writes to/removes from the favorites table. Each tile watches its own id.
 class FavoriteButton extends ConsumerWidget {
-  const FavoriteButton({super.key, required this.trackId, this.size = 22});
+  const FavoriteButton({super.key, required this.trackId, this.size = 22, this.quiet = false});
 
   final int trackId;
   final double size;
+
+  /// Lists: an empty heart is grey, only a favorite is cyan — six bright
+  /// outline hearts per screen were visual noise (design review, 2026-11-02).
+  final bool quiet;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,7 +25,7 @@ class FavoriteButton extends ConsumerWidget {
       visualDensity: VisualDensity.compact,
       icon: Icon(
         isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        color: AppColors.cyan,
+        color: quiet && !isFav ? AppColors.textMuted : AppColors.cyan,
       ),
     );
   }

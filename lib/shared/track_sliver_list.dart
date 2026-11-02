@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../domain/entities/track.dart';
 import '../features/player/player_providers.dart';
@@ -56,16 +57,34 @@ class TrackSliverList extends ConsumerWidget {
     final selector = ref.read(trackSelectionProvider.notifier);
     final removeOne = onRemove;
 
+    // Flat rows with no gap between them; the row's own 8px inset keeps the
+    // cover on the 20px screen margin.
     Widget item(Track t, {VoidCallback? onTap, VoidCallback? onLongPress, bool active = false, bool? selected}) =>
         Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 0, AppSpacing.screenH, AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH - AppSpacing.xs),
           child: TrackTile(
             key: ValueKey(t.id),
             track: t,
             active: active,
             selected: selected,
             subtitle: subtitle?.call(t),
-            trailing: selected == null ? FavoriteButton(trackId: t.id) : null,
+            // ⋮ opens the same menu as a long-press, which nobody discovers on their own
+            trailing: selected == null
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FavoriteButton(trackId: t.id, size: 20, quiet: true),
+                      IconButton(
+                        tooltip: 'More',
+                        onPressed: onLongPress,
+                        visualDensity: VisualDensity.compact,
+                        iconSize: 20,
+                        color: AppColors.textSecondary,
+                        icon: const Icon(Icons.more_vert_rounded),
+                      ),
+                    ],
+                  )
+                : null,
             onTap: onTap,
             onLongPress: onLongPress,
           ),
