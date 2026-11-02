@@ -31,7 +31,9 @@ abstract final class AppColors {
   // Text
   static const Color textPrimary = Color(0xFFF8FAFC);
   static const Color textSecondary = Color(0xFF94A3B8);
-  static const Color textMuted = Color(0xFF475569);
+  // Was #475569 (~2.2:1 on surfaceContainer, unreadable in sunlight) → ~4.7:1,
+  // still clearly quieter than textSecondary (design review, 2026-11-02).
+  static const Color textMuted = Color(0xFF7C8BA1);
   static const Color scrubTrack = Color(0xFF1E293B);
 
   // Semantic

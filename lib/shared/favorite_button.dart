@@ -15,6 +15,7 @@ class FavoriteButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isFav = ref.watch(favoriteIdsProvider.select((s) => s.value?.contains(trackId) ?? false));
     return IconButton(
+      tooltip: isFav ? 'Remove from favorites' : 'Add to favorites',
       onPressed: () => ref.read(libraryRepositoryProvider).toggleFavorite(trackId),
       iconSize: size,
       visualDensity: VisualDensity.compact,

@@ -115,7 +115,36 @@ class _SleepTimerButtonState extends ConsumerState<SleepTimerButton> {
     }
     final label = s.endOfTrack ? 'End of track' : (s.remaining != null ? _fmt(s.remaining!) : null);
     final color = s.active ? AppColors.cyan : AppColors.textSecondary;
+    // TalkBack: "12:34" alone didn't say what it was, and off there was no text at all
+    final minutes = s.remaining == null ? 0 : (s.remaining!.inSeconds / 60).ceil();
+    final spoken = !s.active
+        ? 'Sleep timer: off'
+        : s.endOfTrack
+            ? 'Sleep timer: end of track'
+            : 'Sleep timer: $minutes ${minutes == 1 ? 'minute' : 'minutes'} left';
 
+    // The visible pill is ~30×26 → an invisible 48×48 tap area around it
+    // (taps on the pill itself still go to its InkWell and show the ripple)
+    return Tooltip(
+      message: 'Sleep timer',
+      excludeFromSemantics: true,
+      child: Semantics(
+        button: true,
+        label: spoken,
+        excludeSemantics: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => showSleepTimerSheet(context),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            child: Center(widthFactor: 1, heightFactor: 1, child: _pill(label, color, s)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _pill(String? label, Color color, SleepTimerState s) {
     return InkWell(
       onTap: () => showSleepTimerSheet(context),
       borderRadius: BorderRadius.circular(AppRadius.pill),

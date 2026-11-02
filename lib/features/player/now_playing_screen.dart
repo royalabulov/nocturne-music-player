@@ -94,6 +94,7 @@ class NowPlayingScreen extends ConsumerWidget {
                       Row(
                         children: [
                           IconButton(
+                            tooltip: 'Close player',
                             onPressed: () => Navigator.of(context).maybePop(),
                             icon: const Icon(
                               Icons.keyboard_arrow_down_rounded,
@@ -180,11 +181,13 @@ class NowPlayingScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.xl),
                   const _Scrubber(),
                   const SizedBox(height: AppSpacing.lg),
-                  // Transport
+                  // Transport. Tooltips double as TalkBack labels; shuffle/repeat
+                  // say their state, since only the colour shows it on screen.
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       IconButton(
+                        tooltip: shuffle ? 'Shuffle: on' : 'Shuffle: off',
                         onPressed: handler.toggleShuffle,
                         iconSize: 26,
                         icon: const Icon(Icons.shuffle_rounded),
@@ -193,6 +196,7 @@ class NowPlayingScreen extends ConsumerWidget {
                             : AppColors.textSecondary,
                       ),
                       IconButton(
+                        tooltip: 'Previous song',
                         onPressed: handler.skipToPrevious,
                         iconSize: 40,
                         icon: const Icon(Icons.skip_previous_rounded),
@@ -204,12 +208,18 @@ class NowPlayingScreen extends ConsumerWidget {
                         onTap: playing ? handler.pause : handler.play,
                       ),
                       IconButton(
+                        tooltip: 'Next song',
                         onPressed: handler.skipToNext,
                         iconSize: 40,
                         icon: const Icon(Icons.skip_next_rounded),
                         color: AppColors.textPrimary,
                       ),
                       IconButton(
+                        tooltip: switch (repeat) {
+                          AudioServiceRepeatMode.one => 'Repeat: one song',
+                          AudioServiceRepeatMode.none => 'Repeat: off',
+                          _ => 'Repeat: all',
+                        },
                         onPressed: handler.cycleRepeat,
                         iconSize: 26,
                         icon: Icon(

@@ -19,8 +19,10 @@ const navItems = <NavItem>[
 ];
 
 /// Last slot: opens the side menu (not a tab). Highlighted while Settings
-/// (branch index navItems.length) is open.
-const _menuItem = NavItem('Settings', Icons.settings_outlined, Icons.settings_rounded);
+/// (branch index navItems.length) is open. Labelled "Menu", not "Settings":
+/// the slot opens the drawer, and a "Settings" tab that opens something else
+/// broke the label ↔ action promise (design review, 2026-11-02).
+const _menuItem = NavItem('Menu', Icons.menu_rounded, Icons.menu_open_rounded);
 
 const _barHeight = AppSpacing.bottomNavHeight;
 const _gap = 10.0;

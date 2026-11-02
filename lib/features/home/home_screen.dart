@@ -406,7 +406,9 @@ class _SearchField extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
       child: Container(
         height: 52,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        // Right side is 4, not 16: the 48dp clear button brings its own space,
+        // so the ✕ stays where it used to be
+        padding: const EdgeInsets.only(left: AppSpacing.md, right: AppSpacing.xxs),
         decoration: BoxDecoration(
           color: AppColors.surfaceContainer,
           borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -438,13 +440,13 @@ class _SearchField extends StatelessWidget {
               valueListenable: controller,
               builder: (_, v, _) => v.text.isEmpty
                   ? const SizedBox.shrink()
-                  : GestureDetector(
-                      onTap: onClear,
-                      child: const Icon(
-                        Icons.close_rounded,
-                        color: AppColors.textSecondary,
-                        size: 20,
-                      ),
+                  // IconButton, not a bare 20px icon: 48dp tap target + TalkBack name
+                  : IconButton(
+                      tooltip: 'Clear search',
+                      onPressed: onClear,
+                      iconSize: 20,
+                      color: AppColors.textSecondary,
+                      icon: const Icon(Icons.close_rounded),
                     ),
             ),
           ],
