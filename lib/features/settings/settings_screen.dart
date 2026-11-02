@@ -48,46 +48,31 @@ class SettingsScreen extends StatelessWidget {
         children: [
           const SizedBox(height: AppSpacing.md),
           const PageTitle(SettingsScreen.title),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.sm),
 
-          const _GroupTitle(icon: Icons.wifi_rounded, title: 'Network'),
-          const _NetworkGroup(),
-
-          const _GroupTitle(icon: Icons.folder_outlined, title: 'Storage & Music Library'),
+          // Most used first (design review, 2026-11-02)
+          const _GroupTitle('Library'),
           const _StorageGroup(),
 
-          const _GroupTitle(icon: Icons.tune_rounded, title: 'Audio Engine & Quality'),
+          const _GroupTitle('Smart groups'),
+          const _SmartGroup(),
+
+          const _GroupTitle('Playback'),
           const _AudioGroup(),
 
-          const _GroupTitle(icon: Icons.shield_outlined, title: 'Data & Diagnostics'),
+          const _GroupTitle('Network'),
+          const _NetworkGroup(),
+
+          const _GroupTitle('Backup & data'),
           const _DataGroup(),
 
-          const _GroupTitle(icon: Icons.info_outline_rounded, title: 'About Nocturne'),
-          _Group(children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Nocturne Offline', style: AppTypography.headlineMd),
-                  Text('Version $kAppVersion',
-                      style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      const Icon(Icons.lock_outline_rounded, size: 18, color: AppColors.textSecondary),
-                      const SizedBox(width: 8),
-                      Text('100% Private Local Audio', style: AppTypography.titleSm),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Local audio player • Zero analytics • Offline by default — the network is used only '
-                    'while Online mode is on • Your music stays entirely on this device.',
-                    style: AppTypography.bodySm,
-                  ),
-                ],
-              ),
+          const _GroupTitle('About'),
+          const _Group(children: [
+            _InfoRow(title: 'Nocturne', subtitle: 'Version $kAppVersion'),
+            _InfoRow(
+              title: 'Privacy',
+              subtitle: 'No accounts, no analytics. Your music never leaves this device; '
+                  'the network is used only while Online mode is on.',
             ),
           ]),
         ],
@@ -144,10 +129,7 @@ class _StorageGroup extends ConsumerWidget {
                 ],
               ),
             ),
-            GestureDetector(
-              onTap: ctrl.pickAndAddFolder,
-              child: const _SmallButton(label: 'Add', icon: Icons.create_new_folder_outlined),
-            ),
+            _SmallButton(label: 'Add', icon: Icons.create_new_folder_outlined, onTap: ctrl.pickAndAddFolder),
           ],
         ),
       ),
@@ -179,25 +161,24 @@ class _StorageGroup extends ConsumerWidget {
         ),
       const SizedBox(height: AppSpacing.xs),
       _InfoRow(
-        title: 'Index Metadata',
+        title: 'Rescan library',
         subtitle: scanSubtitle,
         subtitleAccent: scan.isRunning,
-        trailing: GestureDetector(
+        trailing: _SmallButton(
+          label: scan.isRunning ? 'Scanning' : 'Rescan',
+          icon: Icons.radar_rounded,
+          primary: !scan.isRunning,
           onTap: scan.isRunning ? null : ctrl.requestAndScan,
-          child: _SmallButton(
-            label: scan.isRunning ? 'Scanning' : 'Rescan Library',
-            icon: Icons.radar_rounded,
-            primary: !scan.isRunning,
-          ),
         ),
       ),
       // Pick individual files to add → copied to Music/Sonar
       _InfoRow(
         title: 'Import audio files',
         subtitle: 'Pick songs from anywhere — copied to Music/Sonar',
-        trailing: GestureDetector(
+        trailing: _SmallButton(
+          label: 'Import',
+          icon: Icons.library_add_rounded,
           onTap: scan.isRunning ? null : () => ref.read(audioImportProvider).pickAndImport(),
-          child: const _SmallButton(label: 'Import', icon: Icons.library_add_rounded),
         ),
       ),
       _ToggleRow(
@@ -207,14 +188,13 @@ class _StorageGroup extends ConsumerWidget {
         onChanged: (v) => repo.setSetting('autoScan', '$v'),
       ),
       const LibraryFilterGroup(),
-      const _SmartAnalysisRow(),
     ]);
   }
 }
 
 /// Smart groups: on-device mood/genre analysis (on/off + progress).
-class _SmartAnalysisRow extends ConsumerWidget {
-  const _SmartAnalysisRow();
+class _SmartGroup extends ConsumerWidget {
+  const _SmartGroup();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -230,29 +210,27 @@ class _SmartAnalysisRow extends ConsumerWidget {
     // The current model against your answers (changes after re-analysis)
     final predicted = ref.watch(vibePredictionsProvider).value ?? const <int, VibeResult>{};
     final report = currentAccuracy(labels, predicted);
-    return Column(
-      children: [
-        _ToggleRow(
-          title: 'Smart groups (mood & genre)',
-          subtitle: subtitle,
-          value: enabled,
-          onChanged: ref.read(smartAnalysisProvider.notifier).setEnabled,
+    return _Group(children: [
+      _ToggleRow(
+        title: 'Mood & genre analysis',
+        subtitle: subtitle,
+        value: enabled,
+        onChanged: ref.read(smartAnalysisProvider.notifier).setEnabled,
+      ),
+      _InfoRow(
+        title: 'Check accuracy',
+        subtitle: report.total == 0
+            ? 'Rate 40 songs to measure how accurate the groups are'
+            : 'Accuracy from ${report.total} answers: mood ${(report.moodAccuracy * 100).round()}% • '
+                'genre ${(report.genreAccuracy * 100).round()}%',
+        subtitleAccent: report.total > 0,
+        trailing: _SmallButton(
+          label: 'Check',
+          icon: Icons.fact_check_outlined,
+          onTap: () => context.push(kVibeReviewRoute),
         ),
-        const Divider(height: 1, indent: AppSpacing.md, endIndent: AppSpacing.md),
-        _InfoRow(
-          title: 'Check smart groups',
-          subtitle: report.total == 0
-              ? 'Rate 40 songs to measure how accurate the groups are'
-              : 'Accuracy from ${report.total} answers: mood ${(report.moodAccuracy * 100).round()}% • '
-                  'genre ${(report.genreAccuracy * 100).round()}%',
-          subtitleAccent: report.total > 0,
-          trailing: GestureDetector(
-            onTap: () => context.push(kVibeReviewRoute),
-            child: const _SmallButton(label: 'Check', icon: Icons.fact_check_outlined),
-          ),
-        ),
-      ],
-    );
+      ),
+    ]);
   }
 }
 
@@ -289,9 +267,10 @@ class _NetworkGroup extends ConsumerWidget {
         _InfoRow(
           title: 'Check again',
           subtitle: 'Re-test the internet connection now',
-          trailing: GestureDetector(
+          trailing: _SmallButton(
+            label: 'Retry',
+            icon: Icons.refresh_rounded,
             onTap: () => ref.read(onlineModeProvider.notifier).recheck(),
-            child: const _SmallButton(label: 'Retry', icon: Icons.refresh_rounded),
           ),
         ),
     ]);
@@ -300,21 +279,24 @@ class _NetworkGroup extends ConsumerWidget {
 
 // ───────────────────────── helpers ─────────────────────────
 
+/// Small caps label above a group, same as the Menu groups (was a cyan icon +
+/// headline per group, which competed with the page title).
 class _GroupTitle extends StatelessWidget {
-  const _GroupTitle({required this.icon, required this.title});
-  final IconData icon;
+  const _GroupTitle(this.title);
   final String title;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, AppSpacing.lg, AppSpacing.screenH, AppSpacing.sm),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.cyan, size: 20),
-          const SizedBox(width: AppSpacing.xs),
-          Text(title, style: AppTypography.headlineMd),
-        ],
+      // Lines up with the row text inside the card
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenH + AppSpacing.md, AppSpacing.lg, AppSpacing.screenH, AppSpacing.xs),
+      child: Semantics(
+        header: true,
+        child: Text(
+          title.toUpperCase(),
+          style: AppTypography.labelXs.copyWith(color: AppColors.textMuted, letterSpacing: 1.2),
+        ),
       ),
     );
   }
@@ -426,32 +408,50 @@ class _SliderRow extends StatelessWidget {
   }
 }
 
+/// Pill button with ink; the 48 px area around it is tappable too.
 class _SmallButton extends StatelessWidget {
-  const _SmallButton({required this.label, required this.icon, this.primary = false});
+  const _SmallButton({required this.label, required this.icon, required this.onTap, this.primary = false});
   final String label;
   final IconData icon;
+  final VoidCallback? onTap;
   final bool primary;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: label.isEmpty ? 10 : 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: primary ? AppColors.electric : AppColors.surfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        boxShadow: primary ? Glow.accent : null,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: primary ? Colors.white : AppColors.textPrimary),
-          if (label.isNotEmpty) ...[
-            const SizedBox(width: 6),
-            Text(label,
-                style: AppTypography.labelMd.copyWith(
-                    color: primary ? Colors.white : AppColors.textPrimary)),
-          ],
-        ],
+    final fg = primary ? Colors.white : AppColors.textPrimary;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Center(
+          widthFactor: 1,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              boxShadow: primary ? Glow.accent : null,
+            ),
+            child: Material(
+              color: primary ? AppColors.electric : AppColors.surfaceHigh,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, size: 16, color: fg),
+                      const SizedBox(width: 6),
+                      Text(label, style: AppTypography.labelMd.copyWith(color: fg)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -481,8 +481,8 @@ class _AudioGroup extends ConsumerWidget {
         value: s.autoPreset,
         onChanged: ctrl.setAutoPreset,
       ),
-      GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      // Opens a screen → the whole row is the button, with a chevron
+      InkWell(
         onTap: () => context.push('/settings/eq'),
         child: _InfoRow(
           title: 'Equalizer & Bass Boost',
@@ -490,7 +490,7 @@ class _AudioGroup extends ConsumerWidget {
               ? 'Preset: ${preset.name}${s.bassBoost > 0 ? ' • Bass +${(s.bassBoost * 100).round()}%' : ''}'
               : 'Off',
           subtitleAccent: s.eqEnabled,
-          trailing: const _SmallButton(label: '', icon: Icons.equalizer_rounded),
+          trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
         ),
       ),
       _ToggleRow(
@@ -606,34 +606,22 @@ class _DataGroup extends ConsumerWidget {
       _InfoRow(
         title: 'Back up my data',
         subtitle: 'Favorites, playlists, play history and audio settings → JSON file',
-        trailing: GestureDetector(
-          onTap: () => _backup(context, ref),
-          child: const _SmallButton(label: 'Save', icon: Icons.save_alt_rounded),
-        ),
+        trailing: _SmallButton(label: 'Save', icon: Icons.save_alt_rounded, onTap: () => _backup(context, ref)),
       ),
       _InfoRow(
         title: 'Restore from backup',
         subtitle: 'Merges into the current library (scan your music first)',
-        trailing: GestureDetector(
-          onTap: () => _restore(context, ref),
-          child: const _SmallButton(label: 'Open', icon: Icons.restore_rounded),
-        ),
+        trailing: _SmallButton(label: 'Open', icon: Icons.restore_rounded, onTap: () => _restore(context, ref)),
       ),
       _InfoRow(
         title: 'Export smart-group data',
         subtitle: 'AI scores, guesses and your answers for every song → CSV file',
-        trailing: GestureDetector(
-          onTap: () => _exportVibes(context, ref),
-          child: const _SmallButton(label: 'CSV', icon: Icons.table_chart_outlined),
-        ),
+        trailing: _SmallButton(label: 'CSV', icon: Icons.table_chart_outlined, onTap: () => _exportVibes(context, ref)),
       ),
       _InfoRow(
         title: 'Error log',
         subtitle: 'Crashes and playback errors recorded on this device',
-        trailing: GestureDetector(
-          onTap: () => _showLog(context),
-          child: const _SmallButton(label: 'View', icon: Icons.bug_report_outlined),
-        ),
+        trailing: _SmallButton(label: 'View', icon: Icons.bug_report_outlined, onTap: () => _showLog(context)),
       ),
     ]);
   }
