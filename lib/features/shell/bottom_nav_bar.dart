@@ -30,7 +30,7 @@ const _animDuration = Duration(milliseconds: 280);
 const _splash = Color(0x14FFFFFF); // white, 8%
 const _highlight = Color(0x0AFFFFFF); // white, 4%
 
-/// Floating dock in the iOS WhatsApp style: tabs inside a rounded "pill",
+/// Floating dock: tabs inside a rounded "pill",
 /// a sliding highlight behind the active tab, a separate round search button on the right.
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({

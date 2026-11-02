@@ -8,7 +8,7 @@ import '../core/theme/app_colors.dart';
 import '../features/player/player_providers.dart';
 
 /// Accent colour taken from a cover — tints the Now Playing background and the
-/// mini-player, like Apple Music / Spotify (design review, 2026-11-02).
+/// mini-player (design review, 2026-11-02).
 /// Controls stay electric blue: their contrast must not depend on the cover.
 ///
 /// Computed once per cover and kept (family without autoDispose = cache).

@@ -12,11 +12,13 @@ import '../../domain/entities/track.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/album_art.dart';
 import '../../shared/glow_play_button.dart';
-import '../../shared/sonar_header.dart';
 import '../../shared/track_sliver_list.dart';
 
 class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
+
+  /// Big title here and in the compact bar (CollapsingTitle) after scrolling.
+  static const title = 'Your Favorites';
 
   @override
   ConsumerState<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -35,7 +37,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         slivers: [
           SliverList.list(
             children: [
-              const SonarHeader(),
+              const SizedBox(height: AppSpacing.md),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.screenH,
@@ -47,7 +49,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Your Favorites',
+                            FavoritesScreen.title,
                             style: AppTypography.headlineXl,
                           ),
                           const SizedBox(height: AppSpacing.xxs),

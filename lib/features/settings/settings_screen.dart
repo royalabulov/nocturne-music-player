@@ -21,7 +21,6 @@ import '../../core/ui/toast.dart';
 import '../../data/datasources/media_store_source.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../shared/codec_chip.dart';
-import '../../shared/sonar_header.dart';
 import '../import/audio_import.dart';
 import '../../domain/repositories/analysis_repository.dart';
 import '../library_scan/scan_controller.dart';
@@ -36,6 +35,9 @@ import 'settings_controller.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  /// Big title here and in the compact bar (CollapsingTitle) after scrolling.
+  static const title = 'App Settings';
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -43,7 +45,7 @@ class SettingsScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight),
         children: [
-          const SonarHeader(),
+          const SizedBox(height: AppSpacing.md),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
             child: Row(
@@ -55,7 +57,7 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       Text('SYSTEM PREFERENCES',
                           style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
-                      Text('App Settings', style: AppTypography.headlineLg),
+                      Text(SettingsScreen.title, style: AppTypography.headlineLg),
                     ],
                   ),
                 ),

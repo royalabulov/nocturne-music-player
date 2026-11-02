@@ -11,8 +11,8 @@ import 'eq_bars.dart';
 /// (heart, play, kebab, "Played 42x" ...).
 ///
 /// Flat 64dp row, not a card: the old card rows (56px art, a third
-/// "3:52 · 321KBPS MP3" line, 12px gaps) fit ~6 songs per screen; this fits ~9,
-/// like Apple Music / Spotify. Bitrate lives in Now Playing (design review, 2026-11-02).
+/// "3:52 · 321KBPS MP3" line, 12px gaps) fit ~6 songs per screen; this fits ~9.
+/// Bitrate lives in Now Playing (design review, 2026-11-02).
 class TrackTile extends StatelessWidget {
   const TrackTile({
     super.key,

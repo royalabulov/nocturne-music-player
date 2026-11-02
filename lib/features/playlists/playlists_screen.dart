@@ -13,12 +13,14 @@ import '../../domain/repositories/library_repository.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/album_art.dart';
 import '../../shared/section_header.dart';
-import '../../shared/sonar_header.dart';
 import '../../shared/sonar_sheet.dart';
 import '../library_scan/scan_controller.dart';
 
 class PlaylistsScreen extends ConsumerWidget {
   const PlaylistsScreen({super.key});
+
+  /// Big title here and in the compact bar (CollapsingTitle) after scrolling.
+  static const title = 'Local Playlists';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,7 +34,7 @@ class PlaylistsScreen extends ConsumerWidget {
         primary: true, // TabScrollToTop (tap the tab again → top)
         padding: const EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight),
         children: [
-          const SonarHeader(),
+          const SizedBox(height: AppSpacing.md),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
             child: Row(
@@ -41,7 +43,7 @@ class PlaylistsScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Local Playlists', style: AppTypography.headlineXl),
+                      Text(PlaylistsScreen.title, style: AppTypography.headlineXl),
                       const SizedBox(height: AppSpacing.xxs),
                       Text('${playlists.length} CUSTOM PLAYLISTS • OFFLINE STORAGE',
                           style: AppTypography.labelSm),

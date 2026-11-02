@@ -14,6 +14,7 @@ import '../../features/shell/scroll_to_top.dart';
 import '../../features/shell/shell_screen.dart';
 import '../../features/smart_groups/smart_groups_section.dart';
 import '../../features/smart_groups/vibe_review_screen.dart';
+import '../../shared/collapsing_title.dart';
 
 abstract final class Routes {
   static const home = '/home';
@@ -60,16 +61,16 @@ final appRouter = GoRouter(
           ],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: Routes.recent, builder: (_, _) => const TabScrollToTop(tab: 1, child: RecentScreen()))],
+          routes: [GoRoute(path: Routes.recent, builder: (_, _) => const TabScrollToTop(tab: 1, child: CollapsingTitle(title: RecentScreen.title, child: RecentScreen())))],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: Routes.favorites, builder: (_, _) => const TabScrollToTop(tab: 2, child: FavoritesScreen()))],
+          routes: [GoRoute(path: Routes.favorites, builder: (_, _) => const TabScrollToTop(tab: 2, child: CollapsingTitle(title: FavoritesScreen.title, child: FavoritesScreen())))],
         ),
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: Routes.playlists,
-              builder: (_, _) => const TabScrollToTop(tab: 3, child: PlaylistsScreen()),
+              builder: (_, _) => const TabScrollToTop(tab: 3, child: CollapsingTitle(title: PlaylistsScreen.title, child: PlaylistsScreen())),
               routes: [
                 GoRoute(
                   path: ':id',
@@ -83,7 +84,7 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: Routes.settings,
-              builder: (_, _) => const SettingsScreen(),
+              builder: (_, _) => const CollapsingTitle(title: SettingsScreen.title, child: SettingsScreen()),
               routes: [GoRoute(path: 'eq', builder: (_, _) => const EqualizerScreen())],
             ),
           ],

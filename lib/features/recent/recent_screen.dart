@@ -13,7 +13,6 @@ import '../../domain/repositories/library_repository.dart';
 import '../../shared/codec_chip.dart';
 import '../../shared/filter_chip_row.dart';
 import '../../shared/glow_play_button.dart';
-import '../../shared/sonar_header.dart';
 import '../../shared/track_sliver_list.dart';
 import '../player/player_providers.dart';
 
@@ -21,6 +20,9 @@ enum _Filter { recentlyPlayed, mostPlayed, recentlyAdded, title }
 
 class RecentScreen extends ConsumerStatefulWidget {
   const RecentScreen({super.key});
+
+  /// Big title here and in the compact bar (CollapsingTitle) after scrolling.
+  static const title = 'Recently Played';
 
   @override
   ConsumerState<RecentScreen> createState() => _RecentScreenState();
@@ -77,7 +79,7 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
         primary: true, // TabScrollToTop (tap the tab again → top)
         slivers: [
           SliverList.list(children: [
-            const SonarHeader(),
+            const SizedBox(height: AppSpacing.md),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
               child: Row(
@@ -87,7 +89,7 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Recently Played', style: AppTypography.headlineXl),
+                        Text(RecentScreen.title, style: AppTypography.headlineXl),
                         const SizedBox(height: AppSpacing.xxs),
                         Text(
                           'Your listening — today, this week, this month or all time',
