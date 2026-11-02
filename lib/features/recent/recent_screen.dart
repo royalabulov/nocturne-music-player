@@ -10,7 +10,7 @@ import '../../core/utils/duration_format.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/history_repository.dart';
 import '../../domain/repositories/library_repository.dart';
-import '../../shared/codec_chip.dart';
+import '../../shared/page_title.dart';
 import '../../shared/filter_chip_row.dart';
 import '../../shared/glow_play_button.dart';
 import '../../shared/track_sliver_list.dart';
@@ -80,31 +80,7 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
         slivers: [
           SliverList.list(children: [
             const SizedBox(height: AppSpacing.md),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(RecentScreen.title, style: AppTypography.headlineXl),
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          'Your listening — today, this week, this month or all time',
-                          style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: CodecChip(stats.losslessCount > 0 ? 'FLAC • Local' : 'Local'),
-                  ),
-                ],
-              ),
-            ),
+            const PageTitle(RecentScreen.title, subtitle: 'Your listening history'),
             const SizedBox(height: AppSpacing.lg),
             _PeriodSwitcher(value: _period, onChanged: (p) => setState(() => _period = p)),
             const SizedBox(height: AppSpacing.sm),

@@ -10,6 +10,7 @@ import '../../core/theme/glass.dart';
 import '../../core/utils/duration_format.dart';
 import '../../domain/entities/playlist.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../shared/page_title.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/album_art.dart';
 import '../../shared/section_header.dart';
@@ -20,7 +21,7 @@ class PlaylistsScreen extends ConsumerWidget {
   const PlaylistsScreen({super.key});
 
   /// Big title here and in the compact bar (CollapsingTitle) after scrolling.
-  static const title = 'Local Playlists';
+  static const title = 'Playlists';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,39 +36,13 @@ class PlaylistsScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight),
         children: [
           const SizedBox(height: AppSpacing.md),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(PlaylistsScreen.title, style: AppTypography.headlineXl),
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text('${playlists.length} CUSTOM PLAYLISTS • OFFLINE STORAGE',
-                          style: AppTypography.labelSm),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainer,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(color: AppColors.borderLevel1),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.storage_rounded, size: 14, color: AppColors.textSecondary),
-                      const SizedBox(width: 6),
-                      Text('${stats.trackCount} tracks',
-                          style: AppTypography.labelSm.copyWith(color: AppColors.textPrimary)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          PageTitle(
+            PlaylistsScreen.title,
+            subtitle: switch (playlists.length) {
+              0 => 'No playlists yet',
+              1 => '1 playlist',
+              final n => '$n playlists',
+            },
           ),
           const SizedBox(height: AppSpacing.lg),
           Padding(

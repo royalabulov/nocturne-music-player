@@ -9,6 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
 import '../../domain/entities/track.dart';
+import '../../shared/page_title.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/album_art.dart';
 import '../../shared/glow_play_button.dart';
@@ -38,58 +39,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           SliverList.list(
             children: [
               const SizedBox(height: AppSpacing.md),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenH,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            FavoritesScreen.title,
-                            style: AppTypography.headlineXl,
-                          ),
-                          const SizedBox(height: AppSpacing.xxs),
-                          Row(
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.cyan,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '${tracks.length} loved offline tracks & albums',
-                                style: AppTypography.labelSm.copyWith(
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainer,
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        border: Border.all(color: AppColors.borderLevel1),
-                      ),
-                      child: const Icon(
-                        Icons.favorite_border_rounded,
-                        color: AppColors.cyan,
-                      ),
-                    ),
-                  ],
-                ),
+              PageTitle(
+                FavoritesScreen.title,
+                subtitle: '${tracks.length} ${tracks.length == 1 ? 'song' : 'songs'}',
               ),
               const SizedBox(height: AppSpacing.lg),
               Padding(

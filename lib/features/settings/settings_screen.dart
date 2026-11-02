@@ -20,6 +20,7 @@ import '../../core/theme/glass.dart';
 import '../../core/ui/toast.dart';
 import '../../data/datasources/media_store_source.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../shared/page_title.dart';
 import '../../shared/codec_chip.dart';
 import '../import/audio_import.dart';
 import '../../domain/repositories/analysis_repository.dart';
@@ -36,7 +37,7 @@ class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   /// Big title here and in the compact bar (CollapsingTitle) after scrolling.
-  static const title = 'App Settings';
+  static const title = 'Settings';
 
   @override
   Widget build(BuildContext context) {
@@ -46,25 +47,7 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight),
         children: [
           const SizedBox(height: AppSpacing.md),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('SYSTEM PREFERENCES',
-                          style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
-                      Text(SettingsScreen.title, style: AppTypography.headlineLg),
-                    ],
-                  ),
-                ),
-                const CodecChip('v$kAppVersion'),
-              ],
-            ),
-          ),
+          const PageTitle(SettingsScreen.title),
           const SizedBox(height: AppSpacing.xl),
 
           const _GroupTitle(icon: Icons.wifi_rounded, title: 'Network'),
