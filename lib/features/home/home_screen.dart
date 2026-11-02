@@ -18,6 +18,7 @@ import '../../shared/alphabet_rail.dart';
 import '../../shared/track_sliver_list.dart';
 import '../../shared/section_header.dart';
 import '../../shared/sonar_header.dart';
+import '../../shared/sort_sheet.dart';
 import '../library_scan/scan_controller.dart';
 import 'locate_track.dart';
 import '../library_browse/library_groups.dart';
@@ -69,7 +70,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _pickSort() async {
-    final picked = await _pickFrom('Sort songs by', TrackSort.values, _sort, (s) => s.label);
+    final picked = await showSortSheet(context,
+        title: 'Sort songs by', values: TrackSort.values, current: _sort, label: (s) => s.label);
     if (picked == null || picked == _sort || !mounted) return;
     setState(() => _sort = picked);
     ref.read(libraryRepositoryProvider).setSetting('librarySort', picked.name);
@@ -77,45 +79,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _pickGroupSort() async {
     final what = _view == LibraryView.albums ? 'albums' : 'artists';
-    final picked = await _pickFrom('Sort $what by', GroupSort.values, _groupSort, (s) => s.label);
+    final picked = await showSortSheet(context,
+        title: 'Sort $what by', values: GroupSort.values, current: _groupSort, label: (s) => s.label);
     if (picked == null || picked == _groupSort || !mounted) return;
     setState(() => _groupSort = picked);
     ref.read(libraryRepositoryProvider).setSetting('groupSort', picked.name);
-  }
-
-  /// Bottom sheet for picking a sort order; the current one is checked.
-  Future<T?> _pickFrom<T>(String title, List<T> values, T current, String Function(T) label) {
-    return showModalBottomSheet<T>(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xs),
-              child: Text(title, style: AppTypography.headlineMd),
-            ),
-            for (final s in values)
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                title: Text(label(s),
-                    style: AppTypography.bodyMd.copyWith(
-                        color: s == current ? AppColors.cyan : AppColors.textPrimary,
-                        fontWeight: s == current ? FontWeight.w600 : null)),
-                trailing: s == current ? const Icon(Icons.check_rounded, color: AppColors.cyan) : null,
-                onTap: () => Navigator.of(context).pop(s),
-              ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-        ),
-      ),
-    );
   }
 
 

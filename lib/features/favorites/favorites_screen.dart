@@ -13,6 +13,7 @@ import '../../shared/page_title.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/album_art.dart';
 import '../../shared/glow_play_button.dart';
+import '../../shared/sort_sheet.dart';
 import '../../shared/track_sliver_list.dart';
 
 class FavoritesScreen extends ConsumerStatefulWidget {
@@ -28,9 +29,35 @@ class FavoritesScreen extends ConsumerStatefulWidget {
 class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   int _tab = 0;
 
+  /// Order of the Songs tab — persisted ("favoritesSort").
+  _FavSort _sort = _FavSort.recentlyLoved;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(libraryRepositoryProvider).getSetting('favoritesSort').then((v) {
+      final s = _FavSort.values.where((x) => x.name == v).firstOrNull;
+      if (s != null && mounted) setState(() => _sort = s);
+    });
+  }
+
+  Future<void> _pickSort() async {
+    final picked = await showSortSheet(
+      context,
+      title: 'Sort favorites by',
+      values: _FavSort.values,
+      current: _sort,
+      label: (s) => s.label,
+    );
+    if (picked == null || picked == _sort || !mounted) return;
+    setState(() => _sort = picked);
+    ref.read(libraryRepositoryProvider).setSetting('favoritesSort', picked.name);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final tracks = ref.watch(favoritesProvider).value ?? const <Track>[];
+    final loved = ref.watch(favoritesProvider).value ?? const <Track>[];
+    final tracks = _sorted(loved, _sort);
     return SafeArea(
       bottom: false,
       child: CustomScrollView(
@@ -64,68 +91,26 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                   children: [
                     // Flexible: at large font sizes the label ellipsizes
                     Flexible(
-                      child: GestureDetector(
+                      child: _Pill(
+                        icon: Icons.shuffle_rounded,
+                        label: 'Shuffle All (${tracks.length})',
+                        primary: true,
                         onTap: tracks.isEmpty
                             ? null
                             : () => ref
                                   .read(audioHandlerProvider)
                                   .playTracks(tracks, shuffle: true),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.electric,
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                            boxShadow: Glow.accent,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.shuffle_rounded,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  'Shuffle All (${tracks.length})',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.labelMd.copyWith(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
+                    // Albums / Artists are A–Z groups → sorting is for Songs
+                    if (_tab == 0 && tracks.isNotEmpty) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      _Pill(
+                        icon: Icons.swap_vert_rounded,
+                        label: '${_sort.label}  ▾',
+                        onTap: _pickSort,
                       ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceHigh,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.swap_vert_rounded,
-                            color: AppColors.textSecondary,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 6),
-                          Text('Added Date', style: AppTypography.labelMd),
-                        ],
-                      ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -148,6 +133,98 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Was a pill that only looked like a button ("Added Date", not tappable).
+enum _FavSort {
+  recentlyLoved('Recently loved'),
+  title('Title A–Z'),
+  artist('Artist'),
+  album('Album'),
+  longest('Longest first'),
+  shortest('Shortest first');
+
+  const _FavSort(this.label);
+  final String label;
+}
+
+/// Same orders as the library (TrackSort); "Recently loved" is the query's own
+/// order. Dart's sort isn't stable → every order ends with a tie-breaker.
+List<Track> _sorted(List<Track> tracks, _FavSort sort) {
+  if (sort == _FavSort.recentlyLoved) return tracks;
+  int text(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());
+  int track(Track a, Track b) => (a.trackNo ?? 0).compareTo(b.trackNo ?? 0);
+  final Comparator<Track> by = switch (sort) {
+    _FavSort.title => (a, b) => text(a.title, b.title),
+    _FavSort.artist => (a, b) {
+      final c = text(a.artist, b.artist);
+      if (c != 0) return c;
+      final d = text(a.album, b.album);
+      return d != 0 ? d : track(a, b);
+    },
+    _FavSort.album => (a, b) {
+      final c = text(a.album, b.album);
+      return c != 0 ? c : track(a, b);
+    },
+    _FavSort.longest => (a, b) => b.duration.compareTo(a.duration),
+    _FavSort.shortest || _FavSort.recentlyLoved => (a, b) =>
+        a.duration.compareTo(b.duration),
+  };
+  return [...tracks]..sort((a, b) {
+    final c = by(a, b);
+    return c != 0 ? c : a.id.compareTo(b.id);
+  });
+}
+
+/// Pill button with ink (Shuffle All, sort order).
+class _Pill extends StatelessWidget {
+  const _Pill({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.primary = false,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = primary ? Colors.white : AppColors.textPrimary;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        boxShadow: primary ? Glow.accent : null,
+      ),
+      child: Material(
+        color: primary ? AppColors.electric : AppColors.surfaceHigh,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: primary ? 18 : 14, vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: primary ? fg : AppColors.textSecondary, size: 18),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.labelMd.copyWith(color: fg),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
