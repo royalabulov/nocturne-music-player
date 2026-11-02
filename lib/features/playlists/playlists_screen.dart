@@ -9,13 +9,10 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
 import '../../core/utils/duration_format.dart';
 import '../../domain/entities/playlist.dart';
-import '../../domain/repositories/library_repository.dart';
 import '../../shared/page_title.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/album_art.dart';
-import '../../shared/section_header.dart';
 import '../../shared/sonar_sheet.dart';
-import '../library_scan/scan_controller.dart';
 
 class PlaylistsScreen extends ConsumerWidget {
   const PlaylistsScreen({super.key});
@@ -26,7 +23,6 @@ class PlaylistsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playlists = ref.watch(playlistsProvider).value ?? const <Playlist>[];
-    final stats = ref.watch(libraryStatsProvider).value ?? LibraryStats.empty;
     final repo = ref.read(playlistRepositoryProvider);
 
     return SafeArea(
@@ -72,9 +68,8 @@ class PlaylistsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.xl),
-          const SectionHeader(title: 'Your Collections'),
-          const SizedBox(height: AppSpacing.md),
+          // Rescan lives in Settings; the page title already says what this is
+          const SizedBox(height: AppSpacing.lg),
           if (playlists.isEmpty)
             const EmptyState(
               icon: Icons.queue_music_rounded,
@@ -104,43 +99,6 @@ class PlaylistsScreen extends ConsumerWidget {
                 );
               }),
             ),
-          const SizedBox(height: AppSpacing.xl),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
-            child: SolidCard(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              onTap: () => ref.read(scanControllerProvider.notifier).requestAndScan(),
-              child: Row(
-                children: [
-                  const Icon(Icons.sd_card_outlined, color: AppColors.textSecondary),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Internal Storage Sync', style: AppTypography.titleSm),
-                        Text('Indexed ${stats.trackCount} audio files locally', style: AppTypography.labelSm),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceHigh,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.refresh_rounded, size: 16, color: AppColors.textPrimary),
-                        const SizedBox(width: 4),
-                        Text('Rescan', style: AppTypography.labelMd.copyWith(color: AppColors.textPrimary)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
