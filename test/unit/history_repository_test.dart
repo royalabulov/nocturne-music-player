@@ -85,6 +85,24 @@ void main() {
     expect((all.plays, all.songs), (3, 2));
   });
 
+  test('listened: real time heard, not the song length; older plays keep the old estimate', () async {
+    final song = await addTrack('song'); // 200 s
+    // Before tracking existed: no listened time recorded → full length
+    await playAt(song, DateTime.now().subtract(const Duration(days: 2)));
+
+    // Played for 10 s, then skipped
+    final skipped = await history.recordPlay(song);
+    await history.saveListened(skipped, const Duration(seconds: 10));
+    // Played for 1 min 5 s
+    final heard = await history.recordPlay(song);
+    await history.saveListened(heard, const Duration(seconds: 65));
+
+    final today = await history.watchPlayStats(since: DateTime.now().subtract(const Duration(hours: 1))).first;
+    expect((today.plays, today.listened), (2, const Duration(seconds: 75)));
+    final all = await history.watchPlayStats(since: DateTime(2000)).first;
+    expect((all.plays, all.listened), (3, const Duration(seconds: 275)));
+  });
+
   test('period starts: midnight, Monday, the 1st', () {
     final wed = DateTime(2026, 11, 4, 15, 30); // Wednesday
     expect(PlayPeriod.day.start(wed), DateTime(2026, 11, 4));

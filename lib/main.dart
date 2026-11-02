@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'app.dart';
+import 'core/audio/listen_tracker.dart';
 import 'core/audio/sonar_audio_handler.dart';
 import 'core/diagnostics/crash_log.dart';
 import 'core/demo/demo_audio.dart';
@@ -45,7 +46,8 @@ Future<void> main() async {
   late final ProviderContainer container;
   final handler = await AudioService.init(
     builder: () => SonarAudioHandler(
-      onTrackStarted: (t) => container.read(historyRepositoryProvider).recordPlay(t.id),
+      // Records the play and measures how long it's really heard
+      onTrackStarted: (t) => container.read(listenTrackerProvider).trackStarted(t.id),
       onTrackUnavailable: (t) {
         container.read(libraryRepositoryProvider).markMissing(t.id);
         showToast('"${t.title}" is no longer on this device — skipped');

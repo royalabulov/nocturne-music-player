@@ -167,8 +167,14 @@ class DemoHistoryRepository implements HistoryRepository {
   Track? _track(int id) => _lib.all.where((t) => t.id == id).firstOrNull;
 
   @override
-  Future<void> recordPlay(int trackId) async =>
-      _plays.add([..._plays.value, (trackId, DateTime.now())]);
+  Future<int> recordPlay(int trackId) async {
+    _plays.add([..._plays.value, (trackId, DateTime.now())]);
+    return _plays.value.length;
+  }
+
+  /// Web demo: stats keep counting full song length.
+  @override
+  Future<void> saveListened(int playId, Duration listened) async {}
 
   /// id → (count, lastPlayed, score)
   Map<int, (int, DateTime, double)> _agg(List<(int, DateTime)> plays) {

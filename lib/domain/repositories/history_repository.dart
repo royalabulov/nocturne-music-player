@@ -44,8 +44,12 @@ class ResumePoint {
 }
 
 abstract interface class HistoryRepository {
-  /// One row per play (onTrackStarted).
-  Future<void> recordPlay(int trackId);
+  /// One row per play (onTrackStarted). Returns the row id for [saveListened].
+  Future<int> recordPlay(int trackId);
+
+  /// How long that play was really heard (time spent playing, not the song's
+  /// length) — ListenTracker writes it every few seconds and when the play ends.
+  Future<void> saveListened(int playId, Duration listened);
 
   /// Recently played, each track once, most recent first. [since] = only plays after it.
   Stream<List<PlayedTrack>> watchRecentlyPlayed({int limit = 50, DateTime? since});

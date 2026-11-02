@@ -17,11 +17,24 @@ class HistoryRepositoryImpl implements HistoryRepository {
   final TrackFilter filter;
   String get _visibleSql => filter.sql;
 
+  /// From this moment play_history.position_ms holds the real listened time.
+  /// Older rows never had it → stats keep counting their full song length.
+  static const _listenSinceKey = 'listenTrackingSince';
+
   @override
-  Future<void> recordPlay(int trackId) => db.into(db.playHistory).insert(PlayHistoryCompanion.insert(
-        trackId: trackId,
-        playedAt: DateTime.now().millisecondsSinceEpoch,
-      ));
+  Future<int> recordPlay(int trackId) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await db.customStatement(
+      'INSERT OR IGNORE INTO scan_state ("key", value) VALUES (?, ?)',
+      [_listenSinceKey, '$now'],
+    );
+    return db.into(db.playHistory).insert(PlayHistoryCompanion.insert(trackId: trackId, playedAt: now));
+  }
+
+  @override
+  Future<void> saveListened(int playId, Duration listened) => (db.update(db.playHistory)
+        ..where((h) => h.id.equals(playId)))
+      .write(PlayHistoryCompanion(positionMs: Value(listened.inMilliseconds)));
 
   Stream<List<PlayedTrack>> _aggregated(String orderBy, int limit, DateTime? since) {
     return db
@@ -94,10 +107,14 @@ class HistoryRepositoryImpl implements HistoryRepository {
     return db
         .customSelect(
           'SELECT COUNT(h.id) AS plays, COUNT(DISTINCT h.track_id) AS songs, '
-          'COALESCE(SUM(t.duration_ms), 0) AS ms '
+          // Listened = the real time heard; plays from before tracking started
+          // have none → their full length (the old estimate)
+          'COALESCE(SUM(CASE WHEN h.played_at >= COALESCE('
+          "(SELECT CAST(value AS INTEGER) FROM scan_state WHERE \"key\" = '$_listenSinceKey'), "
+          '9223372036854775807) THEN h.position_ms ELSE t.duration_ms END), 0) AS ms '
           'FROM play_history h JOIN tracks t ON t.id = h.track_id WHERE h.played_at >= ?',
           variables: [Variable.withInt(since.millisecondsSinceEpoch)],
-          readsFrom: {db.playHistory, db.tracks},
+          readsFrom: {db.playHistory, db.tracks, db.scanState},
         )
         .watchSingle()
         .map((r) => PlayStats(
