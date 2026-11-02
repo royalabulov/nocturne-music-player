@@ -13,7 +13,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/utils/duration_format.dart';
 import '../../domain/entities/track.dart';
 import '../../shared/album_art.dart';
-import '../../shared/codec_chip.dart';
+import '../../shared/cover_color.dart';
 import '../../shared/favorite_button.dart';
 import '../../shared/glow_play_button.dart';
 import '../../shared/track_actions_sheet.dart';
@@ -58,24 +58,8 @@ class NowPlayingScreen extends ConsumerWidget {
       backgroundColor: AppColors.void_,
       body: Stack(
         children: [
-          // Ambient glow — behind the album art
-          Positioned(
-            top: -80,
-            left: -60,
-            right: -60,
-            child: Container(
-              height: 420,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.electric.withValues(alpha: .18),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
+          // Ambient glow + top wash in the cover's colour
+          const Positioned.fill(child: _CoverBackdrop()),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
@@ -144,7 +128,7 @@ class NowPlayingScreen extends ConsumerWidget {
                           children: [
                             Text(
                               t.title,
-                              style: AppTypography.headlineLg,
+                              style: AppTypography.headlineMd,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -163,24 +147,25 @@ class NowPlayingScreen extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            const SizedBox(height: AppSpacing.xxs),
+                            // Quality as one quiet line — two bordered pills were the
+                            // loudest thing under the title (design review, 2026-11-02)
+                            Text(
+                              [
+                                t.qualityLabel,
+                                if (t.sampleRateHz != null) '${t.sampleRateHz! ~/ 1000}kHz',
+                              ].join('  ·  '),
+                              style: AppTypography.monoSm.copyWith(color: AppColors.textMuted),
+                            ),
                           ],
                         ),
                       ),
-                      FavoriteButton(trackId: t.id, size: 26),
+                      FavoriteButton(trackId: t.id, size: 24),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Row(
-                    children: [
-                      CodecChip(t.qualityLabel),
-                      const SizedBox(width: AppSpacing.xs),
-                      if (t.sampleRateHz != null)
-                        CodecChip('${t.sampleRateHz! ~/ 1000}kHz'),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  const _Scrubber(),
                   const SizedBox(height: AppSpacing.lg),
+                  const _Scrubber(),
+                  const SizedBox(height: AppSpacing.sm),
                   // Transport. Tooltips double as TalkBack labels; shuffle/repeat
                   // say their state, since only the colour shows it on screen.
                   Row(
@@ -189,7 +174,7 @@ class NowPlayingScreen extends ConsumerWidget {
                       IconButton(
                         tooltip: shuffle ? 'Shuffle: on' : 'Shuffle: off',
                         onPressed: handler.toggleShuffle,
-                        iconSize: 26,
+                        iconSize: 22,
                         icon: const Icon(Icons.shuffle_rounded),
                         color: shuffle
                             ? AppColors.cyan
@@ -198,19 +183,19 @@ class NowPlayingScreen extends ConsumerWidget {
                       IconButton(
                         tooltip: 'Previous song',
                         onPressed: handler.skipToPrevious,
-                        iconSize: 40,
+                        iconSize: 34,
                         icon: const Icon(Icons.skip_previous_rounded),
                         color: AppColors.textPrimary,
                       ),
                       GlowPlayButton(
-                        size: 72,
+                        size: 64,
                         playing: playing,
                         onTap: playing ? handler.pause : handler.play,
                       ),
                       IconButton(
                         tooltip: 'Next song',
                         onPressed: handler.skipToNext,
-                        iconSize: 40,
+                        iconSize: 34,
                         icon: const Icon(Icons.skip_next_rounded),
                         color: AppColors.textPrimary,
                       ),
@@ -221,7 +206,7 @@ class NowPlayingScreen extends ConsumerWidget {
                           _ => 'Repeat: all',
                         },
                         onPressed: handler.cycleRepeat,
-                        iconSize: 26,
+                        iconSize: 22,
                         icon: Icon(
                           repeat == AudioServiceRepeatMode.one
                               ? Icons.repeat_one_rounded
@@ -442,6 +427,7 @@ class _Art extends ConsumerWidget {
       340.0,
     );
     final playing = ref.watch(isPlayingProvider);
+    final glow = ref.watch(currentCoverColorProvider);
     // While paused the cover shrinks a little and the glow fades; it grows back when playing.
     return AnimatedScale(
       scale: playing ? 1 : .88,
@@ -453,8 +439,7 @@ class _Art extends ConsumerWidget {
           borderRadius: const BorderRadius.all(Radius.circular(AppRadius.xxl)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF3B82F6)
-                  .withValues(alpha: playing ? .4 : .1),
+              color: glow.withValues(alpha: playing ? .4 : .1),
               blurRadius: 48,
               spreadRadius: -8,
             ),
@@ -503,9 +488,11 @@ class _ScrubberState extends ConsumerState<_Scrubber> {
 
     return Column(
       children: [
+        // Thin line with a small dot; the dot grows only while dragging
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+            trackHeight: 3,
+            thumbShape: RoundSliderThumbShape(enabledThumbRadius: _dragValue == null ? 4 : 7),
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
           ),
           child: Slider(
@@ -525,12 +512,61 @@ class _ScrubberState extends ConsumerState<_Scrubber> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(shown.mmss, style: AppTypography.monoMd),
-              Text(dur.mmss, style: AppTypography.monoMd),
+              Text(shown.mmss, style: AppTypography.monoSm),
+              Text(dur.mmss, style: AppTypography.monoSm),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Background in the cover's colour: a glow behind the art and a wash that fades
+/// into the void by mid-screen, so text below always sits on a dark background.
+/// Eases between songs instead of jumping.
+class _CoverBackdrop extends ConsumerWidget {
+  const _CoverBackdrop();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return TweenAnimationBuilder<Color?>(
+      tween: ColorTween(end: ref.watch(currentCoverColorProvider)),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOut,
+      builder: (_, c, _) {
+        final color = c ?? AppColors.electric;
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0, .6],
+                    colors: [color.withValues(alpha: .16), Colors.transparent],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: -80,
+              left: -60,
+              right: -60,
+              height: 420,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [color.withValues(alpha: .3), Colors.transparent],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

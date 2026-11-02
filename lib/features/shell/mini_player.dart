@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -6,6 +7,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
 import '../../domain/entities/track.dart';
 import '../../shared/album_art.dart';
+import '../../shared/cover_color.dart';
 
 /// Hero tag for the cover between the mini player and Now Playing.
 const kNowPlayingArtHero = 'now-playing-art';
@@ -45,59 +47,85 @@ class MiniPlayer extends StatelessWidget {
           radius: AppRadius.xl,
           // Always on screen: blur was recomputed on every scroll frame
           blur: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 2px scrubber — top edge
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-                child: SizedBox(height: 2, child: RepaintBoundary(child: progressBar)),
-              ),
-              SizedBox(
-                height: AppSpacing.miniPlayerHeight - 2,
-                child: Row(
-                  children: [
-                    const SizedBox(width: AppSpacing.sm),
-                    // Hero: when Now Playing opens, the cover flies up and grows from the mini player
-                    Hero(
-                      tag: kNowPlayingArtHero,
-                      child: AlbumArt(path: track.coverPath, seed: track.id, size: 40, radius: AppRadius.md),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(track.title, style: AppTypography.titleSm,
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
-                          Text(track.artist, style: AppTypography.labelSm,
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: playing ? 'Pause' : 'Play',
-                      onPressed: onPlayPause,
-                      icon: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                      color: AppColors.textPrimary,
-                      iconSize: 28,
-                    ),
-                    IconButton(
-                      tooltip: 'Next song',
-                      onPressed: onNext,
-                      icon: const Icon(Icons.skip_next_rounded),
-                      color: AppColors.textPrimary,
-                      iconSize: 28,
-                    ),
-                    const SizedBox(width: AppSpacing.xxs),
-                  ],
+          child: _CoverTint(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 2px scrubber — top edge
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+                  child: SizedBox(height: 2, child: RepaintBoundary(child: progressBar)),
                 ),
-              ),
-            ],
+                SizedBox(
+                  height: AppSpacing.miniPlayerHeight - 2,
+                  child: Row(
+                    children: [
+                      const SizedBox(width: AppSpacing.sm),
+                      // Hero: when Now Playing opens, the cover flies up and grows from the mini player
+                      Hero(
+                        tag: kNowPlayingArtHero,
+                        child: AlbumArt(path: track.coverPath, seed: track.id, size: 40, radius: AppRadius.md),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(track.title, style: AppTypography.titleSm,
+                                maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Text(track.artist, style: AppTypography.labelSm,
+                                maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: playing ? 'Pause' : 'Play',
+                        onPressed: onPlayPause,
+                        icon: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                        color: AppColors.textPrimary,
+                        iconSize: 28,
+                      ),
+                      IconButton(
+                        tooltip: 'Next song',
+                        onPressed: onNext,
+                        icon: const Icon(Icons.skip_next_rounded),
+                        color: AppColors.textPrimary,
+                        iconSize: 28,
+                      ),
+                      const SizedBox(width: AppSpacing.xxs),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A light wash of the current cover's colour over the mini-player glass
+/// (same colour as the Now Playing background), easing between songs.
+class _CoverTint extends ConsumerWidget {
+  const _CoverTint({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return TweenAnimationBuilder<Color?>(
+      tween: ColorTween(end: ref.watch(currentCoverColorProvider)),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOut,
+      builder: (_, c, child) => DecoratedBox(
+        decoration: BoxDecoration(
+          color: (c ?? AppColors.electric).withValues(alpha: .16),
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
+        child: child,
+      ),
+      child: child,
     );
   }
 }
