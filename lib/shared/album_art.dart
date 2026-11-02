@@ -1,14 +1,16 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
+import 'cover_crop.dart';
 
 /// Album art: 16px radius + 1px inset hairline. Without a cover,
-/// a gradient placeholder + note icon.
-class AlbumArt extends StatelessWidget {
+/// a gradient placeholder + note icon. Black video bars are zoomed past (CoverCrop).
+class AlbumArt extends StatefulWidget {
   const AlbumArt({
     super.key,
     this.path,
@@ -25,26 +27,84 @@ class AlbumArt extends StatelessWidget {
   final int seed;
 
   @override
+  State<AlbumArt> createState() => _AlbumArtState();
+}
+
+class _AlbumArtState extends State<AlbumArt> {
+  @override
+  void initState() {
+    super.initState();
+    _checkBars();
+  }
+
+  @override
+  void didUpdateWidget(AlbumArt old) {
+    super.didUpdateWidget(old);
+    if (old.path != widget.path) _checkBars();
+  }
+
+  /// First time a cover shows up this session: look for bars, then redraw.
+  void _checkBars() {
+    final p = widget.path;
+    if (kIsWeb || p == null || p.isEmpty || isCoverCropKnown(p)) return;
+    coverCrop(p).then((c) {
+      if (c != null && mounted && widget.path == p) setState(() {});
+    });
+  }
+
+  double get size => widget.size;
+
+  @override
   Widget build(BuildContext context) {
-    final p = path;
+    final p = widget.path;
     final Widget content;
     if (!kIsWeb && p != null && p.isNotEmpty) {
-      // cacheWidth: decode the cover at its on-screen size. Full size (1000×1000+)
-      // for 400 tiles means hundreds of MB of RAM + jank.
-      final px = (size * MediaQuery.devicePixelRatioOf(context)).round();
-      content = Image.file(
-        File(p),
-        fit: BoxFit.cover,
-        width: size,
-        height: size,
-        cacheWidth: px,
-        cacheHeight: px,
-        gaplessPlayback: true,
-        errorBuilder: (_, _, _) => _placeholder(),
-      );
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      final crop = cachedCoverCrop(p);
+      if (crop == null) {
+        // Decode at on-screen size: full size (1000×1000+) for 400 tiles means
+        // hundreds of MB of RAM + jank. Only the height is given so the aspect
+        // ratio stays — width + height squashed non-square covers (mostly wide
+        // video frames, hence height).
+        content = Image.file(
+          File(p),
+          fit: BoxFit.cover,
+          width: size,
+          height: size,
+          cacheHeight: (size * dpr).round(),
+          gaplessPlayback: true,
+          errorBuilder: (_, _, _) => _placeholder(),
+        );
+      } else {
+        // Scale the whole image so the picture (without bars) covers the square
+        final c = crop.content;
+        final h = size / min(c.width * crop.aspect, c.height);
+        final w = h * crop.aspect;
+        content = SizedBox.square(
+          dimension: size,
+          child: Stack(
+            children: [
+              Positioned(
+                left: size / 2 - c.center.dx * w,
+                top: size / 2 - c.center.dy * h,
+                width: w,
+                height: h,
+                child: Image.file(
+                  File(p),
+                  fit: BoxFit.fill,
+                  cacheHeight: (h * dpr).round(),
+                  gaplessPlayback: true,
+                  errorBuilder: (_, _, _) => _placeholder(),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
     } else {
       content = _placeholder();
     }
+    final radius = widget.radius;
 
     return Container(
       width: size,
@@ -59,7 +119,7 @@ class AlbumArt extends StatelessWidget {
   }
 
   Widget _placeholder() {
-    final hue = (seed * 47) % 360;
+    final hue = (widget.seed * 47) % 360;
     return Container(
       width: size,
       height: size,
