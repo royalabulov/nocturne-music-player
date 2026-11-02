@@ -97,10 +97,36 @@ void main() {
     final heard = await history.recordPlay(song);
     await history.saveListened(heard, const Duration(seconds: 65));
 
+    // The 10 s skip isn't a play (30 s rule) but its 10 s are listened time
     final today = await history.watchPlayStats(since: DateTime.now().subtract(const Duration(hours: 1))).first;
-    expect((today.plays, today.listened), (2, const Duration(seconds: 75)));
+    expect((today.plays, today.listened), (1, const Duration(seconds: 75)));
     final all = await history.watchPlayStats(since: DateTime(2000)).first;
-    expect((all.plays, all.listened), (3, const Duration(seconds: 275)));
+    expect((all.plays, all.listened), (2, const Duration(seconds: 275)));
+  });
+
+  test('30 s rule: skips stay out of Recent, Most played and Recommended', () async {
+    final skippedSong = await addTrack('skipped'); // 200 s
+    final heardSong = await addTrack('heard');
+    final shortSong = await addTrack('short', durationMs: 50000); // half = 25 s
+    final oldSong = await addTrack('old');
+    // Before tracking: counts whatever happened
+    await playAt(oldSong, DateTime.now().subtract(const Duration(days: 1)));
+
+    Future<void> listen(int song, int seconds) async =>
+        history.saveListened(await history.recordPlay(song), Duration(seconds: seconds));
+    await listen(skippedSong, 29);
+    await listen(skippedSong, 3);
+    await listen(heardSong, 30);
+    await listen(shortSong, 26);
+
+    final recent = await history.watchRecentlyPlayed().first;
+    expect(recent.map((p) => p.track.title).toSet(), {'heard', 'short', 'old'});
+    final most = await history.watchMostPlayed().first;
+    expect(most.map((p) => p.track.title), isNot(contains('skipped')));
+    final recommended = await history.watchRecommended().first;
+    expect(recommended.map((p) => p.track.title), isNot(contains('skipped')));
+    final stats = await history.watchPlayStats(since: DateTime(2000)).first;
+    expect((stats.plays, stats.songs), (3, 3));
   });
 
   test('period starts: midnight, Monday, the 1st', () {

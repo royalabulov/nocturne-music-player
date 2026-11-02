@@ -21,6 +21,17 @@ class HistoryRepositoryImpl implements HistoryRepository {
   /// Older rows never had it → stats keep counting their full song length.
   static const _listenSinceKey = 'listenTrackingSince';
 
+  /// played_at from which rows carry a real listened time (none yet → never).
+  static const _trackedSinceSql = "COALESCE((SELECT CAST(value AS INTEGER) FROM scan_state "
+      "WHERE \"key\" = '$_listenSinceKey'), 9223372036854775807)";
+
+  /// A play counts (play counts, Recent lists, Recommended) once heard for 30 s,
+  /// or half of a song shorter than a minute — a skip after 1 s used to count
+  /// as a full play (2026-11-02). Plays from before tracking always count.
+  /// Listened time still includes the short ones.
+  static const _countsSql = '(h.played_at < $_trackedSinceSql '
+      'OR h.position_ms >= MIN(30000, COALESCE(t.duration_ms, 60000) / 2))';
+
   @override
   Future<int> recordPlay(int trackId) async {
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -41,9 +52,10 @@ class HistoryRepositoryImpl implements HistoryRepository {
         .customSelect(
           'SELECT t.*, COUNT(h.id) AS play_count, MAX(h.played_at) AS last_played '
           'FROM tracks t JOIN play_history h ON h.track_id = t.id '
-          'WHERE $_visibleSql AND h.played_at >= ? GROUP BY t.id ORDER BY $orderBy LIMIT ?',
+          'WHERE $_visibleSql AND h.played_at >= ? AND $_countsSql '
+          'GROUP BY t.id ORDER BY $orderBy LIMIT ?',
           variables: [Variable.withInt(since?.millisecondsSinceEpoch ?? 0), Variable.withInt(limit)],
-          readsFrom: {db.tracks, db.playHistory},
+          readsFrom: {db.tracks, db.playHistory, db.scanState},
         )
         .watch()
         .map((rows) => [
@@ -68,17 +80,23 @@ class HistoryRepositoryImpl implements HistoryRepository {
   @override
   Stream<List<PlayedTrack>> watchRecommended({int limit = 10}) {
     final since = DateTime.now().subtract(const Duration(days: 120)).millisecondsSinceEpoch;
-    final q = db.select(db.playHistory)..where((h) => h.playedAt.isBiggerOrEqualValue(since));
+    final q = db.customSelect(
+      'SELECT h.track_id, h.played_at FROM play_history h JOIN tracks t ON t.id = h.track_id '
+      'WHERE h.played_at >= ? AND $_countsSql',
+      variables: [Variable.withInt(since)],
+      readsFrom: {db.playHistory, db.tracks, db.scanState},
+    );
     return q.watch().asyncMap((rows) async {
       final now = DateTime.now().millisecondsSinceEpoch;
       final score = <int, double>{};
       final count = <int, int>{};
       final last = <int, int>{};
-      for (final h in rows) {
-        final daysAgo = (now - h.playedAt) / Duration.millisecondsPerDay;
-        score[h.trackId] = (score[h.trackId] ?? 0) + exp(-daysAgo / 14);
-        count[h.trackId] = (count[h.trackId] ?? 0) + 1;
-        last[h.trackId] = max(last[h.trackId] ?? 0, h.playedAt);
+      for (final r in rows) {
+        final (id, playedAt) = (r.read<int>('track_id'), r.read<int>('played_at'));
+        final daysAgo = (now - playedAt) / Duration.millisecondsPerDay;
+        score[id] = (score[id] ?? 0) + exp(-daysAgo / 14);
+        count[id] = (count[id] ?? 0) + 1;
+        last[id] = max(last[id] ?? 0, playedAt);
       }
       final ranked = score.keys.toList()..sort((a, b) => score[b]!.compareTo(score[a]!));
       final ids = ranked.take(limit * 2).toList(); // spare for missing/short files
@@ -106,12 +124,13 @@ class HistoryRepositoryImpl implements HistoryRepository {
   Stream<PlayStats> watchPlayStats({required DateTime since}) {
     return db
         .customSelect(
-          'SELECT COUNT(h.id) AS plays, COUNT(DISTINCT h.track_id) AS songs, '
-          // Listened = the real time heard; plays from before tracking started
-          // have none → their full length (the old estimate)
-          'COALESCE(SUM(CASE WHEN h.played_at >= COALESCE('
-          "(SELECT CAST(value AS INTEGER) FROM scan_state WHERE \"key\" = '$_listenSinceKey'), "
-          '9223372036854775807) THEN h.position_ms ELSE t.duration_ms END), 0) AS ms '
+          // Plays and songs: only plays that count (30 s rule)
+          'SELECT COALESCE(SUM(CASE WHEN $_countsSql THEN 1 ELSE 0 END), 0) AS plays, '
+          'COUNT(DISTINCT CASE WHEN $_countsSql THEN h.track_id END) AS songs, '
+          // Listened = the real time heard, skips included; plays from before
+          // tracking started have none → their full length (the old estimate)
+          'COALESCE(SUM(CASE WHEN h.played_at >= $_trackedSinceSql '
+          'THEN h.position_ms ELSE t.duration_ms END), 0) AS ms '
           'FROM play_history h JOIN tracks t ON t.id = h.track_id WHERE h.played_at >= ?',
           variables: [Variable.withInt(since.millisecondsSinceEpoch)],
           readsFrom: {db.playHistory, db.tracks, db.scanState},
