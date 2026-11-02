@@ -23,6 +23,7 @@ import '../library_browse/library_groups.dart';
 import '../library_browse/library_views.dart';
 import '../library_scan/scan_status_card.dart';
 import '../player/player_providers.dart';
+import '../shell/scroll_to_top.dart';
 
 /// Home: greeting, search, Recommended (from play history) and the Library
 /// (Songs / Albums / Artists) — all from the local database.
@@ -187,10 +188,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ref.read(locateTrackProvider.notifier).clear();
       _locate(id);
     });
+    ref.listen(scrollToTopProvider, (_, e) {
+      if (e.$1 == 0) scrollControllerToTop(_scroll);
+    });
     ref.listen(focusSearchProvider, (_, _) {
-      if (_scroll.hasClients) {
-        _scroll.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
-      }
+      scrollControllerToTop(_scroll);
       // When the keyboard is closed with back, focus stays in the field → requestFocus
       // does nothing. In that case we open the keyboard directly.
       if (_searchFocus.hasFocus) {
@@ -204,7 +206,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // caused jank). Static parts live in SliverToBoxAdapter.
     return SafeArea(
       bottom: false,
-      child: CustomScrollView(
+      // Draggable thumb on the right: 400+ songs → grab it to jump anywhere
+      // (shows while scrolling, fades out after)
+      child: RawScrollbar(
+        controller: _scroll,
+        interactive: true,
+        thickness: 6,
+        minThumbLength: 56,
+        radius: const Radius.circular(3),
+        thumbColor: AppColors.electric.withValues(alpha: .7),
+        padding: const EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight),
+        child: CustomScrollView(
         controller: _scroll,
         slivers: [
           SliverList.list(
@@ -288,6 +300,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

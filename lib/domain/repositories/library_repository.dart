@@ -113,6 +113,9 @@ abstract interface class LibraryRepository {
   Stream<Set<int>> watchFavoriteIds();
   Future<void> toggleFavorite(int trackId);
 
+  /// The user's own artist name (Edit artist). Survives rescans; the file isn't changed.
+  Future<void> setArtist(int trackId, String artist);
+
   Future<Track?> getTrack(int id);
 
   /// By file path (Open with Nocturne: is the file already in the library?).

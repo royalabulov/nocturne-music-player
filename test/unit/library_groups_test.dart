@@ -56,6 +56,27 @@ void main() {
     expect(artists.last.albumCount, 0);
   });
 
+  test('collaborations are listed under every artist, most common spelling wins', () {
+    expect(artistsOf('PASTER × RIO × F\'RHYME × RZZA'), ['PASTER', 'RIO', 'F\'RHYME', 'RZZA']);
+    expect(artistsOf('Paster x OD'), ['Paster', 'OD']);
+    expect(artistsOf('Simon & Garfunkel'), ['Simon & Garfunkel']);
+    expect(artistsOf('Xpert'), ['Xpert']);
+    expect(artistsOf('Malcolm X'), ['Malcolm X']);
+
+    final songs = [
+      _t(1, 'Bane', 'Paster', 'A'),
+      _t(2, 'Surfing', 'Paster', 'A'),
+      _t(3, 'AXŞAM', 'PASTER × RZZA', 'B'),
+      _t(4, 'Joe Pesci', 'RIO ft. Amal\'', 'C'),
+    ];
+    final artists = groupArtists(songs);
+    expect(artists.map((a) => a.name), ['Paster', 'RIO', 'RZZA']);
+    expect(artists[0].tracks.map((t) => t.id), containsAll([1, 2, 3]));
+    expect(artists[2].tracks.map((t) => t.id), [3]);
+    expect(artistKeyOf(songs[2]), 'paster');
+    expect(artistKeysOf(songs[2]), {'paster', 'rzza'});
+  });
+
   test('route keys round-trip', () {
     expect(albumKeyOf(lib[0]), '25');
     expect(artistKeyOf(lib[2]), 'adele');

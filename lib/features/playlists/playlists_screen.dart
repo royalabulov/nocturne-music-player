@@ -29,6 +29,7 @@ class PlaylistsScreen extends ConsumerWidget {
     return SafeArea(
       bottom: false,
       child: ListView(
+        primary: true, // TabScrollToTop (tap the tab again → top)
         padding: const EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight),
         children: [
           const SonarHeader(),
@@ -113,6 +114,7 @@ class PlaylistsScreen extends ConsumerWidget {
                 final text = MediaQuery.textScalerOf(context).scale(22 + 14);
                 return GridView.builder(
                   shrinkWrap: true,
+                  primary: false, // the outer ListView owns the scroll-to-top controller
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,

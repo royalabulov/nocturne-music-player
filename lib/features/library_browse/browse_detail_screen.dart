@@ -56,7 +56,7 @@ class ArtistDetailScreen extends ConsumerWidget {
     if (a == null) return const _NotFound(what: 'artist');
     // The artist's albums (without Unknown Album) — horizontal row
     final albums = (ref.watch(albumsProvider) ?? const <AlbumGroup>[])
-        .where((al) => !al.isUnknown && al.tracks.any((t) => artistKeyOf(t) == a.key))
+        .where((al) => !al.isUnknown && al.tracks.any((t) => artistKeysOf(t).contains(a.key)))
         .toList();
     final albumCount = a.albumCount;
     return _DetailScaffold(

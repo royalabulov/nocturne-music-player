@@ -23,13 +23,13 @@ class HistoryRepositoryImpl implements HistoryRepository {
         playedAt: DateTime.now().millisecondsSinceEpoch,
       ));
 
-  Stream<List<PlayedTrack>> _aggregated(String orderBy, int limit) {
+  Stream<List<PlayedTrack>> _aggregated(String orderBy, int limit, DateTime? since) {
     return db
         .customSelect(
           'SELECT t.*, COUNT(h.id) AS play_count, MAX(h.played_at) AS last_played '
           'FROM tracks t JOIN play_history h ON h.track_id = t.id '
-          'WHERE $_visibleSql GROUP BY t.id ORDER BY $orderBy LIMIT ?',
-          variables: [Variable.withInt(limit)],
+          'WHERE $_visibleSql AND h.played_at >= ? GROUP BY t.id ORDER BY $orderBy LIMIT ?',
+          variables: [Variable.withInt(since?.millisecondsSinceEpoch ?? 0), Variable.withInt(limit)],
           readsFrom: {db.tracks, db.playHistory},
         )
         .watch()
@@ -44,11 +44,12 @@ class HistoryRepositoryImpl implements HistoryRepository {
   }
 
   @override
-  Stream<List<PlayedTrack>> watchRecentlyPlayed({int limit = 50}) => _aggregated('last_played DESC', limit);
+  Stream<List<PlayedTrack>> watchRecentlyPlayed({int limit = 50, DateTime? since}) =>
+      _aggregated('last_played DESC', limit, since);
 
   @override
-  Stream<List<PlayedTrack>> watchMostPlayed({int limit = 50}) =>
-      _aggregated('play_count DESC, last_played DESC', limit);
+  Stream<List<PlayedTrack>> watchMostPlayed({int limit = 50, DateTime? since}) =>
+      _aggregated('play_count DESC, last_played DESC', limit, since);
 
   /// Plays from the last 120 days are scored in Dart (SQLite exp() isn't available everywhere).
   @override
@@ -89,18 +90,19 @@ class HistoryRepositoryImpl implements HistoryRepository {
   }
 
   @override
-  Stream<WeekStats> watchWeekStats() {
-    final since = DateTime.now().subtract(const Duration(days: 7)).millisecondsSinceEpoch;
+  Stream<PlayStats> watchPlayStats({required DateTime since}) {
     return db
         .customSelect(
-          'SELECT COUNT(h.id) AS plays, COALESCE(SUM(t.duration_ms), 0) AS ms '
+          'SELECT COUNT(h.id) AS plays, COUNT(DISTINCT h.track_id) AS songs, '
+          'COALESCE(SUM(t.duration_ms), 0) AS ms '
           'FROM play_history h JOIN tracks t ON t.id = h.track_id WHERE h.played_at >= ?',
-          variables: [Variable.withInt(since)],
+          variables: [Variable.withInt(since.millisecondsSinceEpoch)],
           readsFrom: {db.playHistory, db.tracks},
         )
         .watchSingle()
-        .map((r) => WeekStats(
+        .map((r) => PlayStats(
               plays: r.read<int>('plays'),
+              songs: r.read<int>('songs'),
               listened: Duration(milliseconds: r.read<int>('ms')),
             ));
   }

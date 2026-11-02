@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,7 +53,8 @@ class NowPlayingScreen extends ConsumerWidget {
       }),
     );
 
-    return Scaffold(
+    return _PullDownToClose(
+      child: Scaffold(
       backgroundColor: AppColors.void_,
       body: Stack(
         children: [
@@ -130,7 +133,7 @@ class NowPlayingScreen extends ConsumerWidget {
                     ],
                   ),
                   const Spacer(flex: 2),
-                  _Art(track: t),
+                  _SwipeToSkip(child: _Art(track: t)),
                   const SizedBox(height: AppSpacing.xxl),
                   Row(
                     children: [
@@ -230,6 +233,117 @@ class NowPlayingScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+      ),
+    );
+  }
+}
+
+/// Pull the whole player down to close it — back to the mini player (the app
+/// shows behind it while dragging: the route isn't opaque).
+class _PullDownToClose extends StatefulWidget {
+  const _PullDownToClose({required this.child});
+  final Widget child;
+
+  @override
+  State<_PullDownToClose> createState() => _PullDownToCloseState();
+}
+
+class _PullDownToCloseState extends State<_PullDownToClose> with SingleTickerProviderStateMixin {
+  late final _dy = AnimationController.unbounded(vsync: this);
+
+  @override
+  void dispose() {
+    _dy.dispose();
+    super.dispose();
+  }
+
+  void _end(DragEndDetails d) {
+    final height = context.size?.height ?? 800;
+    if (_dy.value > height * .18 || (d.primaryVelocity ?? 0) > 800) {
+      Navigator.of(context).maybePop();
+    } else {
+      _dy.animateTo(0, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onVerticalDragUpdate: (d) => _dy.value = max(0, _dy.value + d.delta.dy),
+      onVerticalDragEnd: _end,
+      child: AnimatedBuilder(
+        animation: _dy,
+        // Same tree shape at rest and while pulled (no remount); no clipping at rest
+        builder: (_, child) => Transform.translate(
+          offset: Offset(0, _dy.value),
+          child: ClipRRect(
+            clipBehavior: _dy.value == 0 ? Clip.none : Clip.antiAlias,
+            // Rounded top corners while pulled, like a sheet
+            borderRadius: BorderRadius.vertical(top: Radius.circular(min(_dy.value / 4, AppRadius.xxl))),
+            child: child,
+          ),
+        ),
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Swipe the cover left → next song, right → previous song. The cover follows the
+/// finger, slides out, and the new one slides in from the other side.
+class _SwipeToSkip extends ConsumerStatefulWidget {
+  const _SwipeToSkip({required this.child});
+  final Widget child;
+
+  @override
+  ConsumerState<_SwipeToSkip> createState() => _SwipeToSkipState();
+}
+
+class _SwipeToSkipState extends ConsumerState<_SwipeToSkip> with SingleTickerProviderStateMixin {
+  late final _dx = AnimationController.unbounded(vsync: this);
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _dx.dispose();
+    super.dispose();
+  }
+
+  Future<void> _end(DragEndDetails d) async {
+    final width = MediaQuery.sizeOf(context).width;
+    final v = d.primaryVelocity ?? 0;
+    final dir = v.abs() > 600 ? v.sign : (_dx.value.abs() > width * .25 ? _dx.value.sign : 0.0);
+    if (dir == 0 || _busy) {
+      await _dx.animateTo(0, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic);
+      return;
+    }
+    _busy = true;
+    final handler = ref.read(audioHandlerProvider);
+    await _dx.animateTo(dir * width, duration: const Duration(milliseconds: 160), curve: Curves.easeIn);
+    try {
+      await (dir < 0 ? handler.skipToNext() : handler.skipToPreviousTrack())
+          .timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // slow load — slide the cover back anyway
+    }
+    if (!mounted) return;
+    _dx.value = -dir * width;
+    await _dx.animateTo(0, duration: const Duration(milliseconds: 260), curve: Curves.easeOutCubic);
+    _busy = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onHorizontalDragUpdate: (d) {
+        if (!_busy) _dx.value += d.delta.dx;
+      },
+      onHorizontalDragEnd: _end,
+      child: AnimatedBuilder(
+        animation: _dx,
+        builder: (_, child) => Transform.translate(offset: Offset(_dx.value, 0), child: child),
+        child: widget.child,
       ),
     );
   }

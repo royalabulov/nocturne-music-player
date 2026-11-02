@@ -107,6 +107,49 @@ void main() {
     });
   });
 
+
+  group('findUploaders', () {
+    // Real artist/title pairs from the phone (YouTube/Snaptube downloads)
+    Set<String> f(List<(String, String)> l) =>
+        TagReader.findUploaders([for (final (a, t) in l) (artist: a, title: t)]);
+
+    test('label and channel names are found', () {
+      expect(f([
+        ('Synaps Records', 'Paster — Bane'),
+        ('Synaps Records', 'RIO — Təkərlər (Official Music Video)'),
+        ('140 Vibes', "F'Rhyme — Absurd (Official Audio)"),
+        ('140 Vibes', "F'Rhyme ft. Uran — Dal Parta (Official Audio)"),
+        ('140 Vibes', 'kimsə bizi izləyir'),
+        ('101 Moon Ave.', 'Xpert — DƏMLƏR'),
+        ('101 Moon Ave.', 'Xpert — MÖHKEM (Official Music Video)'),
+        ('EminemVEVO', 'Eminem - Mockingbird [Official Music Video]'),
+      ]), {'synaps records', '140 vibes', '101 moon ave.', 'eminemvevo'});
+    });
+
+    test('real artists and sentences are left alone', () {
+      expect(f([
+        ('Ezhel', 'Ezhel & Murda - Made in Turkey'),
+        ('Ezhel', 'Felaket'),
+        ('Turkish Sound Effects', 'Merhaba Hanımefendi Hiç Basmış Mıydım Size - Deep Turkish Web - Ses Efekti'),
+        ('Turkish Sound Effects', 'Merhaba Hanımefendi Hiç Basmış Mıydım Size - Deep Turkish Web - Ses Efekti'),
+        ('Original Soundtrack', 'Longing (Redemptions) | The Last of Us Part II OST'),
+        ('Some Band', 'Song One - Remastered 2011'),
+        ('Some Band', 'Song Two - Remastered 2011'),
+        ('Unknown Artist', 'Paster — Bane'),
+        // the same song saved 3 times is not "one name repeating"
+        ('Tame Impala', 'Let It Happen - Radio Edit'),
+        ('Tame Impala', 'Let It Happen - Radio Edit'),
+        ('Tame Impala', 'Let It Happen - Radio Edit'),
+      ]), isEmpty);
+    });
+
+    test('isNameLike', () {
+      expect(TagReader.isNameLike('PASTER × RIO × F\'RHYME × RZZA'), isTrue);
+      expect(TagReader.isNameLike('F\'Rhyme x Nijat Mammadli'), isTrue);
+      expect(TagReader.isNameLike('Kardeşim Arkadan Vurdun Mu Önden Sallanacak'), isFalse);
+    });
+  });
+
   test('stripTopic cleans YouTube auto-channel album names', () {
     expect(TagReader.stripTopic('Michael Tai - Topic'), 'Michael Tai');
     expect(TagReader.stripTopic('Hepsi Bir'), 'Hepsi Bir');

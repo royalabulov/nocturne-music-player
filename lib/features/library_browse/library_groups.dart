@@ -53,6 +53,17 @@ String primaryArtist(String artist) {
   return s.isEmpty ? artist.trim() : s;
 }
 
+/// "PASTER × RZZA", "Paster x OD" → each name. Only "×" and a spaced "x" join
+/// artists; "&" and "," stay ("Simon & Garfunkel", "Tyler, The Creator").
+final _collab = RegExp(r'\s*×\s*|\s+[xX]\s+');
+List<String> artistsOf(String artist) {
+  final names = [
+    for (final n in primaryArtist(artist).split(_collab))
+      if (n.trim().isNotEmpty) n.trim(),
+  ];
+  return names.isEmpty ? [artist.trim()] : names;
+}
+
 int _byDisc(Track a, Track b) {
   final na = a.trackNo, nb = b.trackNo;
   if (na != null && nb != null && na != nb) return na.compareTo(nb);
@@ -91,11 +102,19 @@ List<AlbumGroup> groupAlbums(List<Track> tracks) {
   return out;
 }
 
+/// A collaboration is listed under every artist in it.
 List<ArtistGroup> groupArtists(List<Track> tracks) {
   final byKey = <String, List<Track>>{};
+  // spelling → count per key: "Paster" ×10 beats "PASTER" ×7
+  final spellings = <String, Map<String, int>>{};
   for (final t in tracks) {
     if (t.isMissing) continue;
-    (byKey[_norm(primaryArtist(t.artist))] ??= []).add(t);
+    for (final name in artistsOf(t.artist)) {
+      final key = _norm(name);
+      (byKey[key] ??= []).add(t);
+      final s = spellings[key] ??= {};
+      s[name] = (s[name] ?? 0) + 1;
+    }
   }
   final out = [
     for (final e in byKey.entries)
@@ -105,7 +124,8 @@ List<ArtistGroup> groupArtists(List<Track> tracks) {
             final c = _byName(a.album, b.album, TagReader.unknownAlbum);
             return c != 0 ? c : _byDisc(a, b);
           });
-        return ArtistGroup(key: e.key, name: primaryArtist(list.first.artist), tracks: list);
+        final name = spellings[e.key]!.entries.reduce((a, b) => b.value > a.value ? b : a).key;
+        return ArtistGroup(key: e.key, name: name, tracks: list);
       }(),
   ];
   out.sort((a, b) => _byName(a.name, b.name, TagReader.unknownArtist));
@@ -157,4 +177,6 @@ final artistsProvider = Provider.autoDispose<List<ArtistGroup>?>((ref) {
 String albumRoute(String key) => '/home/album?k=${Uri.encodeQueryComponent(key)}';
 String artistRoute(String key) => '/home/artist?k=${Uri.encodeQueryComponent(key)}';
 String albumKeyOf(Track t) => _norm(t.album);
-String artistKeyOf(Track t) => _norm(primaryArtist(t.artist));
+/// The first (main) artist — "Go to artist" opens this one.
+String artistKeyOf(Track t) => _norm(artistsOf(t.artist).first);
+Set<String> artistKeysOf(Track t) => {for (final n in artistsOf(t.artist)) _norm(n)};

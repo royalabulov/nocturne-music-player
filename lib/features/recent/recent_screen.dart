@@ -28,10 +28,11 @@ class RecentScreen extends ConsumerStatefulWidget {
 
 class _RecentScreenState extends ConsumerState<RecentScreen> {
   _Filter _filter = _Filter.recentlyPlayed;
+  PlayPeriod _period = PlayPeriod.week;
 
   @override
   Widget build(BuildContext context) {
-    final week = ref.watch(weekStatsProvider).value ?? WeekStats.empty;
+    final period = ref.watch(playStatsProvider(_period)).value ?? PlayStats.empty;
     final stats = ref.watch(libraryStatsProvider).value ?? LibraryStats.empty;
     // The position is written every 5 s — the screen only tracks whether the card
     // exists; the card handles the position itself (without rebuilding the whole list).
@@ -42,15 +43,16 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
     final String Function(Track) subtitle;
     switch (_filter) {
       case _Filter.recentlyPlayed:
-        final items = ref.watch(recentlyPlayedProvider).value ?? const <PlayedTrack>[];
+        final items = ref.watch(recentlyPlayedProvider(_period)).value ?? const <PlayedTrack>[];
         final meta = {for (final p in items) p.track.id: p};
         tracks = [for (final p in items) p.track];
-        subtitle = (t) => '${_ago(meta[t.id]?.lastPlayedAt)} • ${t.artist}';
+        // Plays within the chosen period (Today / This week / This month)
+        subtitle = (t) => '${meta[t.id]?.playCount ?? 0}× • ${_ago(meta[t.id]?.lastPlayedAt)} • ${t.artist}';
       case _Filter.mostPlayed:
-        final items = ref.watch(mostPlayedProvider).value ?? const <PlayedTrack>[];
+        final items = ref.watch(mostPlayedProvider(_period)).value ?? const <PlayedTrack>[];
         final meta = {for (final p in items) p.track.id: p};
         tracks = [for (final p in items) p.track];
-        subtitle = (t) => 'Played ${meta[t.id]?.playCount ?? 0}x • ${t.artist}';
+        subtitle = (t) => '${meta[t.id]?.playCount ?? 0}× • ${t.artist}';
       case _Filter.recentlyAdded:
         tracks = ref.watch(tracksProvider((sort: TrackSort.recentlyAdded, query: ''))).value ?? const [];
         subtitle = (t) => '${_ago(t.dateAdded)} • ${t.artist}';
@@ -60,13 +62,19 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
     }
 
     final emptyText = switch (_filter) {
-      _Filter.recentlyPlayed || _Filter.mostPlayed => 'Nothing played yet — tap any track in Home.',
+      _Filter.recentlyPlayed || _Filter.mostPlayed => switch (_period) {
+          PlayPeriod.day => 'Nothing played today yet.',
+          PlayPeriod.week => 'Nothing played this week yet.',
+          PlayPeriod.month => 'Nothing played this month yet.',
+          PlayPeriod.all => 'Nothing played yet — tap any track in Home.',
+        },
       _ => 'Library is empty — scan from Home or Settings.',
     };
 
     return SafeArea(
       bottom: false,
       child: CustomScrollView(
+        primary: true, // TabScrollToTop (tap the tab again → top)
         slivers: [
           SliverList.list(children: [
             const SonarHeader(),
@@ -82,9 +90,7 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
                         Text('Recently Played', style: AppTypography.headlineXl),
                         const SizedBox(height: AppSpacing.xxs),
                         Text(
-                          week.plays == 0
-                              ? 'No plays this week yet'
-                              : '${week.plays} plays this week • ${week.listened.hm} total',
+                          'Your listening — today, this week, this month or all time',
                           style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary),
                         ),
                       ],
@@ -96,6 +102,13 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _PeriodSwitcher(value: _period, onChanged: (p) => setState(() => _period = p)),
+            const SizedBox(height: AppSpacing.sm),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
+              child: _PeriodStats(stats: period),
             ),
             const SizedBox(height: AppSpacing.lg),
             FilterChipRow(
@@ -159,6 +172,88 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 30) return '${diff.inDays} days ago';
     return '${d.day}.${d.month}.${d.year}';
+  }
+}
+
+/// Today | This week | This month — the stats and the played lists follow it.
+class _PeriodSwitcher extends StatelessWidget {
+  const _PeriodSwitcher({required this.value, required this.onChanged});
+  final PlayPeriod value;
+  final ValueChanged<PlayPeriod> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: AppColors.borderLevel1),
+        ),
+        child: Row(
+          children: [
+            for (final p in PlayPeriod.values)
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onChanged(p),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: p == value ? AppColors.electric : Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      boxShadow: p == value ? Glow.accent : null,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      p.label,
+                      style: AppTypography.labelMd.copyWith(
+                        color: p == value ? Colors.white : AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Plays · different songs · listening time for the chosen period.
+class _PeriodStats extends StatelessWidget {
+  const _PeriodStats({required this.stats});
+  final PlayStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tile(String value, String label) => Expanded(
+          child: Column(
+            children: [
+              Text(value, style: AppTypography.headlineMd, maxLines: 1),
+              const SizedBox(height: 2),
+              Text(label, style: AppTypography.labelSm.copyWith(color: AppColors.textSecondary)),
+            ],
+          ),
+        );
+    Widget divider() => Container(width: 1, height: 32, color: AppColors.borderLevel1);
+
+    return SolidCard(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: Row(
+        children: [
+          tile('${stats.plays}', stats.plays == 1 ? 'play' : 'plays'),
+          divider(),
+          tile('${stats.songs}', stats.songs == 1 ? 'song' : 'songs'),
+          divider(),
+          tile(stats.listened == Duration.zero ? '0m' : stats.listened.hm, 'listened'),
+        ],
+      ),
+    );
   }
 }
 

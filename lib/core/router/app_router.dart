@@ -10,6 +10,7 @@ import '../../features/playlists/playlists_screen.dart';
 import '../../features/recent/recent_screen.dart';
 import '../../features/settings/equalizer_screen.dart';
 import '../../features/settings/settings_screen.dart';
+import '../../features/shell/scroll_to_top.dart';
 import '../../features/shell/shell_screen.dart';
 import '../../features/smart_groups/smart_groups_section.dart';
 import '../../features/smart_groups/vibe_review_screen.dart';
@@ -59,16 +60,16 @@ final appRouter = GoRouter(
           ],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: Routes.recent, builder: (_, _) => const RecentScreen())],
+          routes: [GoRoute(path: Routes.recent, builder: (_, _) => const TabScrollToTop(tab: 1, child: RecentScreen()))],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: Routes.favorites, builder: (_, _) => const FavoritesScreen())],
+          routes: [GoRoute(path: Routes.favorites, builder: (_, _) => const TabScrollToTop(tab: 2, child: FavoritesScreen()))],
         ),
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: Routes.playlists,
-              builder: (_, _) => const PlaylistsScreen(),
+              builder: (_, _) => const TabScrollToTop(tab: 3, child: PlaylistsScreen()),
               routes: [
                 GoRoute(
                   path: ':id',
@@ -96,6 +97,8 @@ final appRouter = GoRouter(
       parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (context, state) => CustomTransitionPage(
         key: state.pageKey,
+        // Not opaque: pulling the player down shows the app behind it
+        opaque: false,
         child: const NowPlayingScreen(),
         transitionDuration: const Duration(milliseconds: 320),
         transitionsBuilder: (_, anim, _, child) => SlideTransition(

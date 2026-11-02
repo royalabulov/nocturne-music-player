@@ -108,20 +108,23 @@ final playlistRepositoryProvider = Provider<PlaylistRepository>(
   ),
 );
 
-final recentlyPlayedProvider = StreamProvider<List<PlayedTrack>>(
-  (ref) => ref.watch(historyRepositoryProvider).watchRecentlyPlayed(),
+// Period start is taken when the provider is created; autoDispose → a new
+// "today" when the Recent screen is left and opened again.
+final recentlyPlayedProvider = StreamProvider.autoDispose.family<List<PlayedTrack>, PlayPeriod>(
+  (ref, period) =>
+      ref.watch(historyRepositoryProvider).watchRecentlyPlayed(since: period.start(DateTime.now())),
 );
 
-final mostPlayedProvider = StreamProvider<List<PlayedTrack>>(
-  (ref) => ref.watch(historyRepositoryProvider).watchMostPlayed(),
+final mostPlayedProvider = StreamProvider.autoDispose.family<List<PlayedTrack>, PlayPeriod>(
+  (ref, period) => ref.watch(historyRepositoryProvider).watchMostPlayed(since: period.start(DateTime.now())),
 );
 
 final recommendedProvider = StreamProvider<List<PlayedTrack>>(
   (ref) => ref.watch(historyRepositoryProvider).watchRecommended(limit: 5),
 );
 
-final weekStatsProvider = StreamProvider<WeekStats>(
-  (ref) => ref.watch(historyRepositoryProvider).watchWeekStats(),
+final playStatsProvider = StreamProvider.autoDispose.family<PlayStats, PlayPeriod>(
+  (ref, period) => ref.watch(historyRepositoryProvider).watchPlayStats(since: period.start(DateTime.now())),
 );
 
 final resumePointProvider = StreamProvider<ResumePoint?>(

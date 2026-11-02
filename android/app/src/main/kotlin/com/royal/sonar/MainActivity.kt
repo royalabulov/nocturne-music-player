@@ -138,11 +138,30 @@ class MainActivity : AudioServiceActivity() {
             Intent.ACTION_SEND -> streamExtra(intent)?.let { uris.add(it) }
             Intent.ACTION_SEND_MULTIPLE -> streamListExtra(intent)?.let { uris.addAll(it) }
         }
-        if (uris.isEmpty()) return false
-        openedUris.addAll(uris.map { it.toString() })
+        val safe = uris.filter(::isSafeIncoming)
+        if (safe.isEmpty()) return false
+        openedUris.addAll(safe.map { it.toString() })
         // Handle it once (so it doesn't come back when the app is reopened)
         intent.action = Intent.ACTION_MAIN
         return true
+    }
+
+    /// Only URIs another app may legitimately hand us. Any app can send this exported
+    /// activity a file:// URI (or a bare path) pointing into our own storage — the importer
+    /// can read it and would copy it to the public Music/Sonar folder (e.g. the library
+    /// database). So: content:// from other apps' providers, file:// only on shared storage.
+    private fun isSafeIncoming(uri: Uri): Boolean {
+        when (uri.scheme) {
+            "content" -> return uri.authority?.startsWith(packageName) != true
+            "file" -> {
+                // canonicalPath resolves ".." and symlinks before the prefix check
+                val path = runCatching { File(uri.path ?: return false).canonicalPath }.getOrNull()
+                    ?: return false
+                return path.startsWith("/storage/") && !path.contains("/Android/data/$packageName") &&
+                    !path.contains("/Android/obb/$packageName")
+            }
+            else -> return false
+        }
     }
 
     @Suppress("DEPRECATION")

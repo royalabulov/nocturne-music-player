@@ -235,6 +235,53 @@ abstract final class TagReader {
     return (title: right, artist: left);
   }
 
+  /// Words that mark a YouTube channel / label rather than a performer.
+  static final _channelWord = RegExp(
+    r'(vevo$|\brecords?\b|\brecordings\b|\bmusic\b|\bofficial\b|\btv\b|\bentertainment\b|\bproductions?\b|\bstudios?\b)',
+    caseSensitive: false,
+  );
+  static final _artistJoin = RegExp(r'\s*(?:×|&|,|\s[xX]\s|\sft\.?\s|\sfeat\.?\s)\s*');
+
+  /// "Paster", "PASTER × RZZA", "F'Rhyme ft. Uran" — every part at most 4 words.
+  /// A sentence like "Kardeşim Arkadan Vurdun Mu Önden" is not an artist.
+  static bool isNameLike(String s) {
+    final parts = s.split(_artistJoin).where((p) => p.trim().isNotEmpty).toList();
+    return parts.isNotEmpty &&
+        parts.every((p) => p.length <= 30 && p.trim().split(RegExp(r'\s+')).length <= 4);
+  }
+
+  /// Uploader channels used as the artist tag ("Synaps Records", "140 Vibes"):
+  /// the real artist is the left side of "Artist — Title". An artist counts as a
+  /// channel when its name has a channel word, or when its titles name other
+  /// artists — at least 2 of them, none naming the tag artist, one name repeating.
+  /// Returns lower-case names.
+  static Set<String> findUploaders(Iterable<({String artist, String title})> tracks) {
+    // per artist: title → named artist (duplicate files count once)
+    final lefts = <String, Map<String, String>>{};
+    final agrees = <String>{};
+    for (final t in tracks) {
+      final a = t.artist.trim().toLowerCase();
+      if (_isUnknownArtist(a)) continue;
+      final left = guessArtist(t.title, null).artist;
+      if (left == null || !isNameLike(left)) continue;
+      final primary = left.split(_artistJoin).first.trim().toLowerCase();
+      if (left.toLowerCase().contains(a) || a.contains(primary)) {
+        agrees.add(a);
+      } else {
+        (lefts[a] ??= {})[t.title.trim().toLowerCase()] = primary;
+      }
+    }
+    return {
+      for (final MapEntry(key: a, value: byTitle) in lefts.entries)
+        if (_channelWord.hasMatch(a) ||
+            (!agrees.contains(a) && byTitle.length >= 2 && byTitle.values.toSet().length < byTitle.length))
+          a,
+      // "EminemVEVO" contains "eminem" → counted as agreeing above
+      for (final a in agrees)
+        if (_channelWord.hasMatch(a)) a,
+    };
+  }
+
   /// TIT2/TPE1/TALB/TPE2 from the ID3v2 tag at the start of the file (fallback).
   static Map<String, String> _readId3Text(File f) {
     RandomAccessFile? raf;

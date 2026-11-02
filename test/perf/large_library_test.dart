@@ -90,6 +90,6 @@ void main() {
     await timed('recently played', history.watchRecentlyPlayed().first);
     await timed('most played', history.watchMostPlayed().first);
     await timed('recommended', history.watchRecommended(limit: 5).first);
-    await timed('week stats', history.watchWeekStats().first);
+    await timed('week stats', history.watchPlayStats(since: DateTime.now().subtract(const Duration(days: 7))).first);
   });
 }

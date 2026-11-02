@@ -13,7 +13,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- allowBackup=false: no Google Drive auto-backup of the library/play history
+         (offline app; Settings → Back up my data covers moving to a new phone) -->
     <application
+        android:allowBackup="false"
         android:label="Nocturne"
         android:name=".SonarApplication"
         android:icon="@mipmap/ic_launcher">
@@ -34,6 +37,9 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- No deep links: otherwise Flutter hands the VIEW intent's file/content URI
+                 to go_router as the initial route → "Page Not Found" -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

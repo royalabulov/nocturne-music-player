@@ -6,6 +6,7 @@ import '../core/di/providers.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_typography.dart';
+import '../core/ui/toast.dart';
 import '../core/utils/duration_format.dart';
 import '../domain/entities/track.dart';
 import '../features/player/player_providers.dart';
@@ -170,6 +171,20 @@ class _TrackActions extends ConsumerWidget {
             final router = GoRouter.of(parent);
             close();
             router.go(artistRoute(artistKeyOf(track)));
+          },
+        ),
+        SheetAction(
+          icon: Icons.edit_outlined,
+          label: 'Edit artist',
+          onTap: () async {
+            final repo = ref.read(libraryRepositoryProvider);
+            close();
+            final name = await showNameDialog(parent,
+                title: 'Edit artist', initial: track.artist, hint: 'Artist');
+            if (name != null && name != track.artist) {
+              await repo.setArtist(track.id, name);
+              showToast('Artist changed to $name');
+            }
           },
         ),
         if (onShowInLibrary != null)

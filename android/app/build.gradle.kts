@@ -6,8 +6,8 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Release signing: android/key.properties (not committed to git). Until enabled=true,
-// the debug key is used — so it installs over the existing install on the phone.
+// Release signing: android/key.properties (not committed to git). Without it (or with
+// enabled=false) the debug key is used, so a fresh clone still builds.
 val keyProps = Properties().apply {
     val f = rootProject.file("key.properties")
     if (f.exists()) f.inputStream().use { load(it) }

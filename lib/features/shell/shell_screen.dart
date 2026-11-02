@@ -10,6 +10,7 @@ import '../selection/selection_bar.dart';
 import '../selection/track_selection.dart';
 import 'bottom_nav_bar.dart';
 import 'mini_player.dart';
+import 'scroll_to_top.dart';
 import 'side_menu.dart';
 
 /// Main scaffold with tabs. Each tab keeps its own navigation stack
@@ -42,6 +43,13 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         if (mounted) ref.read(trackSelectionProvider.notifier).clear();
       });
     }
+  }
+
+  void _openNowPlaying() {
+    // Search kept its focus → when Now Playing closed, Flutter
+    // restored focus and the keyboard popped up
+    FocusManager.instance.primaryFocus?.unfocus();
+    context.push('/now-playing');
   }
 
   @override
@@ -94,26 +102,34 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (track != null)
-                        MiniPlayer(
-                          track: track,
-                          progressBar: const _MiniProgress(),
-                          playing: playing,
-                          onTap: () {
-                            // Search kept its focus → when Now Playing closed, Flutter
-                            // restored focus and the keyboard popped up
-                            FocusManager.instance.primaryFocus?.unfocus();
-                            context.push('/now-playing');
-                          },
-                          onPlayPause: playing ? handler.pause : handler.play,
-                          onNext: handler.skipToNext,
+                        MiniPlayerSwipe(
+                          // a new song → a fresh (not slid-off) mini player
+                          key: ValueKey(track.id),
+                          onDismissed: handler.closePlayer,
+                          onSwipeUp: _openNowPlaying,
+                          child: MiniPlayer(
+                            track: track,
+                            progressBar: const _MiniProgress(),
+                            playing: playing,
+                            onTap: _openNowPlaying,
+                            onPlayPause: playing ? handler.pause : handler.play,
+                            onNext: handler.skipToNext,
+                          ),
                         ),
                       BottomNavBar(
                         index: navigationShell.currentIndex,
-                        onTap: (i) => navigationShell.goBranch(
-                          i,
-                          // Tapping the current tab again returns to its root.
-                          initialLocation: i == navigationShell.currentIndex,
-                        ),
+                        onTap: (i) {
+                          // Tapping the current tab again: on a sub-page → back to the
+                          // tab's root; already at the root → scroll to the top.
+                          final again = i == navigationShell.currentIndex;
+                          final atRoot = Uri.parse(widget.location).pathSegments.length <= 1; // "/home"
+                          if (again && atRoot) {
+                            ref.read(scrollToTopProvider.notifier).request(i);
+                          } else {
+                            navigationShell.goBranch(i, initialLocation: again);
+                          }
+                        },
+                        onMenu: openSideMenu,
                         onSearch: () {
                           // Go to Home's root, then focus search
                           navigationShell.goBranch(0, initialLocation: true);

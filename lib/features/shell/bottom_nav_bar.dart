@@ -18,6 +18,10 @@ const navItems = <NavItem>[
   NavItem('Playlists', Icons.queue_music_rounded, Icons.queue_music_rounded),
 ];
 
+/// Last slot: opens the side menu (not a tab). Highlighted while Settings
+/// (branch index navItems.length) is open.
+const _menuItem = NavItem('Settings', Icons.settings_outlined, Icons.settings_rounded);
+
 const _barHeight = AppSpacing.bottomNavHeight;
 const _gap = 10.0;
 const _animDuration = Duration(milliseconds: 280);
@@ -27,11 +31,18 @@ const _highlight = Color(0x0AFFFFFF); // white, 4%
 /// Floating dock in the iOS WhatsApp style: tabs inside a rounded "pill",
 /// a sliding highlight behind the active tab, a separate round search button on the right.
 class BottomNavBar extends StatelessWidget {
-  const BottomNavBar({super.key, required this.index, required this.onTap, required this.onSearch});
+  const BottomNavBar({
+    super.key,
+    required this.index,
+    required this.onTap,
+    required this.onSearch,
+    required this.onMenu,
+  });
 
   final int index;
   final ValueChanged<int> onTap;
   final VoidCallback onSearch;
+  final VoidCallback onMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -48,9 +59,9 @@ class BottomNavBar extends StatelessWidget {
               child: _Capsule(
                 child: LayoutBuilder(
                   builder: (context, c) {
-                    final itemW = c.maxWidth / navItems.length;
-                    // On screens not in the menu, like Settings, no tab is active
-                    final onNav = index < navItems.length;
+                    final itemW = c.maxWidth / (navItems.length + 1);
+                    // Settings (index navItems.length) lights up the menu slot
+                    final onNav = index <= navItems.length;
                     return Stack(
                       children: [
                         // Sliding pill behind the active tab
@@ -75,6 +86,9 @@ class BottomNavBar extends StatelessWidget {
                               Expanded(
                                 child: _NavButton(item: navItems[i], active: i == index, onTap: () => onTap(i)),
                               ),
+                            Expanded(
+                              child: _NavButton(item: _menuItem, active: index == navItems.length, onTap: onMenu),
+                            ),
                           ],
                         ),
                       ],

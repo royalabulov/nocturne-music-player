@@ -83,6 +83,9 @@ class DemoLibraryRepository implements LibraryRepository {
   Stream<Set<int>> watchFavoriteIds() => _favorites.stream;
 
   @override
+  Future<void> setArtist(int trackId, String artist) async {} // demo library is read-only
+
+  @override
   Future<void> toggleFavorite(int trackId) async {
     final f = {..._favorites.value};
     f.contains(trackId) ? f.remove(trackId) : f.add(trackId);
@@ -197,28 +200,32 @@ class DemoHistoryRepository implements HistoryRepository {
   }
 
   @override
-  Stream<List<PlayedTrack>> watchRecentlyPlayed({int limit = 50}) =>
-      _plays.map((p) => _list(p, (v) => v.$2, limit));
+  Stream<List<PlayedTrack>> watchRecentlyPlayed({int limit = 50, DateTime? since}) =>
+      _plays.map((p) => _list(_since(p, since), (v) => v.$2, limit));
 
   @override
-  Stream<List<PlayedTrack>> watchMostPlayed({int limit = 50}) =>
-      _plays.map((p) => _list(p, (v) => v.$1, limit));
+  Stream<List<PlayedTrack>> watchMostPlayed({int limit = 50, DateTime? since}) =>
+      _plays.map((p) => _list(_since(p, since), (v) => v.$1, limit));
+
+  static List<(int, DateTime)> _since(List<(int, DateTime)> plays, DateTime? since) =>
+      since == null ? plays : [for (final p in plays) if (!p.$2.isBefore(since)) p];
 
   @override
   Stream<List<PlayedTrack>> watchRecommended({int limit = 10}) =>
       _plays.map((p) => _list(p, (v) => v.$3, limit));
 
   @override
-  Stream<WeekStats> watchWeekStats() => _plays.map((p) {
-        final since = DateTime.now().subtract(const Duration(days: 7));
-        var plays = 0;
+  Stream<PlayStats> watchPlayStats({required DateTime since}) => _plays.map((p) {
         var listened = Duration.zero;
-        for (final (id, at) in p) {
-          if (at.isBefore(since)) continue;
-          plays++;
+        final inPeriod = _since(p, since);
+        for (final (id, _) in inPeriod) {
           listened += _track(id)?.duration ?? Duration.zero;
         }
-        return WeekStats(plays: plays, listened: listened);
+        return PlayStats(
+          plays: inPeriod.length,
+          songs: {for (final (id, _) in inPeriod) id}.length,
+          listened: listened,
+        );
       });
 
   @override

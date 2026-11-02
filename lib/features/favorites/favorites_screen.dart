@@ -31,6 +31,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     return SafeArea(
       bottom: false,
       child: CustomScrollView(
+        primary: true, // TabScrollToTop (tap the tab again → top)
         slivers: [
           SliverList.list(
             children: [

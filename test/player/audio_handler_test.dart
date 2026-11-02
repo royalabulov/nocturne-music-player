@@ -111,6 +111,26 @@ void main() {
     expect(fake.players.values.firstWhere((p) => p.playing).position, Duration.zero);
   });
 
+  test('swipe previous: always the previous track, even 30 s in', () async {
+    await h.playTracks(five, startIndex: 2);
+    await settle();
+    await h.seek(const Duration(seconds: 30));
+    await settle();
+    await h.skipToPreviousTrack();
+    await settle();
+    expect(currentId(), 2);
+  });
+
+  test('closePlayer stops and clears the current track (mini player hides)', () async {
+    await h.playTracks(five, startIndex: 1);
+    await settle();
+    await h.closePlayer();
+    await settle();
+    expect(h.currentTrackValue, isNull);
+    expect(h.playing, isFalse);
+    expect(await h.trackQueue.first, isEmpty);
+  });
+
   test('previous on the first track wraps to the last', () async {
     await h.playTracks(five);
     await settle();

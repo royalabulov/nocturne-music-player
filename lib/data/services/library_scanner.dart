@@ -14,6 +14,9 @@ import '../db/app_database.dart';
 
 enum ScanPhase { idle, enumerating, reading, finalizing, done, error }
 
+/// scan_state key: {path: artist} typed by the user (Edit artist). Wins over the tag.
+const kArtistOverridesKey = 'artistOverrides';
+
 class ScanProgress {
   const ScanProgress({
     required this.phase,
@@ -227,6 +230,8 @@ class LibraryScanner {
             .write(const TracksCompanion(isMissing: Value(false)));
       }
 
+      await _fixArtists();
+
       // 5. scan_state
       final count = await db.tracks.count(where: (t) => t.isMissing.not()).getSingle();
       await db.batch((b) => b.insertAllOnConflictUpdate(db.scanState, [
@@ -259,6 +264,57 @@ class LibraryScanner {
       return (jsonDecode(row.value) as Map<String, dynamic>).cast<String, String>();
     } catch (_) {
       return const {};
+    }
+  }
+
+  /// Channel names in the artist tag → artist from "Artist — Title"
+  /// ([TagReader.findUploaders]), then the user's own edits (Edit artist) on top.
+  /// Runs on every scan: re-read files get their tag artist back first.
+  /// Found channels are remembered, so a single new upload is fixed too.
+  Future<void> _fixArtists() async {
+    final rows = await (db.selectOnly(db.tracks)
+          ..addColumns([db.tracks.id, db.tracks.path, db.tracks.artist, db.tracks.title]))
+        .get();
+    final tracks = [
+      for (final r in rows)
+        (id: r.read(db.tracks.id)!, path: r.read(db.tracks.path)!,
+            artist: r.read(db.tracks.artist)!, title: r.read(db.tracks.title)!),
+    ];
+    final known = ((await _loadJson(_uploadersKey)) as List?)?.cast<String>() ?? const [];
+    final uploaders = {...known, ...TagReader.findUploaders([for (final t in tracks) (artist: t.artist, title: t.title)])};
+    final overrides = ((await _loadJson(kArtistOverridesKey)) as Map?)?.cast<String, String>() ?? const {};
+
+    final changes = <(int, TracksCompanion)>[];
+    for (final t in tracks) {
+      var artist = t.artist, title = t.title;
+      if (uploaders.contains(artist.trim().toLowerCase())) {
+        final g = TagReader.guessArtist(title, null);
+        if (g.artist != null && TagReader.isNameLike(g.artist!)) (artist, title) = (g.artist!, g.title);
+      }
+      artist = overrides[t.path] ?? artist;
+      if (artist != t.artist || title != t.title) {
+        changes.add((t.id, TracksCompanion(artist: Value(artist), title: Value(title))));
+      }
+    }
+    await db.batch((b) {
+      for (final (id, c) in changes) {
+        b.update(db.tracks, c, where: (t) => t.id.equals(id));
+      }
+      b.insertAllOnConflictUpdate(db.scanState, [
+        ScanStateCompanion(key: const Value(_uploadersKey), value: Value(jsonEncode(uploaders.toList()..sort()))),
+      ]);
+    });
+    if (changes.isNotEmpty) debugPrint('LibraryScanner: ${changes.length} artists fixed');
+  }
+
+  static const _uploadersKey = 'uploaderArtists';
+
+  Future<Object?> _loadJson(String key) async {
+    final row = await (db.select(db.scanState)..where((s) => s.key.equals(key))).getSingleOrNull();
+    try {
+      return row == null ? null : jsonDecode(row.value);
+    } catch (_) {
+      return null;
     }
   }
 

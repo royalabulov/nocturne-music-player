@@ -100,6 +100,63 @@ class MiniPlayer extends StatelessWidget {
   }
 }
 
+/// Mini player gestures: swipe sideways → it slides off and [onDismissed] runs
+/// (the player closes); swipe up → [onSwipeUp] (opens Now Playing).
+class MiniPlayerSwipe extends StatefulWidget {
+  const MiniPlayerSwipe({super.key, required this.child, required this.onDismissed, this.onSwipeUp});
+
+  final Widget child;
+  final VoidCallback onDismissed;
+  final VoidCallback? onSwipeUp;
+
+  @override
+  State<MiniPlayerSwipe> createState() => _MiniPlayerSwipeState();
+}
+
+class _MiniPlayerSwipeState extends State<MiniPlayerSwipe> with SingleTickerProviderStateMixin {
+  late final _dx = AnimationController.unbounded(vsync: this);
+
+  @override
+  void dispose() {
+    _dx.dispose();
+    super.dispose();
+  }
+
+  Future<void> _end(DragEndDetails d) async {
+    final width = MediaQuery.sizeOf(context).width;
+    final v = d.primaryVelocity ?? 0;
+    final dir = v.abs() > 700 ? v.sign : (_dx.value.abs() > width * .35 ? _dx.value.sign : 0.0);
+    if (dir == 0) {
+      await _dx.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOutCubic);
+      return;
+    }
+    await _dx.animateTo(dir * width, duration: const Duration(milliseconds: 180), curve: Curves.easeIn);
+    widget.onDismissed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onHorizontalDragUpdate: (d) => _dx.value += d.delta.dx,
+      onHorizontalDragEnd: _end,
+      onVerticalDragEnd: (d) {
+        if ((d.primaryVelocity ?? 0) < -300) widget.onSwipeUp?.call();
+      },
+      child: AnimatedBuilder(
+        animation: _dx,
+        builder: (context, child) {
+          final width = MediaQuery.sizeOf(context).width;
+          return Transform.translate(
+            offset: Offset(_dx.value, 0),
+            child: Opacity(opacity: (1 - _dx.value.abs() / width).clamp(0.2, 1), child: child),
+          );
+        },
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 /// The mini-player's 2px progress strip.
 class MiniProgressStrip extends StatelessWidget {
   const MiniProgressStrip({super.key, required this.progress});

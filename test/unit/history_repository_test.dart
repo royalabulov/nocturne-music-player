@@ -6,6 +6,7 @@ import 'package:sonar/data/db/app_database.dart';
 import 'package:sonar/data/mappers/track_mapper.dart';
 import 'package:sonar/data/repositories/history_repository_impl.dart';
 import 'package:sonar/data/repositories/playlist_repository_impl.dart';
+import 'package:sonar/domain/repositories/history_repository.dart';
 
 void main() {
   late AppDatabase db;
@@ -63,6 +64,35 @@ void main() {
     expect(recent.map((p) => p.track.title), ['ok']);
     final most = await history.watchMostPlayed().first;
     expect(most.map((p) => p.track.title), ['ok']);
+  });
+
+  test('period: lists and stats only count plays since the start', () async {
+    final now = DateTime.now();
+    final today = await addTrack('today');
+    final old = await addTrack('old');
+    await playAt(today, now);
+    await playAt(today, now);
+    await playAt(old, now.subtract(const Duration(days: 40)));
+
+    final since = PlayPeriod.day.start(now);
+    expect((await history.watchRecentlyPlayed(since: since).first).map((p) => p.track.title), ['today']);
+    final most = await history.watchMostPlayed(since: since).first;
+    expect(most.single.playCount, 2);
+
+    final day = await history.watchPlayStats(since: since).first;
+    expect((day.plays, day.songs, day.listened), (2, 1, const Duration(seconds: 400)));
+    final all = await history.watchPlayStats(since: DateTime(2000)).first;
+    expect((all.plays, all.songs), (3, 2));
+  });
+
+  test('period starts: midnight, Monday, the 1st', () {
+    final wed = DateTime(2026, 11, 4, 15, 30); // Wednesday
+    expect(PlayPeriod.day.start(wed), DateTime(2026, 11, 4));
+    expect(PlayPeriod.week.start(wed), DateTime(2026, 11, 2));
+    expect(PlayPeriod.month.start(wed), DateTime(2026, 11, 1));
+    expect(PlayPeriod.all.start(wed).millisecondsSinceEpoch, 0);
+    // Sunday 1 Nov → the week started on Monday 26 Oct
+    expect(PlayPeriod.week.start(DateTime(2026, 11, 1, 9)), DateTime(2026, 10, 26));
   });
 
   test('resume point round-trips', () async {

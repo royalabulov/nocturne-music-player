@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
@@ -6,6 +8,7 @@ import '../../domain/repositories/library_repository.dart';
 import '../datasources/media_store_source.dart';
 import '../db/app_database.dart';
 import '../mappers/track_mapper.dart';
+import '../services/library_scanner.dart' show kArtistOverridesKey;
 
 class LibraryRepositoryImpl implements LibraryRepository {
   LibraryRepositoryImpl(this.db, this.mapper, {MediaStoreSource? mediaStore, this.filter = TrackFilter.defaults})
@@ -117,6 +120,26 @@ class LibraryRepositoryImpl implements LibraryRepository {
   @override
   Stream<Set<int>> watchFavoriteIds() =>
       db.select(db.favorites).watch().map((rows) => {for (final r in rows) r.trackId});
+
+  @override
+  Future<void> setArtist(int trackId, String artist) async {
+    final row = await (db.select(db.tracks)..where((t) => t.id.equals(trackId))).getSingleOrNull();
+    if (row == null) return;
+    final saved = await (db.select(db.scanState)..where((s) => s.key.equals(kArtistOverridesKey))).getSingleOrNull();
+    Map<String, dynamic> overrides;
+    try {
+      overrides = saved == null ? {} : jsonDecode(saved.value) as Map<String, dynamic>;
+    } catch (_) {
+      overrides = {};
+    }
+    overrides[row.path] = artist;
+    await db.batch((b) {
+      b.update(db.tracks, TracksCompanion(artist: Value(artist)), where: (t) => t.id.equals(trackId));
+      b.insertAllOnConflictUpdate(db.scanState, [
+        ScanStateCompanion(key: const Value(kArtistOverridesKey), value: Value(jsonEncode(overrides))),
+      ]);
+    });
+  }
 
   @override
   Future<void> toggleFavorite(int trackId) async {

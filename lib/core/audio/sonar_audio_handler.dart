@@ -209,6 +209,19 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
     }
   });
 
+  /// Mini player swiped away: stop and empty the queue, so the mini player and
+  /// the notification go away. The resume point stays (Recent → Playback Memory).
+  Future<void> closePlayer() => _serial(() async {
+    _cancelFade();
+    await _stopAll();
+    _tracks = const [];
+    _order = const [];
+    _pos = -1;
+    _standbyPos = null;
+    _publishQueue();
+    _current.add(null);
+  });
+
   // ── transport ─────────────────────────────────────────────
 
   @override
@@ -248,11 +261,16 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   });
 
   @override
-  Future<void> skipToPrevious() => _serial(() async {
+  Future<void> skipToPrevious() => _serial(() => _previous(restartFirst: true));
+
+  /// Swipe right on the cover in Now Playing: always the previous song.
+  Future<void> skipToPreviousTrack() => _serial(() => _previous(restartFirst: false));
+
+  Future<void> _previous({required bool restartFirst}) async {
     // More than 5 seconds in → restart the song; otherwise go to the previous song.
     // At the start of the list (with shuffle the first song is always at
     // position 0) jump to the last one — before, this just went back to 0:00.
-    if (_active.position >= const Duration(seconds: 5) || _order.length < 2) {
+    if ((restartFirst && _active.position >= const Duration(seconds: 5)) || _order.length < 2) {
       if (_fading) _finishFadeNow();
       await _active.seek(Duration.zero);
       return;
@@ -260,7 +278,7 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
     _cancelFade();
     _pos = _pos > 0 ? _pos - 1 : _order.length - 1;
     await _loadActive(_pos, autoplay: true);
-  });
+  }
 
   @override
   Future<void> stop() => _serial(_stopAll);
