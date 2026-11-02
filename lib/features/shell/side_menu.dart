@@ -113,9 +113,6 @@ class SideMenu extends ConsumerWidget {
                     active: location.startsWith('${Routes.settings}/eq'),
                     onTap: () => go('${Routes.settings}/eq'),
                   ),
-                  const _Group('Coming soon'),
-                  const _Item(icon: Icons.notifications_none_rounded, label: 'Forgotten favorites', soon: true),
-                  const _Item(icon: Icons.cloud_outlined, label: 'Weather mix', soon: true),
                 ],
               ),
             ),
@@ -158,7 +155,6 @@ class _Item extends StatelessWidget {
     this.hint,
     this.trailing,
     this.active = false,
-    this.soon = false,
     this.onTap,
   });
 
@@ -167,14 +163,11 @@ class _Item extends StatelessWidget {
   final String? hint;
   final Widget? trailing;
   final bool active;
-
-  /// Not ready yet — dimmed, with a "Soon" badge, not tappable.
-  final bool soon;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final enabled = onTap != null && !soon;
+    final enabled = onTap != null;
     final color = active
         ? AppColors.electric
         : enabled
@@ -215,17 +208,7 @@ class _Item extends StatelessWidget {
                   ],
                 ),
               ),
-              if (soon)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceHigh,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text('Soon', style: AppTypography.labelXs.copyWith(color: AppColors.textSecondary)),
-                )
-              else
-                ?trailing,
+              ?trailing,
             ],
           ),
         ),
