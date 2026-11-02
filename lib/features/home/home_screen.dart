@@ -14,6 +14,7 @@ import '../../domain/entities/track.dart';
 import '../../domain/repositories/history_repository.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../shared/album_art.dart';
+import '../../shared/alphabet_rail.dart';
 import '../../shared/track_sliver_list.dart';
 import '../../shared/section_header.dart';
 import '../../shared/sonar_header.dart';
@@ -55,6 +56,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _scroll.addListener(_onScroll);
     final repo = ref.read(libraryRepositoryProvider);
     repo.getSetting('librarySort').then((v) {
       final s = TrackSort.values.where((x) => x.name == v).firstOrNull;
@@ -134,20 +136,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               .value ??
           const <Track>[];
       final i = library.indexWhere((t) => t.id == trackId);
-      final sliver = _libraryKey.currentContext?.findRenderObject();
-      if (i < 0 || sliver == null || !sliver.attached) return;
-      final viewport = RenderAbstractViewport.maybeOf(sliver);
-      if (viewport == null) return;
-      final start = viewport.getOffsetToReveal(sliver, 0).offset;
-      // Row height is measured from the prototype (RenderSliverFixedExtentBoxAdaptor)
-      final extent = (sliver is RenderSliverFixedExtentBoxAdaptor ? sliver.itemExtent : null) ?? 96.0;
-      final target = start + i * extent - AppSpacing.xxl;
+      final m = _libraryMetrics();
+      if (i < 0 || m == null) return;
+      final target = m.start + i * m.extent - AppSpacing.xxl;
       _scroll.animateTo(
         target.clamp(0.0, _scroll.position.maxScrollExtent),
         duration: const Duration(milliseconds: 450),
         curve: Curves.easeOutCubic,
       );
     });
+  }
+
+  /// Scroll offset of the Songs list's first row and the row height, or null
+  /// while the list isn't laid out.
+  ({double start, double extent})? _libraryMetrics() {
+    final sliver = _libraryKey.currentContext?.findRenderObject();
+    if (sliver == null || !sliver.attached) return null;
+    final viewport = RenderAbstractViewport.maybeOf(sliver);
+    if (viewport == null) return null;
+    // Row height is measured from the prototype (RenderSliverFixedExtentBoxAdaptor)
+    final extent = (sliver is RenderSliverFixedExtentBoxAdaptor ? sliver.itemExtent : null) ?? 96.0;
+    return (start: viewport.getOffsetToReveal(sliver, 0).offset, extent: extent);
+  }
+
+  /// A–Z rail: shown only while the Songs list (not Recommended) fills the screen.
+  bool _railOnList = false;
+
+  void _onScroll() {
+    final m = _libraryMetrics();
+    final on = m != null && _scroll.hasClients && _scroll.offset > m.start - _scroll.position.viewportDimension / 2;
+    if (on != _railOnList) setState(() => _railOnList = on);
+  }
+
+  void _jumpToRow(int i) {
+    final m = _libraryMetrics();
+    if (m == null || !_scroll.hasClients) return;
+    _scroll.jumpTo((m.start + i * m.extent).clamp(0.0, _scroll.position.maxScrollExtent));
   }
 
   // 250 ms debounce so we don't open a DB query on every keystroke.
@@ -202,19 +226,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     });
 
+    // Sorted by title/artist → the A–Z rail; any other order → the draggable thumb
+    final alphaKey = switch (_sort) {
+      TrackSort.title => (Track t) => t.title,
+      TrackSort.artist => (Track t) => t.artist,
+      _ => null,
+    };
+    final rail = alphaKey != null && _view == LibraryView.songs && !searching && library.length > 20;
+
     // Slivers: the track list renders lazily (building 400+ tiles at once
     // caused jank). Static parts live in SliverToBoxAdapter.
     return SafeArea(
       bottom: false,
+      child: Stack(
+        children: [
       // Draggable thumb on the right: 400+ songs → grab it to jump anywhere
-      // (shows while scrolling, fades out after)
-      child: RawScrollbar(
+      // (shows while scrolling, fades out after). Hidden while the A–Z rail is there.
+      RawScrollbar(
         controller: _scroll,
-        interactive: true,
+        interactive: !rail,
         thickness: 6,
         minThumbLength: 56,
         radius: const Radius.circular(3),
-        thumbColor: AppColors.electric.withValues(alpha: .7),
+        thumbColor: rail ? Colors.transparent : AppColors.electric.withValues(alpha: .7),
         padding: const EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight),
         child: CustomScrollView(
         controller: _scroll,
@@ -301,6 +335,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
+      ),
+          // A–Z rail over the right edge, only while the Songs list is on screen
+          if (rail)
+            Positioned(
+              right: 0,
+              top: AppSpacing.md,
+              bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight + AppSpacing.md,
+              width: 22,
+              child: IgnorePointer(
+                ignoring: !_railOnList,
+                child: AnimatedOpacity(
+                  opacity: _railOnList ? 1 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: AlphabetRail(keys: [for (final t in library) alphaKey(t)], onJump: _jumpToRow),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
