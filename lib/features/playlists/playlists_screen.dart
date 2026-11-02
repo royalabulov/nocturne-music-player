@@ -137,7 +137,9 @@ class _PlaylistCard extends ConsumerWidget {
               children: [
                 Text(p.name, style: AppTypography.titleSm, maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
-                Text('${p.trackCount} tracks • ${p.totalDuration.hm}', style: AppTypography.labelSm),
+                // One line: the card height is computed for two lines of text
+                Text('${p.trackCount} tracks • ${p.totalDuration.hm}',
+                    style: AppTypography.labelSm, maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),

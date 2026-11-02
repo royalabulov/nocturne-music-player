@@ -30,23 +30,29 @@ class SectionHeader extends StatelessWidget {
             const SizedBox(width: AppSpacing.xs),
           ],
           // Single-line title; when space runs out the text on the right shrinks (on narrow
-          // screens the word "Recommended" used to break in the middle).
-          Text(title, style: AppTypography.headlineMd, maxLines: 1),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: action == null
-                ? const SizedBox.shrink()
-                : GestureDetector(
-                    onTap: onAction,
-                    child: Text(
-                      action!,
-                      textAlign: TextAlign.right,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.labelMd.copyWith(color: AppColors.cyan),
-                    ),
-                  ),
-          ),
+          // screens the word "Recommended" used to break in the middle). Without an
+          // action the title gets the whole row and ellipsizes at large font sizes.
+          if (action == null)
+            Expanded(
+              child: Text(title,
+                  style: AppTypography.headlineMd, maxLines: 1, overflow: TextOverflow.ellipsis),
+            )
+          else ...[
+            Text(title, style: AppTypography.headlineMd, maxLines: 1),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: GestureDetector(
+                onTap: onAction,
+                child: Text(
+                  action!,
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.labelMd.copyWith(color: AppColors.cyan),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

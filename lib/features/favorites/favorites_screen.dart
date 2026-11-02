@@ -60,42 +60,51 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                   horizontal: AppSpacing.screenH,
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    GestureDetector(
-                      onTap: tracks.isEmpty
-                          ? null
-                          : () => ref
-                                .read(audioHandlerProvider)
-                                .playTracks(tracks, shuffle: true),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.electric,
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                          boxShadow: Glow.accent,
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.shuffle_rounded,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Shuffle All (${tracks.length})',
-                              style: AppTypography.labelMd.copyWith(
+                    // Flexible: at large font sizes the label ellipsizes
+                    Flexible(
+                      child: GestureDetector(
+                        onTap: tracks.isEmpty
+                            ? null
+                            : () => ref
+                                  .read(audioHandlerProvider)
+                                  .playTracks(tracks, shuffle: true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.electric,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            boxShadow: Glow.accent,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.shuffle_rounded,
                                 color: Colors.white,
+                                size: 18,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'Shuffle All (${tracks.length})',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.labelMd.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: AppSpacing.sm),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,

@@ -18,9 +18,11 @@ class SonarHeader extends StatelessWidget {
         AppSpacing.screenH, AppSpacing.md, AppSpacing.screenH, AppSpacing.lg,
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _MenuButton(),
-          Spacer(),
+          // Large font sizes: the name ellipsizes before the pill is pushed out
+          Flexible(child: _MenuButton()),
+          SizedBox(width: AppSpacing.sm),
           OnlineModePill(),
         ],
       ),
@@ -52,7 +54,10 @@ class _MenuButton extends StatelessWidget {
               children: [
                 const SonarMark(),
                 const SizedBox(width: AppSpacing.sm),
-                Text('Nocturne', style: AppTypography.headlineLg),
+                Flexible(
+                  child: Text('Nocturne',
+                      style: AppTypography.headlineLg, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
               ],
             ),
           ),

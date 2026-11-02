@@ -39,6 +39,7 @@ class AudioSettingsController extends Notifier<AudioSettings> {
 
   Future<void> _load() async {
     final raw = await ref.read(libraryRepositoryProvider).getSetting(_key);
+    if (!ref.mounted) return; // disposed while reading (app closing)
     state = AudioSettings.decode(raw);
     await _applyAll();
   }
@@ -54,6 +55,7 @@ class AudioSettingsController extends Notifier<AudioSettings> {
   }
 
   Future<void> _applyEq() async {
+    if (!ref.mounted) return;
     final effects = ref.read(audioHandlerProvider).effects;
     if (!effects.supported) return;
     await effects.setEnabled(state.eqEnabled);
