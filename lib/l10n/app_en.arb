@@ -1044,5 +1044,81 @@
   "lyricsFromFile": "From the song file",
   "lyricsFromLrclib": "From LRCLIB",
   "lyricsOnline": "Find lyrics on the internet",
-  "lyricsOnlineHint": "Only in Online mode. The song's title and artist are sent to lrclib.net"
+  "lyricsOnlineHint": "Only in Online mode. The song's title and artist are sent to lrclib.net",
+  "menuForgotten": "Forgotten favorites",
+  "menuForgottenHint": "Songs you loved, then stopped playing",
+  "forgottenRule": "Played {plays}× or more, or a favorite — not in the last {days} days",
+  "forgottenAdjust": "Adjust",
+  "forgottenMinPlays": "Played at least",
+  "forgottenDays": "Not played for",
+  "forgottenDaysUnit": "days",
+  "forgottenEmpty": "No song matches the rule right now. Try fewer days or plays.",
+  "@forgottenRule": {
+    "placeholders": {
+      "plays": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "forgottenEmptyTitle": "Nothing forgotten yet",
+  "forgottenChangeRule": "Change the rule",
+  "forgottenCustom": "Custom…",
+  "forgottenDaysN": "{n} days",
+  "@forgottenDaysN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "forgottenDaysRange": "From 1 to 365",
+  "decrease": "Decrease",
+  "increase": "Increase",
+  "reminder": "Reminder",
+  "reminderOff": "Off",
+  "reminderDays": "Days",
+  "reminderTime": "Time",
+  "reminderWeekdays": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+  "reminderTitle": "Remember this one?",
+  "reminderBody": "{title} — {artist} · not played for {days} days",
+  "@reminderBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "artist": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderPlay": "Play",
+  "reminderChannelHint": "Reminders about songs you haven't played for a while",
+  "reminderPermissionDenied": "Notifications are blocked for Nocturne — allow them in the phone's settings.",
+  "reminderFrom": "From your reminder",
+  "reminderTimesAWeek": "{count, plural, =1{Once a week} other{{count} times a week}}",
+  "reminderSummary": "{when} · {time}",
+  "reminderEveryDay": "Every day",
+  "@reminderTimesAWeek": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@reminderSummary": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  }
 }

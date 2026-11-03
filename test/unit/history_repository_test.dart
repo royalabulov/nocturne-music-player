@@ -139,6 +139,47 @@ void main() {
     expect(PlayPeriod.week.start(DateTime(2026, 11, 1, 9)), DateTime(2026, 10, 26));
   });
 
+  test('forgotten favorites: plays or ❤, and not played for N days', () async {
+    final now = DateTime.now();
+    Future<int> played(String title, int times, int daysAgo) async {
+      final id = await addTrack(title);
+      for (var i = 0; i < times; i++) {
+        await playAt(id, now.subtract(Duration(days: daysAgo)));
+      }
+      return id;
+    }
+
+    await played('loved long ago', 10, 40);
+    await played('just enough', 5, 16);
+    await played('too few plays', 4, 40);
+    await played('played recently', 20, 3);
+    final fav = await played('liked, played once', 1, 20);
+    await db.into(db.favorites).insert(FavoritesCompanion.insert(
+          trackId: Value(fav),
+          addedAt: now.subtract(const Duration(days: 60)).millisecondsSinceEpoch,
+        ));
+    final neverPlayedFav = await addTrack('liked, never played');
+    await db.into(db.favorites).insert(FavoritesCompanion.insert(
+          trackId: Value(neverPlayedFav),
+          addedAt: now.subtract(const Duration(days: 30)).millisecondsSinceEpoch,
+        ));
+    final gone = await played('deleted file', 10, 40);
+    await (db.update(db.tracks)..where((t) => t.id.equals(gone))).write(const TracksCompanion(isMissing: Value(true)));
+
+    final r = await history.watchForgotten(minPlays: 5, days: 15).first;
+    expect(r.map((p) => p.track.title), [
+      'loved long ago', // 11 × 40 days
+      'just enough', // 6 × 16
+      'liked, played once', // 2 × 20
+      'liked, never played', // 1 × 30 (counted from when it was liked)
+    ]);
+    expect(r.first.playCount, 10);
+
+    // Stricter rule → fewer songs
+    final strict = await history.watchForgotten(minPlays: 10, days: 30).first;
+    expect(strict.map((p) => p.track.title), ['loved long ago', 'liked, never played']);
+  });
+
   test('resume point round-trips', () async {
     final id = await addTrack('t');
     await history.saveResumePoint(id, const Duration(seconds: 42));

@@ -1499,4 +1499,110 @@ class L10nAz extends L10n {
   @override
   String get lyricsOnlineHint =>
       'Yalnız Onlayn rejimdə. Mahnının adı və ifaçısı lrclib.net-ə göndərilir';
+
+  @override
+  String get menuForgotten => 'Unudulmuş sevimlilər';
+
+  @override
+  String get menuForgottenHint => 'Sevib, sonra dinləmədiyin mahnılar';
+
+  @override
+  String forgottenRule(int plays, int days) {
+    return '$plays× və ya çox dinlənib, yaxud favoritdir — son $days gündə dinlənməyib';
+  }
+
+  @override
+  String get forgottenAdjust => 'Tənzimlə';
+
+  @override
+  String get forgottenMinPlays => 'Ən azı dinlənib';
+
+  @override
+  String get forgottenDays => 'Dinlənməyib';
+
+  @override
+  String get forgottenDaysUnit => 'gün';
+
+  @override
+  String get forgottenEmpty =>
+      'İndi qaydaya uyğun mahnı yoxdur. Günlərin və ya dinləmələrin sayını azaltmağı yoxla.';
+
+  @override
+  String get forgottenEmptyTitle => 'Hələ unudulmuş mahnı yoxdur';
+
+  @override
+  String get forgottenChangeRule => 'Qaydanı dəyiş';
+
+  @override
+  String get forgottenCustom => 'Başqa…';
+
+  @override
+  String forgottenDaysN(int n) {
+    return '$n gün';
+  }
+
+  @override
+  String get forgottenDaysRange => '1-dən 365-ə qədər';
+
+  @override
+  String get decrease => 'Azalt';
+
+  @override
+  String get increase => 'Artır';
+
+  @override
+  String get reminder => 'Xatırlatma';
+
+  @override
+  String get reminderOff => 'Sönülü';
+
+  @override
+  String get reminderDays => 'Günlər';
+
+  @override
+  String get reminderTime => 'Saat';
+
+  @override
+  String get reminderWeekdays => 'B.e,Ç.a,Ç,C.a,C,Ş,B';
+
+  @override
+  String get reminderTitle => 'Bu mahnını xatırlayırsan?';
+
+  @override
+  String reminderBody(String title, String artist, int days) {
+    return '$title — $artist · $days gündür dinləmirsən';
+  }
+
+  @override
+  String get reminderPlay => 'Dinlə';
+
+  @override
+  String get reminderChannelHint =>
+      'Çoxdandır dinləmədiyin mahnılar barədə xatırlatmalar';
+
+  @override
+  String get reminderPermissionDenied =>
+      'Nocturne üçün bildirişlər bağlıdır — telefonun ayarlarında icazə ver.';
+
+  @override
+  String get reminderFrom => 'Xatırlatmadan';
+
+  @override
+  String reminderTimesAWeek(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Həftədə $count dəfə',
+      one: 'Həftədə bir dəfə',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reminderSummary(String when, String time) {
+    return '$when · saat $time';
+  }
+
+  @override
+  String get reminderEveryDay => 'Hər gün';
 }

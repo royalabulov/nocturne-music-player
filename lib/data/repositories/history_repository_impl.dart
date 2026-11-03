@@ -76,6 +76,40 @@ class HistoryRepositoryImpl implements HistoryRepository {
   Stream<List<PlayedTrack>> watchMostPlayed({int limit = 50, DateTime? since}) =>
       _aggregated('play_count DESC, last_played DESC', limit, since);
 
+  @override
+  Stream<List<PlayedTrack>> watchForgotten({required int minPlays, required int days, int limit = 100}) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final before = now - days * Duration.millisecondsPerDay;
+    return db
+        .customSelect(
+          'SELECT * FROM ('
+          ' SELECT t.*, COUNT(h.id) AS play_count, MAX(f.track_id) AS fav,'
+          ' COALESCE(MAX(h.played_at), MAX(f.added_at)) AS last_played'
+          ' FROM tracks t'
+          ' LEFT JOIN play_history h ON h.track_id = t.id'
+          ' LEFT JOIN favorites f ON f.track_id = t.id'
+          ' WHERE $_visibleSql GROUP BY t.id'
+          ') WHERE (play_count >= ? OR fav IS NOT NULL) AND last_played < ?'
+          ' ORDER BY (play_count + 1) * (? - last_played) DESC LIMIT ?',
+          variables: [
+            Variable.withInt(minPlays),
+            Variable.withInt(before),
+            Variable.withInt(now),
+            Variable.withInt(limit),
+          ],
+          readsFrom: {db.tracks, db.playHistory, db.favorites},
+        )
+        .watch()
+        .map((rows) => [
+              for (final r in rows)
+                PlayedTrack(
+                  track: mapper.toDomain(db.tracks.map(r.data)),
+                  playCount: r.read<int>('play_count'),
+                  lastPlayedAt: DateTime.fromMillisecondsSinceEpoch(r.read<int>('last_played')),
+                ),
+            ]);
+  }
+
   /// Plays from the last 120 days are scored in Dart (SQLite exp() isn't available everywhere).
   @override
   Stream<List<PlayedTrack>> watchRecommended({int limit = 10}) {

@@ -62,6 +62,11 @@ abstract interface class HistoryRepository {
   /// By play count (plays after [since]).
   Stream<List<PlayedTrack>> watchMostPlayed({int limit = 50, DateTime? since});
 
+  /// Forgotten favorites (Menu): played at least [minPlays] times or a ❤ favorite,
+  /// and not played for [days] days (a never-played favorite counts from when it
+  /// was liked). Most played × longest forgotten first.
+  Stream<List<PlayedTrack>> watchForgotten({required int minPlays, required int days, int limit = 100});
+
   /// Score = Σ exp(-daysAgo / 14). Recency × frequency.
   Stream<List<PlayedTrack>> watchRecommended({int limit = 10});
 

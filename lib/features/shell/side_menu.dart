@@ -11,6 +11,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/utils/duration_format.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../shared/sonar_header.dart';
+import '../forgotten/forgotten.dart';
 import '../import/audio_import.dart';
 import '../library_scan/scan_controller.dart';
 import '../smart_groups/smart_groups.dart';
@@ -94,6 +95,13 @@ class SideMenu extends ConsumerWidget {
                     label: l10n.checkAccuracy,
                     active: location.startsWith(kVibeReviewRoute),
                     onTap: () => go(kVibeReviewRoute),
+                  ),
+                  _Item(
+                    icon: Icons.history_toggle_off_rounded,
+                    label: l10n.menuForgotten,
+                    hint: l10n.menuForgottenHint,
+                    active: location.startsWith(kForgottenRoute),
+                    onTap: () => go(kForgottenRoute),
                   ),
                   _Group(l10n.library),
                   _Item(

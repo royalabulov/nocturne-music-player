@@ -181,14 +181,14 @@ class _DetailScaffold extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
                   child: Row(
                     children: [
-                      _Pill(
+                      ActionPill(
                         icon: Icons.play_arrow_rounded,
                         label: l10n.playAll,
                         primary: true,
                         onTap: () => handler.playTracks(tracks),
                       ),
                       const SizedBox(width: AppSpacing.sm),
-                      _Pill(
+                      ActionPill(
                         icon: Icons.shuffle_rounded,
                         label: l10n.shuffle,
                         onTap: () => handler.playTracks(tracks, shuffle: true),
@@ -248,8 +248,9 @@ class _DetailScaffold extends ConsumerWidget {
   }
 }
 
-class _Pill extends StatelessWidget {
-  const _Pill({required this.icon, required this.label, required this.onTap, this.primary = false});
+/// Rounded "Play all" / "Shuffle" button (also used by Forgotten favorites).
+class ActionPill extends StatelessWidget {
+  const ActionPill({super.key, required this.icon, required this.label, required this.onTap, this.primary = false});
   final IconData icon;
   final String label;
   final VoidCallback onTap;

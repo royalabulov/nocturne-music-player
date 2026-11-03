@@ -19,4 +19,4 @@ const kTagReaderVersion = 8;
 const kVibeAnalysisVersion = 2;
 
 /// Version shown in Settings (keep in sync with pubspec.yaml).
-const kAppVersion = '1.0.0';
+const kAppVersion = '1.0.1';

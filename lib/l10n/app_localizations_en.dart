@@ -1504,4 +1504,110 @@ class L10nEn extends L10n {
   @override
   String get lyricsOnlineHint =>
       'Only in Online mode. The song\'s title and artist are sent to lrclib.net';
+
+  @override
+  String get menuForgotten => 'Forgotten favorites';
+
+  @override
+  String get menuForgottenHint => 'Songs you loved, then stopped playing';
+
+  @override
+  String forgottenRule(int plays, int days) {
+    return 'Played $plays× or more, or a favorite — not in the last $days days';
+  }
+
+  @override
+  String get forgottenAdjust => 'Adjust';
+
+  @override
+  String get forgottenMinPlays => 'Played at least';
+
+  @override
+  String get forgottenDays => 'Not played for';
+
+  @override
+  String get forgottenDaysUnit => 'days';
+
+  @override
+  String get forgottenEmpty =>
+      'No song matches the rule right now. Try fewer days or plays.';
+
+  @override
+  String get forgottenEmptyTitle => 'Nothing forgotten yet';
+
+  @override
+  String get forgottenChangeRule => 'Change the rule';
+
+  @override
+  String get forgottenCustom => 'Custom…';
+
+  @override
+  String forgottenDaysN(int n) {
+    return '$n days';
+  }
+
+  @override
+  String get forgottenDaysRange => 'From 1 to 365';
+
+  @override
+  String get decrease => 'Decrease';
+
+  @override
+  String get increase => 'Increase';
+
+  @override
+  String get reminder => 'Reminder';
+
+  @override
+  String get reminderOff => 'Off';
+
+  @override
+  String get reminderDays => 'Days';
+
+  @override
+  String get reminderTime => 'Time';
+
+  @override
+  String get reminderWeekdays => 'Mon,Tue,Wed,Thu,Fri,Sat,Sun';
+
+  @override
+  String get reminderTitle => 'Remember this one?';
+
+  @override
+  String reminderBody(String title, String artist, int days) {
+    return '$title — $artist · not played for $days days';
+  }
+
+  @override
+  String get reminderPlay => 'Play';
+
+  @override
+  String get reminderChannelHint =>
+      'Reminders about songs you haven\'t played for a while';
+
+  @override
+  String get reminderPermissionDenied =>
+      'Notifications are blocked for Nocturne — allow them in the phone\'s settings.';
+
+  @override
+  String get reminderFrom => 'From your reminder';
+
+  @override
+  String reminderTimesAWeek(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count times a week',
+      one: 'Once a week',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reminderSummary(String when, String time) {
+    return '$when · $time';
+  }
+
+  @override
+  String get reminderEveryDay => 'Every day';
 }

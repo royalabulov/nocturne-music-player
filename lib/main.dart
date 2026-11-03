@@ -15,6 +15,9 @@ import 'core/demo/demo_overrides.dart';
 import 'core/di/providers.dart';
 import 'core/ui/toast.dart';
 import 'data/datasources/media_store_source.dart';
+import 'core/router/app_router.dart';
+import 'features/forgotten/forgotten.dart';
+import 'features/forgotten/forgotten_reminder.dart';
 import 'features/import/audio_import.dart';
 import 'features/library_scan/scan_controller.dart';
 import 'features/player/player_providers.dart';
@@ -109,6 +112,14 @@ Future<void> main() async {
     AppLifecycleListener(onResume: () => scan.scheduleAutoScan(delay: const Duration(milliseconds: 800)));
   }
 
+  // Forgotten favorites reminder: plan the notifications on start and every time the
+  // app goes to the background (also picks up a language change).
+  final reminder = container.read(forgottenReminderProvider);
+  reminder
+      .init(onResponse: (id, play) => _openFromReminder(container, handler, id, play: play))
+      .then((_) => reminder.reschedule());
+  AppLifecycleListener(onPause: reminder.reschedule);
+
   // If autoScan is on and permission is granted, scan silently — 1.5 s after the first
   // frame, so the MediaStore/folder walk doesn't compete with Home's first render.
   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -120,4 +131,20 @@ Future<void> main() async {
       container.read(smartAnalysisProvider.notifier).start();
     });
   });
+}
+
+/// A reminder was tapped: open Forgotten favorites with that song on top (no sound —
+/// headphones may not be in). Its "Play" button also starts the forgotten list there.
+Future<void> _openFromReminder(ProviderContainer c, SonarAudioHandler handler, int trackId, {required bool play}) async {
+  appRouter.go('$kForgottenRoute?t=$trackId');
+  if (!play) return;
+  final rule = c.read(forgottenSettingsProvider);
+  final list = await c.read(historyRepositoryProvider).watchForgotten(minPlays: rule.minPlays, days: rule.days).first;
+  final tracks = [for (final p in list) p.track];
+  final i = tracks.indexWhere((t) => t.id == trackId);
+  if (i >= 0) {
+    await handler.playTracks(tracks, startIndex: i);
+  } else if (await c.read(libraryRepositoryProvider).getTrack(trackId) case final t?) {
+    await handler.playTracks([t]);
+  }
 }

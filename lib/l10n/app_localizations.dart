@@ -2543,6 +2543,180 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Only in Online mode. The song\'s title and artist are sent to lrclib.net'**
   String get lyricsOnlineHint;
+
+  /// No description provided for @menuForgotten.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgotten favorites'**
+  String get menuForgotten;
+
+  /// No description provided for @menuForgottenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Songs you loved, then stopped playing'**
+  String get menuForgottenHint;
+
+  /// No description provided for @forgottenRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Played {plays}× or more, or a favorite — not in the last {days} days'**
+  String forgottenRule(int plays, int days);
+
+  /// No description provided for @forgottenAdjust.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust'**
+  String get forgottenAdjust;
+
+  /// No description provided for @forgottenMinPlays.
+  ///
+  /// In en, this message translates to:
+  /// **'Played at least'**
+  String get forgottenMinPlays;
+
+  /// No description provided for @forgottenDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Not played for'**
+  String get forgottenDays;
+
+  /// No description provided for @forgottenDaysUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get forgottenDaysUnit;
+
+  /// No description provided for @forgottenEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No song matches the rule right now. Try fewer days or plays.'**
+  String get forgottenEmpty;
+
+  /// No description provided for @forgottenEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing forgotten yet'**
+  String get forgottenEmptyTitle;
+
+  /// No description provided for @forgottenChangeRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the rule'**
+  String get forgottenChangeRule;
+
+  /// No description provided for @forgottenCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom…'**
+  String get forgottenCustom;
+
+  /// No description provided for @forgottenDaysN.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} days'**
+  String forgottenDaysN(int n);
+
+  /// No description provided for @forgottenDaysRange.
+  ///
+  /// In en, this message translates to:
+  /// **'From 1 to 365'**
+  String get forgottenDaysRange;
+
+  /// No description provided for @decrease.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease'**
+  String get decrease;
+
+  /// No description provided for @increase.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase'**
+  String get increase;
+
+  /// No description provided for @reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get reminder;
+
+  /// No description provided for @reminderOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get reminderOff;
+
+  /// No description provided for @reminderDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get reminderDays;
+
+  /// No description provided for @reminderTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get reminderTime;
+
+  /// No description provided for @reminderWeekdays.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon,Tue,Wed,Thu,Fri,Sat,Sun'**
+  String get reminderWeekdays;
+
+  /// No description provided for @reminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember this one?'**
+  String get reminderTitle;
+
+  /// No description provided for @reminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} — {artist} · not played for {days} days'**
+  String reminderBody(String title, String artist, int days);
+
+  /// No description provided for @reminderPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get reminderPlay;
+
+  /// No description provided for @reminderChannelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders about songs you haven\'t played for a while'**
+  String get reminderChannelHint;
+
+  /// No description provided for @reminderPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are blocked for Nocturne — allow them in the phone\'s settings.'**
+  String get reminderPermissionDenied;
+
+  /// No description provided for @reminderFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From your reminder'**
+  String get reminderFrom;
+
+  /// No description provided for @reminderTimesAWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Once a week} other{{count} times a week}}'**
+  String reminderTimesAWeek(int count);
+
+  /// No description provided for @reminderSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{when} · {time}'**
+  String reminderSummary(String when, String time);
+
+  /// No description provided for @reminderEveryDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get reminderEveryDay;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

@@ -219,6 +219,20 @@ class DemoHistoryRepository implements HistoryRepository {
       since == null ? plays : [for (final p in plays) if (!p.$2.isBefore(since)) p];
 
   @override
+  Stream<List<PlayedTrack>> watchForgotten({required int minPlays, required int days, int limit = 100}) =>
+      Rx.combineLatest2(_plays, _lib.watchFavoriteIds(), (plays, favs) {
+        final now = DateTime.now();
+        final agg = _agg(plays);
+        final out = [
+          for (final MapEntry(key: id, value: (count, last, _)) in agg.entries)
+            if ((count >= minPlays || favs.contains(id)) && now.difference(last).inDays >= days)
+              if (_track(id) case final t?) PlayedTrack(track: t, playCount: count, lastPlayedAt: last),
+        ]..sort((a, b) => ((b.playCount + 1) * now.difference(b.lastPlayedAt).inMinutes)
+            .compareTo((a.playCount + 1) * now.difference(a.lastPlayedAt).inMinutes));
+        return out.take(limit).toList();
+      });
+
+  @override
   Stream<List<PlayedTrack>> watchRecommended({int limit = 10}) =>
       _plays.map((p) => _list(p, (v) => v.$3, limit));
 
