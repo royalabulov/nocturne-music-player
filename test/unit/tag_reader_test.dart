@@ -37,6 +37,17 @@ void main() {
     expect(TagReader.parseId3TextFrames(tag), {'TIT2': 'Üç Kalp', 'TPE1': 'Hepsi', 'TALB': 'Hepsi Bir'});
   });
 
+  test('double-BOM lyrics (USLT) keep their letters and line breaks', () {
+    // encoding 1, language "tur", empty description (BOMs + NUL), then the words
+    final uslt = [
+      1, ...'tur'.codeUnits, 0xFE, 0xFF, 0xFE, 0xFF, 0, 0,
+      ..._doubleBom('Üç kalp\nbir şarkı').skip(1),
+    ];
+    final tag = _id3({'TIT2': _doubleBom('Üç Kalp'), 'USLT': uslt});
+    expect(TagReader.parseId3Lyrics(tag), 'Üç kalp\nbir şarkı');
+    expect(TagReader.parseId3Lyrics(_id3({'TIT2': _doubleBom('x')})), isNull);
+  });
+
   test('other letters that used to break: Ø ß Ý', () {
     final tag = _id3({'TIT2': _doubleBom('Øresund ßÝ')});
     expect(TagReader.parseId3TextFrames(tag)['TIT2'], 'Øresund ßÝ');

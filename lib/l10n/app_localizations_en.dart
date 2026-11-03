@@ -193,7 +193,7 @@ class L10nEn extends L10n {
 
   @override
   String get privacyText =>
-      'No accounts, no analytics. Your music never leaves this device; the network is used only while Online mode is on.';
+      'No accounts, no analytics. Your music never leaves this device; the network is used only while Online mode is on — to check the connection and to find lyrics.';
 
   @override
   String get agoNever => 'never';
@@ -1439,4 +1439,50 @@ class L10nEn extends L10n {
 
   @override
   String get variousArtists => 'Various Artists';
+
+  @override
+  String get showLyrics => 'Lyrics';
+
+  @override
+  String get showCover => 'Show cover';
+
+  @override
+  String get lyricsSearching => 'Looking for lyrics…';
+
+  @override
+  String get lyricsNotFound => 'No lyrics found for this song';
+
+  @override
+  String get lyricsInstrumental => 'This song has no words';
+
+  @override
+  String get lyricsNeedOnline =>
+      'The song file has no lyrics. Turn on Online mode to look on the internet.';
+
+  @override
+  String get lyricsSearchOff =>
+      'The song file has no lyrics. Internet search is off in Settings.';
+
+  @override
+  String get lyricsError =>
+      'Couldn\'t load the lyrics. Check the internet and try again.';
+
+  @override
+  String get lyricsRetry => 'Search again';
+
+  @override
+  String get turnOnOnline => 'Turn on Online mode';
+
+  @override
+  String get lyricsFromFile => 'From the song file';
+
+  @override
+  String get lyricsFromLrclib => 'From LRCLIB';
+
+  @override
+  String get lyricsOnline => 'Find lyrics on the internet';
+
+  @override
+  String get lyricsOnlineHint =>
+      'Only in Online mode. The song\'s title and artist are sent to lrclib.net';
 }

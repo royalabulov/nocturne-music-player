@@ -103,7 +103,7 @@
     }
   },
   "privacy": "Privacy",
-  "privacyText": "No accounts, no analytics. Your music never leaves this device; the network is used only while Online mode is on.",
+  "privacyText": "No accounts, no analytics. Your music never leaves this device; the network is used only while Online mode is on — to check the connection and to find lyrics.",
   "agoNever": "never",
   "agoJustNow": "just now",
   "agoMinutesShort": "{n} min ago",
@@ -1024,5 +1024,19 @@
   },
   "unknownArtist": "Unknown Artist",
   "unknownAlbum": "Unknown Album",
-  "variousArtists": "Various Artists"
+  "variousArtists": "Various Artists",
+  "showLyrics": "Lyrics",
+  "showCover": "Show cover",
+  "lyricsSearching": "Looking for lyrics…",
+  "lyricsNotFound": "No lyrics found for this song",
+  "lyricsInstrumental": "This song has no words",
+  "lyricsNeedOnline": "The song file has no lyrics. Turn on Online mode to look on the internet.",
+  "lyricsSearchOff": "The song file has no lyrics. Internet search is off in Settings.",
+  "lyricsError": "Couldn't load the lyrics. Check the internet and try again.",
+  "lyricsRetry": "Search again",
+  "turnOnOnline": "Turn on Online mode",
+  "lyricsFromFile": "From the song file",
+  "lyricsFromLrclib": "From LRCLIB",
+  "lyricsOnline": "Find lyrics on the internet",
+  "lyricsOnlineHint": "Only in Online mode. The song's title and artist are sent to lrclib.net"
 }

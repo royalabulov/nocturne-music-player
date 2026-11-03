@@ -6,7 +6,9 @@ import '../../domain/entities/playlist.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/analysis_repository.dart';
 import '../../domain/repositories/history_repository.dart';
+import '../../domain/entities/lyrics.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../domain/repositories/lyrics_repository.dart';
 import '../../domain/repositories/playlist_repository.dart';
 import 'demo_library.dart';
 
@@ -397,4 +399,35 @@ class DemoAnalysisRepository implements AnalysisRepository {
   @override
   Stream<AnalysisProgress> watchProgress(int version) =>
       lib.watchTracks().map((l) => AnalysisProgress(done: l.length, total: l.length));
+}
+
+/// Web demo: made-up synced lyrics for odd-numbered songs, none for the rest.
+class DemoLyricsRepository implements LyricsRepository {
+  const DemoLyricsRepository();
+
+  static const _words = [
+    'Streetlights hum a quiet tune',
+    'Your shadow walking next to mine',
+    'We left the radio on too long',
+    '',
+    'Hold on, the night is still young',
+    'Hold on, we are almost home',
+    'Every window glowing gold',
+    'Every story left untold',
+  ];
+
+  @override
+  Future<LyricsResult> load(
+    Track track, {
+    required bool online,
+    required bool onlineSearch,
+    bool force = false,
+    bool Function()? isCancelled,
+  }) async {
+    if (track.id.isEven) return const LyricsResult(LyricsStatus.notFound);
+    return LyricsResult.found(Lyrics(source: LyricsSource.lrclib, lines: [
+      for (var i = 0; i < _words.length * 3; i++)
+        LyricLine(Duration(seconds: 8 + i * 5), _words[i % _words.length]),
+    ]));
+  }
 }

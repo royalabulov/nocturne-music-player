@@ -284,20 +284,33 @@ abstract final class TagReader {
 
   /// TIT2/TPE1/TALB/TPE2 from the ID3v2 tag at the start of the file (fallback).
   static Map<String, String> _readId3Text(File f) {
+    final tag = _id3Tag(f);
+    return tag == null ? const {} : parseId3TextFrames(tag);
+  }
+
+  /// The ID3v2 tag bytes at the start of the file, null if there is none.
+  static Uint8List? _id3Tag(File f) {
     RandomAccessFile? raf;
     try {
       raf = f.openSync();
       final head = raf.readSync(10);
-      if (head.length < 10 || head[0] != 0x49 || head[1] != 0x44 || head[2] != 0x33) return const {};
+      if (head.length < 10 || head[0] != 0x49 || head[1] != 0x44 || head[2] != 0x33) return null;
       final size = _synchsafe(head, 6);
       // The cover image is inside the tag; a reasonable limit
       final body = raf.readSync(size.clamp(0, 8 << 20));
-      return parseId3TextFrames(Uint8List.fromList([...head, ...body]));
+      return Uint8List.fromList([...head, ...body]);
     } catch (_) {
-      return const {};
+      return null;
     } finally {
       raf?.closeSync();
     }
+  }
+
+  /// MP3 lyrics (USLT), read from the tag bytes like the text frames: with the
+  /// doubled BOM audio_metadata_reader returns them as CJK garbage.
+  static String? readId3Lyrics(String path) {
+    final tag = _id3Tag(File(path));
+    return tag == null ? null : parseId3Lyrics(tag);
   }
 
   static int _synchsafe(List<int> b, int o) =>
@@ -306,11 +319,36 @@ abstract final class TagReader {
   static const _textFrames = {'TIT2', 'TPE1', 'TALB', 'TPE2'};
 
   /// Text frames from ID3v2.3/2.4 tag bytes (only [_textFrames]).
-  static Map<String, String> parseId3TextFrames(Uint8List b) {
-    final out = <String, String>{};
-    if (b.length < 10 || String.fromCharCodes(b, 0, 3) != 'ID3') return out;
+  static Map<String, String> parseId3TextFrames(Uint8List b) => {
+        for (final (id, data) in _id3Frames(b))
+          if (_textFrames.contains(id))
+            if (_decodeText(data) case final text when text.isNotEmpty) id: text,
+      };
+
+  /// USLT: encoding, 3-letter language, a description ending in NUL, then the text.
+  static String? parseId3Lyrics(Uint8List b) {
+    for (final (id, d) in _id3Frames(b)) {
+      if (id != 'USLT' || d.length < 5) continue;
+      final enc = d[0];
+      final wide = enc == 1 || enc == 2;
+      var i = 4;
+      // Skip the description (its NUL is 2 bytes in UTF-16)
+      while (i < d.length && !(d[i] == 0 && (!wide || (i + 1 < d.length && d[i + 1] == 0)))) {
+        i += wide ? 2 : 1;
+      }
+      i += wide ? 2 : 1;
+      if (i >= d.length) continue;
+      final text = _decodeText(Uint8List.fromList([enc, ...d.sublist(i)]));
+      if (text.isNotEmpty) return text;
+    }
+    return null;
+  }
+
+  /// (frame id, frame data) of an ID3v2.3/2.4 tag.
+  static Iterable<(String, Uint8List)> _id3Frames(Uint8List b) sync* {
+    if (b.length < 10 || String.fromCharCodes(b, 0, 3) != 'ID3') return;
     final ver = b[3];
-    if (ver != 3 && ver != 4) return out;
+    if (ver != 3 && ver != 4) return;
     final end = (10 + _synchsafe(b, 6)).clamp(0, b.length);
     var i = 10;
     if (b[5] & 0x40 != 0 && i + 4 <= end) {
@@ -325,13 +363,9 @@ abstract final class TagReader {
       final start = i + 10;
       final stop = start + size;
       if (size <= 0 || stop > end) break;
-      if (_textFrames.contains(id)) {
-        final text = _decodeText(b.sublist(start, stop));
-        if (text.isNotEmpty) out[id] = text;
-      }
+      yield (id, b.sublist(start, stop));
       i = stop;
     }
-    return out;
   }
 
   /// ID3 text frame: ilk bayt encoding (0 Latin-1, 1 UTF-16+BOM, 2 UTF-16BE, 3 UTF-8).

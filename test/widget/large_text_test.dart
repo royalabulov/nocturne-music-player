@@ -91,6 +91,13 @@ void main() {
       await settle();
       expect(find.text(song), findsWidgets);
 
+      // Lyrics in the cover's place (demo song 1 has synced lyrics), then back
+      await tester.tap(find.byTooltip(t.showLyrics));
+      await settle();
+      expect(find.text('Hold on, the night is still young'), findsWidgets);
+      await tester.tap(find.byTooltip(t.showCover));
+      await settle();
+
       appRouter.go(Routes.home);
       await tester.pumpWidget(const SizedBox());
       await tester.runAsync(handler.dispose);

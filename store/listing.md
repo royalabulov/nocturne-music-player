@@ -37,6 +37,7 @@ PLAYBACK
 • Gapless playback, queue, resume where you left off
 • Lock screen and notification controls, Bluetooth buttons
 • Sleep timer
+• Lyrics: synced or plain, from the song file or the free LRCLIB database (Online mode); tap a line to jump there
 • Equalizer with bass boost and automatic presets for speaker, wired headphones and Bluetooth
 • Volume levelling with ReplayGain
 
@@ -86,6 +87,7 @@ OXUTMA
 • Fasiləsiz keçid, növbə, qaldığınız yerdən davam
 • Kilid ekranında və bildirişdə idarəetmə, Bluetooth düymələri
 • Yuxu taymeri
+• Mahnı sözləri: sinxron və ya adi mətn, mahnı faylından və ya pulsuz LRCLIB bazasından (Onlayn rejimdə); sətrə toxunub həmin yerə keçin
 • Bas gücləndirici ilə ekvalayzer; dinamik, qulaqlıq və Bluetooth üçün avtomatik rejim
 • ReplayGain ilə səs səviyyəsinin bərabərləşdirilməsi
 
@@ -140,10 +142,17 @@ DAHA ÇOX
 - Appeals to children: **No**.
 
 ### Data safety
-- Does your app collect or share any of the required user data types? **No**.
-- (Bu "No" cavabı ilə digər suallar açılmır.) Səbəb: heç bir məlumat telefondan çıxmır. Online rejimdəki boş internet yoxlaması istifadəçi məlumatı daşımır.
-- Is all user data encrypted in transit? — sual açılmır.
-- Data deletion: — sual açılmır (toplanan data yoxdur).
+Mahnı sözləri əlavə olunandan sonra cavab dəyişir: Onlayn rejimdə mahnının adı/ifaçısı lrclib.net-ə gedir.
+Play-in tərifləri vaxtaşırı dəyişir — göndərməzdən əvvəl Play Console-dakı izahlarla yoxlayın.
+- Does your app collect or share any of the required user data types? **Yes**.
+- Data type: **App activity → Other actions** (sözü açılan mahnının adı və ifaçısı).
+  - Collected: **Yes**. Shared: **No** (istifadəçinin öz hərəkəti ilə göndərilir — "user-initiated" istisnası).
+  - Processed ephemerally: **No** (LRCLIB serveri sorğunu loglaya bilər).
+  - Required or optional: **Optional** (Onlayn rejim və Ayarlardakı seçim).
+  - Purpose: **App functionality**.
+- Is all user data encrypted in transit? **Yes** (HTTPS).
+- Do you provide a way for users to request that their data is deleted? **No** — developer heç bir data saxlamır; telefondakı data tətbiq silinəndə silinir.
+- Online rejimdəki boş internet yoxlaması istifadəçi məlumatı daşımır.
 
 ### Government apps / Financial features / Health / News
 - Hamısı: **No / Not applicable**.

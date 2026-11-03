@@ -16,6 +16,7 @@ const kDefaultScanFolders = <String>[
 
 @DriftDatabase(tables: [
   Tracks, Playlists, PlaylistTracks, Favorites, PlayHistory, ScanState, ScanFolders, TrackAnalyses, VibeLabels,
+  TrackLyrics,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
@@ -26,7 +27,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -47,6 +48,7 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) await m.addColumn(tracks, tracks.replayGainDb);
           if (from < 3) await m.createTable(trackAnalyses);
           if (from < 4) await m.createTable(vibeLabels);
+          if (from < 5) await m.createTable(trackLyrics);
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

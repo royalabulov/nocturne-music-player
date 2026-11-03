@@ -21,6 +21,8 @@ import '../home/locate_track.dart';
 import '../library_browse/library_groups.dart';
 import '../settings/settings_controller.dart';
 import '../shell/mini_player.dart';
+import 'lyrics_controller.dart';
+import 'lyrics_view.dart';
 import 'player_providers.dart';
 import 'queue_sheet.dart';
 import 'sleep_timer.dart';
@@ -120,7 +122,7 @@ class NowPlayingScreen extends ConsumerWidget {
                     ],
                   ),
                   const Spacer(flex: 2),
-                  _SwipeToSkip(child: _Art(track: t)),
+                  _SwipeToSkip(child: _ArtOrLyrics(track: t)),
                   const SizedBox(height: AppSpacing.xxl),
                   Row(
                     children: [
@@ -162,6 +164,7 @@ class NowPlayingScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
+                      const _LyricsButton(),
                       FavoriteButton(trackId: t.id, size: 24),
                     ],
                   ),
@@ -418,16 +421,55 @@ class _BottomBar extends ConsumerWidget {
   }
 }
 
-class _Art extends ConsumerWidget {
-  const _Art({required this.track});
+/// Cover side of the art square.
+double _artSize(BuildContext context) => (MediaQuery.sizeOf(context).width - AppSpacing.xl * 2).clamp(
+      200.0,
+      340.0,
+    );
+
+/// Tap the cover → lyrics in its place; tap again → the cover.
+class _ArtOrLyrics extends ConsumerWidget {
+  const _ArtOrLyrics({required this.track});
   final Track track;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final size = (MediaQuery.sizeOf(context).width - AppSpacing.xl * 2).clamp(
-      200.0,
-      340.0,
+    final show = ref.watch(showLyricsProvider);
+    return GestureDetector(
+      onTap: ref.read(showLyricsProvider.notifier).toggle,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: show
+            ? LyricsPanel(key: const ValueKey('lyrics'), size: _artSize(context))
+            : _Art(key: const ValueKey('art'), track: track),
+      ),
     );
+  }
+}
+
+/// Next to the heart: lyrics ⇄ cover. Lit while lyrics are shown.
+class _LyricsButton extends ConsumerWidget {
+  const _LyricsButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final show = ref.watch(showLyricsProvider);
+    return IconButton(
+      tooltip: show ? l10n.showCover : l10n.showLyrics,
+      onPressed: ref.read(showLyricsProvider.notifier).toggle,
+      icon: Icon(show ? Icons.lyrics_rounded : Icons.lyrics_outlined, size: 24),
+      color: show ? AppColors.cyan : AppColors.textSecondary,
+    );
+  }
+}
+
+class _Art extends ConsumerWidget {
+  const _Art({super.key, required this.track});
+  final Track track;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final size = _artSize(context);
     final playing = ref.watch(isPlayingProvider);
     final glow = ref.watch(currentCoverColorProvider);
     // While paused the cover shrinks a little and the glow fades; it grows back when playing.

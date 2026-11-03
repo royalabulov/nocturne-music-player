@@ -30,6 +30,7 @@ import '../smart_groups/vibe_classifier.dart';
 import '../smart_groups/vibe_export.dart';
 import '../smart_groups/vibe_review.dart';
 import '../../shared/sort_sheet.dart';
+import '../player/lyrics_controller.dart';
 import 'library_filter_section.dart';
 import 'settings_controller.dart';
 import '../../l10n/l10n.dart';
@@ -274,6 +275,13 @@ class _NetworkGroup extends ConsumerWidget {
             onTap: () => ref.read(onlineModeProvider.notifier).recheck(),
           ),
         ),
+      // Lyrics: the only thing that uses the internet besides the connection check
+      _ToggleRow(
+        title: l10n.lyricsOnline,
+        subtitle: l10n.lyricsOnlineHint,
+        value: ref.watch(boolSettingProvider(kLyricsOnlineKey)).value ?? true,
+        onChanged: (v) => ref.read(libraryRepositoryProvider).setSetting(kLyricsOnlineKey, '$v'),
+      ),
     ]);
   }
 }

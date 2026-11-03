@@ -20,6 +20,8 @@ genre — no account, no cloud, no tracking.
   notification, sleep timer, resume point, queue and multi-select actions.
 - **Equalizer** — system EQ bands, bass boost and automatic presets per output
   (speaker / wired / Bluetooth).
+- **Lyrics** — synced (karaoke-style) or plain, from the song file or, in Online mode,
+  from [LRCLIB](https://lrclib.net); tap a line to jump there. Found lyrics are kept offline.
 - **Favorites, playlists, recently played** with drag-to-reorder playlists.
 - **Library filters & sorting** — hide voice notes and ringtones by file size and
   length; sort songs, albums and artists several ways.
@@ -84,8 +86,10 @@ Nocturne collects no data: no account, no analytics, no ads, no crash reporting.
 Permissions: audio files (to build the library), foreground service + wake lock
 (background playback) and network state + internet. The network is used only after the
 user turns Online mode on (default: off), and then only for a connectivity check
-(an empty `generate_204` request to Cloudflare, falling back to Google). Songs, play
-history and AI analysis never leave the phone.
+(an empty `generate_204` request to Cloudflare, falling back to Google) and, when the user
+opens lyrics that aren't in the file, a lyrics lookup on lrclib.net with the song's title
+and artist (can be turned off). Songs, play history and AI analysis never
+leave the phone.
 
 ## Credits
 

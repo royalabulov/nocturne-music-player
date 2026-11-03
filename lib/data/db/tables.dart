@@ -122,6 +122,22 @@ class VibeLabels extends Table {
   Set<Column> get primaryKey => {trackId};
 }
 
+/// Lyrics found on lrclib.net, kept so they show offline later (v5).
+/// found = false: LRCLIB had nothing — asked again only after a while.
+/// Lyrics from the song file aren't stored: the file is read each time.
+@DataClassName('LyricsRow')
+class TrackLyrics extends Table {
+  IntColumn get trackId => integer().references(Tracks, #id, onDelete: KeyAction.cascade)();
+  BoolColumn get found => boolean()();
+  TextColumn get synced => text().nullable()();
+  TextColumn get plain => text().nullable()();
+  BoolColumn get instrumental => boolean().withDefault(const Constant(false))();
+  IntColumn get fetchedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {trackId};
+}
+
 /// Scan folders chosen by the user.
 @DataClassName('ScanFolderRow')
 class ScanFolders extends Table {

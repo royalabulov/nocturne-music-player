@@ -12,5 +12,6 @@ List<Override> demoOverrides() {
     historyRepositoryProvider.overrideWithValue(DemoHistoryRepository(lib)),
     playlistRepositoryProvider.overrideWithValue(DemoPlaylistRepository(lib)),
     analysisRepositoryProvider.overrideWithValue(DemoAnalysisRepository(lib)),
+    lyricsRepositoryProvider.overrideWithValue(const DemoLyricsRepository()),
   ];
 }

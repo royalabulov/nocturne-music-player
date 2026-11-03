@@ -406,7 +406,7 @@ abstract class L10n {
   /// No description provided for @privacyText.
   ///
   /// In en, this message translates to:
-  /// **'No accounts, no analytics. Your music never leaves this device; the network is used only while Online mode is on.'**
+  /// **'No accounts, no analytics. Your music never leaves this device; the network is used only while Online mode is on — to check the connection and to find lyrics.'**
   String get privacyText;
 
   /// No description provided for @agoNever.
@@ -2423,6 +2423,90 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Various Artists'**
   String get variousArtists;
+
+  /// No description provided for @showLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics'**
+  String get showLyrics;
+
+  /// No description provided for @showCover.
+  ///
+  /// In en, this message translates to:
+  /// **'Show cover'**
+  String get showCover;
+
+  /// No description provided for @lyricsSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for lyrics…'**
+  String get lyricsSearching;
+
+  /// No description provided for @lyricsNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No lyrics found for this song'**
+  String get lyricsNotFound;
+
+  /// No description provided for @lyricsInstrumental.
+  ///
+  /// In en, this message translates to:
+  /// **'This song has no words'**
+  String get lyricsInstrumental;
+
+  /// No description provided for @lyricsNeedOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'The song file has no lyrics. Turn on Online mode to look on the internet.'**
+  String get lyricsNeedOnline;
+
+  /// No description provided for @lyricsSearchOff.
+  ///
+  /// In en, this message translates to:
+  /// **'The song file has no lyrics. Internet search is off in Settings.'**
+  String get lyricsSearchOff;
+
+  /// No description provided for @lyricsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the lyrics. Check the internet and try again.'**
+  String get lyricsError;
+
+  /// No description provided for @lyricsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Search again'**
+  String get lyricsRetry;
+
+  /// No description provided for @turnOnOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on Online mode'**
+  String get turnOnOnline;
+
+  /// No description provided for @lyricsFromFile.
+  ///
+  /// In en, this message translates to:
+  /// **'From the song file'**
+  String get lyricsFromFile;
+
+  /// No description provided for @lyricsFromLrclib.
+  ///
+  /// In en, this message translates to:
+  /// **'From LRCLIB'**
+  String get lyricsFromLrclib;
+
+  /// No description provided for @lyricsOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Find lyrics on the internet'**
+  String get lyricsOnline;
+
+  /// No description provided for @lyricsOnlineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only in Online mode. The song\'s title and artist are sent to lrclib.net'**
+  String get lyricsOnlineHint;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

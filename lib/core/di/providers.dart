@@ -9,6 +9,7 @@ import '../../data/mappers/track_mapper.dart';
 import '../../data/repositories/analysis_repository_impl.dart';
 import '../../data/repositories/history_repository_impl.dart';
 import '../../data/repositories/library_repository_impl.dart';
+import '../../data/repositories/lyrics_repository_impl.dart';
 import '../../data/repositories/playlist_repository_impl.dart';
 import '../../data/services/backup_service.dart';
 import '../../data/services/library_scanner.dart';
@@ -17,6 +18,7 @@ import '../../domain/entities/track.dart';
 import '../../domain/repositories/analysis_repository.dart';
 import '../../domain/repositories/history_repository.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../domain/repositories/lyrics_repository.dart';
 import '../../domain/repositories/playlist_repository.dart';
 
 // ── infrastructure singletons ─────────────────────────────
@@ -100,6 +102,11 @@ final historyRepositoryProvider = Provider<HistoryRepository>(
 /// Smart groups: YAMNet analysis results.
 final analysisRepositoryProvider = Provider<AnalysisRepository>(
   (ref) => AnalysisRepositoryImpl(ref.watch(databaseProvider), filter: ref.watch(trackFilterProvider)),
+);
+
+/// Lyrics: the song file, saved LRCLIB answers, LRCLIB.
+final lyricsRepositoryProvider = Provider<LyricsRepository>(
+  (ref) => LyricsRepositoryImpl(ref.watch(databaseProvider)),
 );
 
 final audioAnalyzerProvider = Provider<AudioAnalyzerSource>((_) => AudioAnalyzerSource());

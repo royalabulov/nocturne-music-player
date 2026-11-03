@@ -191,7 +191,7 @@ class L10nAz extends L10n {
 
   @override
   String get privacyText =>
-      'Hesab yoxdur, analitika yoxdur. Musiqiniz bu cihazdan çıxmır; şəbəkə yalnız Onlayn rejim açıq olanda işlənir.';
+      'Hesab yoxdur, analitika yoxdur. Musiqiniz bu cihazdan çıxmır; internet yalnız Onlayn rejim açıq olanda işlənir — bağlantını yoxlamaq və mahnı sözlərini tapmaq üçün.';
 
   @override
   String get agoNever => 'heç vaxt';
@@ -1434,4 +1434,50 @@ class L10nAz extends L10n {
 
   @override
   String get variousArtists => 'Müxtəlif ifaçılar';
+
+  @override
+  String get showLyrics => 'Sözlər';
+
+  @override
+  String get showCover => 'Üz qabığını göstər';
+
+  @override
+  String get lyricsSearching => 'Sözlər axtarılır…';
+
+  @override
+  String get lyricsNotFound => 'Bu mahnı üçün söz tapılmadı';
+
+  @override
+  String get lyricsInstrumental => 'Bu mahnıda söz yoxdur';
+
+  @override
+  String get lyricsNeedOnline =>
+      'Mahnı faylında söz yoxdur. İnternetdə axtarmaq üçün Onlayn rejimi açın.';
+
+  @override
+  String get lyricsSearchOff =>
+      'Mahnı faylında söz yoxdur. İnternetdə axtarış Ayarlarda söndürülüb.';
+
+  @override
+  String get lyricsError =>
+      'Sözləri yükləmək alınmadı. İnterneti yoxlayıb yenidən cəhd edin.';
+
+  @override
+  String get lyricsRetry => 'Yenidən axtar';
+
+  @override
+  String get turnOnOnline => 'Onlayn rejimi aç';
+
+  @override
+  String get lyricsFromFile => 'Mənbə: mahnı faylı';
+
+  @override
+  String get lyricsFromLrclib => 'Mənbə: LRCLIB';
+
+  @override
+  String get lyricsOnline => 'Mahnı sözlərini internetdə axtar';
+
+  @override
+  String get lyricsOnlineHint =>
+      'Yalnız Onlayn rejimdə. Mahnının adı və ifaçısı lrclib.net-ə göndərilir';
 }
