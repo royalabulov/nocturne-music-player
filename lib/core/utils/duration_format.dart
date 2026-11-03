@@ -1,3 +1,5 @@
+import '../../l10n/l10n.dart';
+
 extension DurationFormat on Duration {
   /// 03:42 or 1:02:15
   String get mmss {
@@ -13,6 +15,6 @@ extension DurationFormat on Duration {
   String get hm {
     final h = inHours;
     final m = inMinutes.remainder(60);
-    return h > 0 ? '${h}h ${m}m' : '${m}m';
+    return h > 0 ? l10n.durHoursMinutes(h, m) : l10n.durMinutes(m);
   }
 }

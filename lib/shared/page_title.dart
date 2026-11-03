@@ -8,10 +8,13 @@ import '../core/theme/app_typography.dart';
 /// One style for every tab — they used to mix eyebrows, ALL-CAPS lines,
 /// badges and a decorative button that did nothing (design review, 2026-11-02).
 class PageTitle extends StatelessWidget {
-  const PageTitle(this.title, {super.key, this.subtitle});
+  const PageTitle(this.title, {super.key, this.subtitle, this.trailing});
 
   final String title;
   final String? subtitle;
+
+  /// Next to the title, e.g. the period on Recent.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +24,12 @@ class PageTitle extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppTypography.headlineXl),
+          Row(
+            children: [
+              Expanded(child: Text(title, style: AppTypography.headlineXl)),
+              ?trailing,
+            ],
+          ),
           if (sub != null) ...[
             const SizedBox(height: AppSpacing.xxs),
             Text(sub, style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary)),

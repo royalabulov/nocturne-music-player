@@ -15,6 +15,7 @@ import '../player/player_providers.dart';
 import '../smart_groups/smart_groups.dart';
 import '../smart_groups/smart_groups_section.dart';
 import 'library_groups.dart';
+import '../../l10n/l10n.dart';
 
 class AlbumDetailScreen extends ConsumerWidget {
   const AlbumDetailScreen({super.key, required this.albumKey});
@@ -26,13 +27,13 @@ class AlbumDetailScreen extends ConsumerWidget {
     // null = the library is still loading (first frame) — not "not found"
     if (albums == null) return const _Loading();
     final a = albums.where((x) => x.key == albumKey).firstOrNull;
-    if (a == null) return const _NotFound(what: 'album');
+    if (a == null) return _NotFound(title: l10n.notFoundAlbum);
     final year = a.year;
     return _DetailScaffold(
-      label: 'ALBUM',
+      label: l10n.albumLabel,
       title: a.title,
       subtitle: [a.artist, ?year?.toString()].join(' • '),
-      meta: '${a.tracks.length} tracks • ${a.totalDuration.hm}',
+      meta: '${l10n.trackCount(a.tracks.length)} • ${a.totalDuration.hm}',
       art: AlbumArt(path: a.coverPath, seed: a.key.hashCode, size: 112, radius: AppRadius.xl),
       tracks: a.tracks,
       // In an album, the artist under each row (the album name is in the header)
@@ -53,18 +54,18 @@ class ArtistDetailScreen extends ConsumerWidget {
     final artists = ref.watch(artistsProvider);
     if (artists == null) return const _Loading();
     final a = artists.where((x) => x.key == artistKey).firstOrNull;
-    if (a == null) return const _NotFound(what: 'artist');
+    if (a == null) return _NotFound(title: l10n.notFoundArtist);
     // The artist's albums (without Unknown Album) — horizontal row
     final albums = (ref.watch(albumsProvider) ?? const <AlbumGroup>[])
         .where((al) => !al.isUnknown && al.tracks.any((t) => artistKeysOf(t).contains(a.key)))
         .toList();
     final albumCount = a.albumCount;
     return _DetailScaffold(
-      label: 'ARTIST',
+      label: l10n.artistLabel,
       title: a.name,
       subtitle: [
-        if (albumCount > 0) '$albumCount ${albumCount == 1 ? 'album' : 'albums'}',
-        '${a.tracks.length} tracks',
+        if (albumCount > 0) l10n.albumCount(albumCount),
+        l10n.trackCount(a.tracks.length),
       ].join(' • '),
       meta: a.tracks.fold(Duration.zero, (d, t) => d + t.duration).hm,
       art: AlbumArt(path: a.coverPath, seed: a.key.hashCode, size: 112, radius: 56),
@@ -85,13 +86,13 @@ class SmartGroupDetailScreen extends ConsumerWidget {
     final groups = ref.watch(smartGroupsProvider);
     if (groups == null) return const _Loading();
     final g = groups.byKey(groupKey);
-    if (g == null) return const _NotFound(what: 'group');
+    if (g == null) return _NotFound(title: l10n.notFoundGroup);
     final total = g.tracks.fold(Duration.zero, (d, t) => d + t.duration);
     return _DetailScaffold(
-      label: g.kind == SmartGroupKind.mood ? 'MOOD' : 'GENRE',
+      label: g.kind == SmartGroupKind.mood ? l10n.moodLabel : l10n.genreLabel,
       title: g.title,
-      subtitle: 'Smart group • detected on this device',
-      meta: '${g.tracks.length} tracks • ${total.hm}',
+      subtitle: l10n.smartGroupSubtitle,
+      meta: '${l10n.trackCount(g.tracks.length)} • ${total.hm}',
       art: VibeArt(group: g, size: 112),
       tracks: g.tracks,
       subtitleOf: (t) => t.artist,
@@ -181,14 +182,14 @@ class _DetailScaffold extends ConsumerWidget {
                     children: [
                       _Pill(
                         icon: Icons.play_arrow_rounded,
-                        label: 'Play all',
+                        label: l10n.playAll,
                         primary: true,
                         onTap: () => handler.playTracks(tracks),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       _Pill(
                         icon: Icons.shuffle_rounded,
-                        label: 'Shuffle',
+                        label: l10n.shuffle,
                         onTap: () => handler.playTracks(tracks, shuffle: true),
                       ),
                     ],
@@ -198,7 +199,7 @@ class _DetailScaffold extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.lg),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
-                    child: Text('Albums', style: AppTypography.titleSm),
+                    child: Text(l10n.tabAlbums, style: AppTypography.titleSm),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   SizedBox(
@@ -225,7 +226,7 @@ class _DetailScaffold extends ConsumerWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                Text('${al.tracks.length} tracks', style: AppTypography.labelSm),
+                                Text(l10n.trackCount(al.tracks.length), style: AppTypography.labelSm),
                               ],
                             ),
                           ),
@@ -285,8 +286,8 @@ class _Loading extends StatelessWidget {
 }
 
 class _NotFound extends StatelessWidget {
-  const _NotFound({required this.what});
-  final String what;
+  const _NotFound({required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -294,8 +295,8 @@ class _NotFound extends StatelessWidget {
     appBar: AppBar(backgroundColor: Colors.transparent),
     body: EmptyState(
       icon: Icons.search_off_rounded,
-      title: 'This $what is no longer in your library',
-      message: 'Its tracks may have been deleted or moved.',
+      title: title,
+      message: l10n.notFoundHint,
     ),
   );
 }

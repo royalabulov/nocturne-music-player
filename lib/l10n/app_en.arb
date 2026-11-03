@@ -1,0 +1,1025 @@
+{
+  "@@locale": "en",
+  "navHome": "Home",
+  "navRecent": "Recent",
+  "navFavorites": "Favorites",
+  "navPlaylists": "Playlists",
+  "navMenu": "Menu",
+  "songCount": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@songCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trackCount": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "@trackCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuDiscover": "Discover",
+  "menuYourVibes": "Your Vibes",
+  "menuYourVibesHint": "Mood & genre groups",
+  "checkAccuracy": "Check accuracy",
+  "library": "Library",
+  "importAudioFiles": "Import audio files",
+  "scanning": "Scanning…",
+  "rescanLibrary": "Rescan library",
+  "equalizer": "Equalizer",
+  "settings": "Settings",
+  "openMenu": "Open menu",
+  "netOffline": "Offline",
+  "netChecking": "Checking…",
+  "netOnline": "Online",
+  "netNoInternet": "No internet",
+  "netModeSemantics": "Network mode: {mode}. Tap to switch.",
+  "@netModeSemantics": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "toastOfflineMode": "Offline mode — Nocturne won’t use the network",
+  "toastOnlineVia": "Online via {network}",
+  "@toastOnlineVia": {
+    "placeholders": {
+      "network": {
+        "type": "String"
+      }
+    }
+  },
+  "toastNoConnection": "No connection. Turn on Wi‑Fi or mobile data first.",
+  "toastNoInternet": "Connected, but there’s no internet. Staying offline.",
+  "networkNone": "No connection",
+  "networkWifi": "Wi‑Fi",
+  "networkMobile": "Mobile data",
+  "networkEthernet": "Ethernet",
+  "networkOther": "Network",
+  "play": "Play",
+  "pause": "Pause",
+  "nextSong": "Next song",
+  "removeFromFavorites": "Remove from favorites",
+  "addToFavorites": "Add to favorites",
+  "more": "More",
+  "queue": "Queue",
+  "queuePosition": "{position} of {total}",
+  "@queuePosition": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "toastTrackMissing": "\"{title}\" is no longer on this device — skipped",
+  "@toastTrackMissing": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationChannel": "Nocturne playback",
+  "groupSmartGroups": "Smart groups",
+  "groupPlayback": "Playback",
+  "groupNetwork": "Network",
+  "groupBackup": "Backup & data",
+  "groupAbout": "About",
+  "language": "Language",
+  "languageSystem": "Phone language",
+  "versionLabel": "Version {version}",
+  "@versionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "privacy": "Privacy",
+  "privacyText": "No accounts, no analytics. Your music never leaves this device; the network is used only while Online mode is on.",
+  "agoNever": "never",
+  "agoJustNow": "just now",
+  "agoMinutesShort": "{n} min ago",
+  "@agoMinutesShort": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "agoHoursShort": "{n} h ago",
+  "@agoHoursShort": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "agoDaysShort": "{n} d ago",
+  "@agoDaysShort": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "readingTags": "Reading tags {done}/{total}",
+  "@readingTags": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "lastScan": "Last scan: {when} • {tracks}",
+  "@lastScan": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      },
+      "tracks": {
+        "type": "String"
+      }
+    }
+  },
+  "scanFolders": "Scan folders",
+  "scanFoldersHint": "Nocturne looks for audio files in these folders",
+  "add": "Add",
+  "scanningShort": "Scanning",
+  "rescan": "Rescan",
+  "importHint": "Pick songs from anywhere — copied to Music/Sonar",
+  "import": "Import",
+  "autoScan": "Auto-scan on launch",
+  "autoScanHint": "Check local folders for newly added tracks",
+  "analysisOff": "Off — moods & genres use file tags only",
+  "analysisRunning": "Analyzing {done}/{total} songs on this device…",
+  "@analysisRunning": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "analysisDone": "Analyzed {done}/{total} • works fully offline",
+  "@analysisDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "moodGenreAnalysis": "Mood & genre analysis",
+  "accuracyHint": "Rate 40 songs to measure how accurate the groups are",
+  "accuracyReport": "Accuracy from {answers} answers: mood {mood}% • genre {genre}%",
+  "@accuracyReport": {
+    "placeholders": {
+      "answers": {
+        "type": "int"
+      },
+      "mood": {
+        "type": "int"
+      },
+      "genre": {
+        "type": "int"
+      }
+    }
+  },
+  "check": "Check",
+  "onlineOffDesc": "Off — Nocturne never touches the network",
+  "checkingConnection": "Checking connection…",
+  "connectedVia": "Connected via {network}",
+  "@connectedVia": {
+    "placeholders": {
+      "network": {
+        "type": "String"
+      }
+    }
+  },
+  "waitingForNetwork": "Waiting for Wi‑Fi or mobile data…",
+  "connectedNoInternet": "{network} connected, but no internet — retrying",
+  "@connectedNoInternet": {
+    "placeholders": {
+      "network": {
+        "type": "String"
+      }
+    }
+  },
+  "onlineMode": "Online mode",
+  "checkAgain": "Check again",
+  "checkAgainHint": "Re-test the internet connection now",
+  "retry": "Retry",
+  "output": "Output",
+  "outputAutoDetected": "{output} • auto-detected",
+  "@outputAutoDetected": {
+    "placeholders": {
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "autoEqPreset": "Auto EQ preset by output",
+  "autoEqPresetHint": "Headphones / Bluetooth / Speaker",
+  "eqAndBass": "Equalizer & Bass Boost",
+  "eqPresetLine": "Preset: {preset}",
+  "@eqPresetLine": {
+    "placeholders": {
+      "preset": {
+        "type": "String"
+      }
+    }
+  },
+  "eqBassSuffix": " • Bass +{percent}%",
+  "@eqBassSuffix": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "off": "Off",
+  "crossfade": "Crossfade",
+  "crossfadeHint": "Fade into the next track as the current one ends",
+  "crossfadeDuration": "Crossfade duration",
+  "replayGain": "Volume normalization (ReplayGain)",
+  "replayGainHint": "Evens out loudness between tracks (needs ReplayGain tags in the file)",
+  "saveBackupDialog": "Save Nocturne backup",
+  "backupSaved": "Backup saved",
+  "backupFailed": "Backup failed: {error}",
+  "@backupFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "preparingExport": "Preparing export…",
+  "exportSaved": "Saved {songs} → {path}",
+  "@exportSaved": {
+    "placeholders": {
+      "songs": {
+        "type": "String"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseBackupDialog": "Choose Nocturne backup",
+  "restoreFailed": "Restore failed: {error}",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "backUpData": "Back up my data",
+  "backUpDataHint": "Favorites, playlists, play history and audio settings → JSON file",
+  "save": "Save",
+  "restoreBackup": "Restore from backup",
+  "restoreBackupHint": "Merges into the current library (scan your music first)",
+  "open": "Open",
+  "exportSmartData": "Export smart-group data",
+  "exportSmartDataHint": "AI scores, guesses and your answers for every song → CSV file",
+  "errorLog": "Error log",
+  "errorLogHint": "Crashes and playback errors recorded on this device",
+  "view": "View",
+  "copy": "Copy",
+  "clear": "Clear",
+  "noLimit": "No limit",
+  "libraryFilter": "Library filter",
+  "reset": "Reset",
+  "libraryFilterHint": "Only songs inside both ranges are shown. Hides voice notes, ringtones and half-downloaded files.",
+  "songsShown": "{count} songs shown",
+  "@songsShown": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bySize": "By size",
+  "byLength": "By length",
+  "zeroSec": "0 sec",
+  "fiveMinPlus": "5 min+",
+  "eqUnavailable": "Play any track first — the system equalizer becomes available once audio is initialised.",
+  "bassBoost": "Bass Boost",
+  "autoPresetOn": "Auto preset is on: the preset you pick here is remembered for \"{output}\" and switches when you change output.",
+  "@autoPresetOn": {
+    "placeholders": {
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "autoPresetOff": "Auto preset is off: this preset applies to every output.",
+  "outputWired": "Wired headphones",
+  "outputBluetooth": "Bluetooth",
+  "outputSpeaker": "Phone speaker",
+  "presetFlat": "Flat",
+  "presetBassBoost": "Bass Boost",
+  "presetVocal": "Vocal",
+  "presetTreble": "Treble",
+  "presetRock": "Rock",
+  "presetPop": "Pop",
+  "presetElectronic": "Electronic",
+  "presetHeadphones": "Headphones",
+  "presetSpeaker": "Speaker",
+  "presetCustom": "Custom",
+  "sortSongsBy": "Sort songs by",
+  "sortAlbumsBy": "Sort albums by",
+  "sortArtistsBy": "Sort artists by",
+  "sortFavoritesBy": "Sort favorites by",
+  "results": "Results",
+  "nothingMatches": "Nothing matches \"{query}\"",
+  "@nothingMatches": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchTryHint": "Try a song title, artist or album name.",
+  "recommendedForYou": "Recommended For You",
+  "goodMorning": "Good morning",
+  "goodAfternoon": "Good afternoon",
+  "goodEvening": "Good evening",
+  "losslessCount": "{count} lossless",
+  "@losslessCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addingNewSongs": "Adding new songs  {done}/{total}",
+  "@addingNewSongs": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "searchHint": "Search songs, artists, albums",
+  "clearSearch": "Clear search",
+  "sortRecentlyAdded": "Recently added",
+  "sortTitle": "Title A–Z",
+  "sortArtist": "Artist",
+  "sortAlbum": "Album",
+  "sortLongest": "Longest first",
+  "sortShortest": "Shortest first",
+  "sortRecentlyLoved": "Recently loved",
+  "sortAZ": "A–Z",
+  "sortMostSongs": "Most songs",
+  "recentTitle": "Recent",
+  "emptyToday": "Nothing played today yet.",
+  "emptyWeek": "Nothing played this week yet.",
+  "emptyMonth": "Nothing played this month yet.",
+  "emptyAll": "Nothing played yet — tap any track in Home.",
+  "noPlays": "No plays {period}",
+  "@noPlays": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "playCount": "{count, plural, =1{1 play} other{{count} plays}}",
+  "@playCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listenedIn": "{time} {period}",
+  "@listenedIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "filterPlayed": "Played",
+  "filterMostPlayed": "Most played",
+  "agoJustNowCap": "Just now",
+  "agoMinutes": "{n}m ago",
+  "@agoMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "agoHours": "{n}h ago",
+  "@agoHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "yesterday": "Yesterday",
+  "agoDays": "{n} days ago",
+  "@agoDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "phraseToday": "today",
+  "phraseWeek": "this week",
+  "phraseMonth": "this month",
+  "phraseAll": "in total",
+  "periodToday": "Today",
+  "periodWeek": "This week",
+  "periodMonth": "This month",
+  "periodAll": "All time",
+  "period": "Period",
+  "continueListening": "Continue listening",
+  "resumeFrom": "{title}  ·  from {time}",
+  "@resumeFrom": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "favoritesTitle": "Your Favorites",
+  "tabSongs": "Songs",
+  "tabAlbums": "Albums",
+  "tabArtists": "Artists",
+  "shuffleAll": "Shuffle All ({count})",
+  "@shuffleAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noFavorites": "No favorites yet",
+  "noFavoritesHint": "Tap the heart on any track to keep it here.",
+  "lovedTracks": "{count, plural, =1{1 loved track} other{{count} loved tracks}}",
+  "@lovedTracks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noPlaylists": "No playlists yet",
+  "playlistCount": "{count, plural, =1{1 playlist} other{{count} playlists}}",
+  "@playlistCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newPlaylist": "New playlist",
+  "playlistName": "Playlist name",
+  "createNewPlaylist": "Create New Playlist",
+  "noPlaylistsHint": "Create one with the button above. Then tap ⋮ next to any song and choose \"Add to playlist\".",
+  "rename": "Rename",
+  "renamePlaylist": "Rename playlist",
+  "deletePlaylist": "Delete playlist",
+  "addToPlaylist": "Add to playlist",
+  "addedToPlaylist": "Added {tracks} to \"{name}\"",
+  "@addedToPlaylist": {
+    "placeholders": {
+      "tracks": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tracksSelected": "{count, plural, =1{1 track selected} other{{count} tracks selected}}",
+  "@tracksSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "done": "Done",
+  "reorder": "Reorder",
+  "playlistLabel": "PLAYLIST",
+  "playAll": "Play all",
+  "shuffle": "Shuffle",
+  "playlistEmpty": "This playlist is empty",
+  "playlistEmptyHint": "Tap ⋮ next to any song and choose \"Add to playlist\".",
+  "noAlbums": "No albums yet",
+  "noArtists": "No artists yet",
+  "albumCount": "{count, plural, =1{1 album} other{{count} albums}}",
+  "@albumCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "albumLabel": "ALBUM",
+  "artistLabel": "ARTIST",
+  "moodLabel": "MOOD",
+  "genreLabel": "GENRE",
+  "smartGroupSubtitle": "Smart group • detected on this device",
+  "notFoundAlbum": "This album is no longer in your library",
+  "notFoundArtist": "This artist is no longer in your library",
+  "notFoundGroup": "This group is no longer in your library",
+  "notFoundHint": "Its tracks may have been deleted or moved.",
+  "name": "Name",
+  "cancel": "Cancel",
+  "durHoursMinutes": "{h}h {m}m",
+  "@durHoursMinutes": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "durMinutes": "{m}m",
+  "@durMinutes": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "durUnderMinute": "<1m",
+  "nowPlaying": "NOW PLAYING",
+  "closePlayer": "Close player",
+  "shuffleOn": "Shuffle: on",
+  "shuffleOff": "Shuffle: off",
+  "previousSong": "Previous song",
+  "repeatOne": "Repeat: one song",
+  "repeatOff": "Repeat: off",
+  "repeatAll": "Repeat: all",
+  "upNext": "Up next  ",
+  "endOfTrack": "End of track",
+  "sleepTimer": "Sleep timer",
+  "sleepTimerOffSpoken": "Sleep timer: off",
+  "sleepTimerEndSpoken": "Sleep timer: end of track",
+  "sleepTimerLeftSpoken": "{count, plural, =1{Sleep timer: 1 minute left} other{Sleep timer: {count} minutes left}}",
+  "@sleepTimerLeftSpoken": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stopsWhenTrackEnds": "Stops when this track ends",
+  "stopsIn": "Stops in {time}",
+  "@stopsIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "fadesOutAndPauses": "Music fades out and pauses",
+  "minutesLong": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@minutesLong": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "oneHour": "1 hour",
+  "hoursMinutesLong": "{h} h {m} min",
+  "@hoursMinutesLong": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "sleepTimerSetTo": "Sleep timer: {count} min",
+  "@sleepTimerSetTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "endOfCurrentTrack": "End of current track",
+  "plusTenMinutes": "+10 minutes",
+  "addedTenMinutes": "Added 10 minutes",
+  "turnOff": "Turn off",
+  "sleepTimerOff": "Sleep timer off",
+  "selectMultiple": "Select multiple",
+  "playNext": "Play next",
+  "addToQueue": "Add to queue",
+  "addToPlaylistEllipsis": "Add to playlist…",
+  "goToAlbum": "Go to album",
+  "goToArtist": "Go to artist",
+  "editArtist": "Edit artist",
+  "artistField": "Artist",
+  "artistChanged": "Artist changed to {name}",
+  "@artistChanged": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "showInLibrary": "Show in library",
+  "removeFromPlaylist": "Remove from playlist",
+  "deleteFromDevice": "Delete from device",
+  "deleteFromDeviceQ": "Delete from device?",
+  "deleteOneWarning": "\"{title}\" will be permanently deleted from this phone. This cannot be undone.",
+  "@deleteOneWarning": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "delete": "Delete",
+  "deleteCancelled": "Delete cancelled",
+  "deletedOne": "Deleted \"{title}\"",
+  "@deletedOne": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "couldNotDelete": "Could not delete: {error}",
+  "@couldNotDelete": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteManyQ": "{count, plural, =1{Delete 1 track?} other{Delete {count} tracks?}}",
+  "@deleteManyQ": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteManyWarning": "{count, plural, =1{1 track will be permanently deleted from this phone. This cannot be undone.} other{{count} tracks will be permanently deleted from this phone. This cannot be undone.}}",
+  "@deleteManyWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteCount": "Delete {count}",
+  "@deleteCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deletedMany": "{count, plural, =1{Deleted 1 track} other{Deleted {count} tracks}}",
+  "@deletedMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deletedSome": "Deleted {done} of {total} tracks",
+  "@deletedSome": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "selectedCount": "{count} selected",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deselectAll": "Deselect all",
+  "selectAll": "Select all",
+  "queueShort": "Queue",
+  "addedToQueue": "Added {count} to queue",
+  "@addedToQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "playlistShort": "Playlist",
+  "unfavorite": "Unfavorite",
+  "favorite": "Favorite",
+  "removedFromFavorites": "Removed {count} from favorites",
+  "@removedFromFavorites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addedToFavorites": "Added {count} to favorites",
+  "@addedToFavorites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remove": "Remove",
+  "removedFromPlaylist": "Removed {count} from playlist",
+  "@removedFromPlaylist": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storageBlocked": "Storage access blocked",
+  "storageBlockedHint": "Enable \"Music and audio\" for Nocturne in system settings",
+  "openSettings": "Open settings",
+  "findYourMusic": "Find your music",
+  "findYourMusicHint": "Nocturne needs access to audio files on this device",
+  "allowAndScan": "Allow & scan",
+  "noTracksYet": "No tracks found yet",
+  "scanFailed": "Scan failed",
+  "noTracksHint": "Drop MP3/FLAC files into Music, Download or snaptube/download",
+  "scanNow": "Scan now",
+  "lookingForFiles": "Looking for audio files…",
+  "readingTagsSpaced": "Reading tags  {done}/{total}",
+  "@readingTagsSpaced": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "finishing": "Finishing…",
+  "opening": "Opening…",
+  "addingFiles": "Adding {count} files…",
+  "@addingFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "couldNotOpenFile": "Couldn't open this file",
+  "savedToMusicSonarSuffix": " • saved to Music/Sonar",
+  "playingOne": "Playing \"{title}\"",
+  "@playingOne": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "playingMany": "Playing {count} tracks",
+  "@playingMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importingFiles": "Importing {count} files…",
+  "@importingFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addedTracks": "{count, plural, =1{Added 1 track} other{Added {count} tracks}}",
+  "@addedTracks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "savedToMusicSonar": "saved to Music/Sonar",
+  "skippedCount": "{count} skipped",
+  "@skippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nothingImported": "Nothing imported",
+  "modeInOrder": "In order",
+  "modeRepeatOne": "Repeat one",
+  "outputHeadphones": "Headphones",
+  "outputSpeakerShort": "Speaker",
+  "moodSad": "Sad & Melancholic",
+  "moodCalm": "Calm & Chill",
+  "moodHappy": "Happy & Upbeat",
+  "moodEnergetic": "Energetic",
+  "genreHipHop": "Rap & Hip-Hop",
+  "genrePop": "Pop",
+  "genreRock": "Rock & Metal",
+  "genreElectronic": "Electronic & Dance",
+  "genreRnb": "R&B & Soul",
+  "genreJazz": "Jazz & Blues",
+  "genreClassical": "Classical",
+  "genreEastern": "Eastern & Traditional",
+  "genreFolk": "Folk & Country",
+  "genreLatin": "Latin & World",
+  "genreAmbient": "Ambient",
+  "genreSoundtrack": "Soundtrack",
+  "noClearMood": "No clear mood",
+  "otherNone": "Other / none",
+  "vibesSubtitle": "Your songs sorted by mood and genre — worked out on this phone.",
+  "smartGroupingOff": "Smart grouping is off. Turn it on in Settings → Smart analysis.",
+  "moods": "Moods",
+  "genres": "Genres",
+  "rateAFewSongs": "Rate a few songs to see how well the grouping works",
+  "analyzingHint": "Listening to your songs on this device to sort them by mood and genre…",
+  "notEnoughAnalyzed": "Not enough analyzed songs yet",
+  "notEnoughAnalyzedHint": "Let Nocturne finish analyzing your library (Menu → Your Vibes), then come back.",
+  "checkSmartGroups": "Check smart groups",
+  "songPosition": "Song {position} of {total}",
+  "@songPosition": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "soFar": "So far: mood {mood} • genre {genre} ({answers} answers)",
+  "@soFar": {
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      },
+      "genre": {
+        "type": "String"
+      },
+      "answers": {
+        "type": "int"
+      }
+    }
+  },
+  "playAClip": "Play a clip",
+  "aiGuessed": "AI GUESSED",
+  "whatMood": "What mood is it really?",
+  "andGenre": "And the genre?",
+  "aiIsRight": "AI is right — next",
+  "saveCorrection": "Save correction",
+  "dontKnowSkip": "Don't know this song — skip",
+  "resultsCaps": "RESULTS",
+  "basedOnAnswers": "Based on {count} answers",
+  "@basedOnAnswers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "justNowCount": " ({count} just now)",
+  "@justNowCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mood": "Mood",
+  "genre": "Genre",
+  "whenYouChecked": "When you checked: mood {mood} • genre {genre}",
+  "@whenYouChecked": {
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      },
+      "genre": {
+        "type": "String"
+      }
+    }
+  },
+  "commonMoodMistakes": "Most common mood mistakes",
+  "commonGenreMistakes": "Most common genre mistakes",
+  "answersKept": "Your answers are kept as corrections — those songs now sit in the groups you chose.",
+  "checkMoreSongs": "Check more songs",
+  "correctOf": "{ok} of {n} correct",
+  "@correctOf": {
+    "placeholders": {
+      "ok": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "noneParty": "None 🎉",
+  "aiSaidReally": "AI said {predicted} → really {actual}  ·  {count}×",
+  "@aiSaidReally": {
+    "placeholders": {
+      "predicted": {
+        "type": "String"
+      },
+      "actual": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noErrorsLogged": "No errors logged.",
+  "restoreReport": "Restored: {favorites} favorites, {playlists} playlists ({playlistTracks} tracks), {plays} plays",
+  "@restoreReport": {
+    "placeholders": {
+      "favorites": {
+        "type": "int"
+      },
+      "playlists": {
+        "type": "int"
+      },
+      "playlistTracks": {
+        "type": "int"
+      },
+      "plays": {
+        "type": "int"
+      }
+    }
+  },
+  "restoreMissing": " • {count} tracks not found on this device",
+  "@restoreMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appLanguage": "App language",
+  "chipWired": "WIRED",
+  "chipBluetooth": "BT",
+  "chipSpeaker": "SPEAKER",
+  "seconds": "{value}s",
+  "@seconds": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
+}

@@ -15,12 +15,13 @@ import '../../shared/album_art.dart';
 import '../../shared/glow_play_button.dart';
 import '../../shared/sort_sheet.dart';
 import '../../shared/track_sliver_list.dart';
+import '../../l10n/l10n.dart';
 
 class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
 
   /// Big title here and in the compact bar (CollapsingTitle) after scrolling.
-  static const title = 'Your Favorites';
+  static String get title => l10n.favoritesTitle;
 
   @override
   ConsumerState<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -44,7 +45,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   Future<void> _pickSort() async {
     final picked = await showSortSheet(
       context,
-      title: 'Sort favorites by',
+      title: l10n.sortFavoritesBy,
       values: _FavSort.values,
       current: _sort,
       label: (s) => s.label,
@@ -68,7 +69,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
               const SizedBox(height: AppSpacing.md),
               PageTitle(
                 FavoritesScreen.title,
-                subtitle: '${tracks.length} ${tracks.length == 1 ? 'song' : 'songs'}',
+                subtitle: l10n.songCount(tracks.length),
               ),
               const SizedBox(height: AppSpacing.lg),
               Padding(
@@ -76,7 +77,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                   horizontal: AppSpacing.screenH,
                 ),
                 child: _SegmentedTabs(
-                  items: const ['Songs', 'Albums', 'Artists'],
+                  items: [l10n.tabSongs, l10n.tabAlbums, l10n.tabArtists],
                   selected: _tab,
                   onSelected: (i) => setState(() => _tab = i),
                 ),
@@ -93,7 +94,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                     Flexible(
                       child: _Pill(
                         icon: Icons.shuffle_rounded,
-                        label: 'Shuffle All (${tracks.length})',
+                        label: l10n.shuffleAll(tracks.length),
                         primary: true,
                         onTap: tracks.isEmpty
                             ? null
@@ -116,10 +117,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
               if (tracks.isEmpty)
-                const EmptyState(
+                EmptyState(
                   icon: Icons.favorite_border_rounded,
-                  title: 'No favorites yet',
-                  message: 'Tap the heart on any track to keep it here.',
+                  title: l10n.noFavorites,
+                  message: l10n.noFavoritesHint,
                 ),
             ],
           ),
@@ -140,15 +141,21 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 
 /// Was a pill that only looked like a button ("Added Date", not tappable).
 enum _FavSort {
-  recentlyLoved('Recently loved'),
-  title('Title A–Z'),
-  artist('Artist'),
-  album('Album'),
-  longest('Longest first'),
-  shortest('Shortest first');
+  recentlyLoved,
+  title,
+  artist,
+  album,
+  longest,
+  shortest;
 
-  const _FavSort(this.label);
-  final String label;
+  String get label => switch (this) {
+    recentlyLoved => l10n.sortRecentlyLoved,
+    title => l10n.sortTitle,
+    artist => l10n.sortArtist,
+    album => l10n.sortAlbum,
+    longest => l10n.sortLongest,
+    shortest => l10n.sortShortest,
+  };
 }
 
 /// Same orders as the library (TrackSort); "Recently loved" is the query's own
@@ -322,7 +329,7 @@ class _GroupedSliver extends ConsumerWidget {
                       Text(k, style: AppTypography.titleSm, maxLines: 1, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 2),
                       Text(
-                        byArtist ? '${g.length} loved tracks' : '${first.artist} • ${g.length} loved tracks',
+                        byArtist ? l10n.lovedTracks(g.length) : '${first.artist} • ${l10n.lovedTracks(g.length)}',
                         style: AppTypography.bodySm, maxLines: 1, overflow: TextOverflow.ellipsis,
                       ),
                     ],

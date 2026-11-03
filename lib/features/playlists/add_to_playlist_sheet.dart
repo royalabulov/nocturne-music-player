@@ -10,6 +10,7 @@ import '../../domain/entities/playlist.dart';
 import '../../domain/entities/track.dart';
 import '../../shared/album_art.dart';
 import '../../shared/sonar_sheet.dart';
+import '../../l10n/l10n.dart';
 
 /// Add a track to / remove it from playlist(s). Tick = already in it.
 Future<void> showAddToPlaylistSheet(BuildContext context, Track track) => showSonarSheet(
@@ -33,13 +34,13 @@ class _AddToPlaylistSheet extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SheetTitle('Add to playlist', subtitle: track.title),
+          SheetTitle(l10n.addToPlaylist, subtitle: track.title),
           SheetAction(
             icon: Icons.add_circle_outline_rounded,
-            label: 'New playlist',
+            label: l10n.newPlaylist,
             accent: true,
             onTap: () async {
-              final name = await showNameDialog(context, title: 'New playlist', hint: 'Playlist name');
+              final name = await showNameDialog(context, title: l10n.newPlaylist, hint: l10n.playlistName);
               if (name == null) return;
               final id = await repo.create(name);
               await repo.addTracks(id, [track.id]);
@@ -51,7 +52,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
             child: playlists.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(AppSpacing.xl),
-                    child: Text('No playlists yet', style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary)),
+                    child: Text(l10n.noPlaylists, style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary)),
                   )
                 : ListView.builder(
                     shrinkWrap: true,
@@ -63,7 +64,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
                         onTap: () => on ? repo.removeTrack(p.id, track.id) : repo.addTracks(p.id, [track.id]),
                         leading: AlbumArt(path: p.coverPath, seed: p.id * 7, size: 44, radius: AppRadius.md),
                         title: Text(p.name, style: AppTypography.titleSm),
-                        subtitle: Text('${p.trackCount} tracks', style: AppTypography.labelSm),
+                        subtitle: Text(l10n.trackCount(p.trackCount), style: AppTypography.labelSm),
                         trailing: Icon(
                           on ? Icons.check_circle_rounded : Icons.circle_outlined,
                           color: on ? AppColors.cyan : AppColors.textMuted,
@@ -100,7 +101,7 @@ class _AddManySheet extends ConsumerWidget {
     Future<void> addTo(int playlistId, String name) async {
       await repo.addTracks(playlistId, ids);
       if (context.mounted) Navigator.pop(context);
-      showToast('Added ${ids.length} tracks to "$name"');
+      showToast(l10n.addedToPlaylist(l10n.trackCount(ids.length), name));
     }
 
     return ConstrainedBox(
@@ -108,13 +109,13 @@ class _AddManySheet extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SheetTitle('Add to playlist', subtitle: '${tracks.length} tracks selected'),
+          SheetTitle(l10n.addToPlaylist, subtitle: l10n.tracksSelected(tracks.length)),
           SheetAction(
             icon: Icons.add_circle_outline_rounded,
-            label: 'New playlist',
+            label: l10n.newPlaylist,
             accent: true,
             onTap: () async {
-              final name = await showNameDialog(context, title: 'New playlist', hint: 'Playlist name');
+              final name = await showNameDialog(context, title: l10n.newPlaylist, hint: l10n.playlistName);
               if (name == null) return;
               await addTo(await repo.create(name), name);
             },
@@ -124,7 +125,7 @@ class _AddManySheet extends ConsumerWidget {
             child: playlists.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(AppSpacing.xl),
-                    child: Text('No playlists yet', style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary)),
+                    child: Text(l10n.noPlaylists, style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary)),
                   )
                 : ListView.builder(
                     shrinkWrap: true,
@@ -135,7 +136,7 @@ class _AddManySheet extends ConsumerWidget {
                         onTap: () => addTo(p.id, p.name),
                         leading: AlbumArt(path: p.coverPath, seed: p.id * 7, size: 44, radius: AppRadius.md),
                         title: Text(p.name, style: AppTypography.titleSm),
-                        subtitle: Text('${p.trackCount} tracks', style: AppTypography.labelSm),
+                        subtitle: Text(l10n.trackCount(p.trackCount), style: AppTypography.labelSm),
                         trailing: const Icon(Icons.add_rounded, color: AppColors.textSecondary),
                       );
                     },

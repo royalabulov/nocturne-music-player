@@ -13,6 +13,7 @@ import '../../shared/track_sliver_list.dart';
 import '../player/player_providers.dart';
 import 'playlist_reorder_list.dart';
 import 'playlists_screen.dart';
+import '../../l10n/l10n.dart';
 
 class PlaylistDetailScreen extends ConsumerStatefulWidget {
   const PlaylistDetailScreen({super.key, required this.id});
@@ -70,11 +71,11 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                           ? TextButton.icon(
                               onPressed: () => setState(() => _reordering = false),
                               icon: const Icon(Icons.check_rounded, size: 18),
-                              label: const Text('Done'),
+                              label: Text(l10n.done),
                               style: TextButton.styleFrom(foregroundColor: AppColors.cyan),
                             )
                           : IconButton(
-                              tooltip: 'Reorder',
+                              tooltip: l10n.reorder,
                               onPressed: () => setState(() => _reordering = true),
                               icon: const Icon(Icons.swap_vert_rounded),
                               color: AppColors.textPrimary,
@@ -96,7 +97,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('PLAYLIST', style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
+                            Text(l10n.playlistLabel, style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
                             const SizedBox(height: 2),
                             Text(
                               playlist.name,
@@ -106,7 +107,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${playlist.trackCount} tracks • ${playlist.totalDuration.hm}',
+                              '${l10n.trackCount(playlist.trackCount)} • ${playlist.totalDuration.hm}',
                               style: AppTypography.labelSm,
                             ),
                           ],
@@ -122,14 +123,14 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                     children: [
                       _Pill(
                         icon: Icons.play_arrow_rounded,
-                        label: 'Play all',
+                        label: l10n.playAll,
                         primary: true,
                         onTap: tracks.isEmpty ? null : () => handler.playTracks(tracks),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       _Pill(
                         icon: Icons.shuffle_rounded,
-                        label: 'Shuffle',
+                        label: l10n.shuffle,
                         onTap: tracks.isEmpty ? null : () => handler.playTracks(tracks, shuffle: true),
                       ),
                     ],
@@ -144,8 +145,8 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
               TrackSliverList(
                 tracks: tracks,
                 emptyIcon: Icons.playlist_add_rounded,
-                emptyTitle: 'This playlist is empty',
-                emptyText: 'Long-press any track in Home → "Add to playlist".',
+                emptyTitle: l10n.playlistEmpty,
+                emptyText: l10n.playlistEmptyHint,
                 onRemove: (t) => repo.removeTrack(id, t.id),
               ),
             const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight)),

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import '../../l10n/l10n.dart';
 
 /// Error log kept inside the app (Settings → Diagnostics).
 ///
@@ -87,7 +88,7 @@ abstract final class CrashLog {
         parts.add('===== $name =====\n${await f.readAsString()}');
       }
     }
-    return parts.isEmpty ? 'No errors logged.' : parts.join('\n');
+    return parts.isEmpty ? l10n.noErrorsLogged : parts.join('\n');
   }
 
   static Future<void> clear() async {

@@ -83,6 +83,10 @@ final boolSettingProvider = StreamProvider.family<bool, String>(
   (ref, key) => ref.watch(libraryRepositoryProvider).watchSetting(key).map((v) => v != 'false'),
 );
 
+final stringSettingProvider = StreamProvider.family<String?, String>(
+  (ref, key) => ref.watch(libraryRepositoryProvider).watchSetting(key),
+);
+
 // ── history / playlists ───────────────────────────────────
 
 final historyRepositoryProvider = Provider<HistoryRepository>(

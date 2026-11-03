@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/di/providers.dart';
 import '../core/theme/app_colors.dart';
+import '../l10n/l10n.dart';
 
 /// Heart — writes to/removes from the favorites table. Each tile watches its own id.
 class FavoriteButton extends ConsumerWidget {
@@ -19,7 +20,7 @@ class FavoriteButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isFav = ref.watch(favoriteIdsProvider.select((s) => s.value?.contains(trackId) ?? false));
     return IconButton(
-      tooltip: isFav ? 'Remove from favorites' : 'Add to favorites',
+      tooltip: isFav ? l10n.removeFromFavorites : l10n.addToFavorites,
       onPressed: () => ref.read(libraryRepositoryProvider).toggleFavorite(trackId),
       iconSize: size,
       visualDensity: VisualDensity.compact,

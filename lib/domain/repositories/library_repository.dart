@@ -1,5 +1,6 @@
 import '../../core/constants.dart';
 import '../entities/track.dart';
+import '../../l10n/l10n.dart';
 
 /// Library statistics for the Home greeting.
 class LibraryStats {
@@ -44,15 +45,21 @@ class LibraryStats {
 }
 
 enum TrackSort {
-  recentlyAdded('Recently added'),
-  title('Title A–Z'),
-  artist('Artist'),
-  album('Album'),
-  longest('Longest first'),
-  shortest('Shortest first');
+  recentlyAdded,
+  title,
+  artist,
+  album,
+  longest,
+  shortest;
 
-  const TrackSort(this.label);
-  final String label;
+  String get label => switch (this) {
+        recentlyAdded => l10n.sortRecentlyAdded,
+        title => l10n.sortTitle,
+        artist => l10n.sortArtist,
+        album => l10n.sortAlbum,
+        longest => l10n.sortLongest,
+        shortest => l10n.sortShortest,
+      };
 }
 
 /// Which files show up in the library: size and length range

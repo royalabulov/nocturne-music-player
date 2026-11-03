@@ -12,6 +12,7 @@ import 'package:sonar/core/demo/demo_library.dart';
 import 'package:sonar/core/demo/demo_overrides.dart';
 import 'package:sonar/core/router/app_router.dart';
 import 'package:sonar/features/player/player_providers.dart';
+import 'package:sonar/l10n/l10n.dart';
 
 import '../player/fake_just_audio.dart';
 
@@ -28,11 +29,16 @@ void main() {
     }
   });
 
-  for (final scale in [1.3, 2.0]) {
-    testWidgets('no overflow at system font ${scale}x', (tester) async {
+  // Azerbaijani: longer words than English ("Sevimlilər", "Kitabxananı yenidən skan et")
+  for (final (lang, scale) in [('en', 1.3), ('en', 2.0), ('az', 1.0), ('az', 2.0)]) {
+    testWidgets('no overflow at system font ${scale}x ($lang)', (tester) async {
       tester.view.physicalSize = const Size(360, 740);
       tester.view.devicePixelRatio = 1;
       tester.platformDispatcher.textScaleFactorTestValue = scale;
+      tester.platformDispatcher.localeTestValue = Locale(lang);
+      tester.platformDispatcher.localesTestValue = [Locale(lang)];
+      addTearDown(tester.platformDispatcher.clearLocaleTestValue);
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       addTearDown(tester.view.reset);
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
@@ -64,12 +70,13 @@ void main() {
       expect(find.text(song), findsWidgets);
 
       // Each tab, scrolled to the bottom so every row gets laid out
+      final t = lookupL10n(Locale(lang));
       for (final (route, title) in [
         (Routes.home, 'Nocturne'),
-        (Routes.recent, 'Recent'),
-        (Routes.favorites, 'Favorites'),
-        (Routes.playlists, 'Playlists'),
-        (Routes.settings, 'Settings'),
+        (Routes.recent, t.recentTitle),
+        (Routes.favorites, t.navFavorites),
+        (Routes.playlists, t.navPlaylists),
+        (Routes.settings, t.settings),
       ]) {
         appRouter.go(route);
         await settle();

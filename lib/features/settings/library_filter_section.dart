@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../l10n/l10n.dart';
 
 /// Size: 0 – 2 MB in 50 KB steps. Right end = no upper limit.
 const _sizeMaxKb = 2000.0;
@@ -16,13 +17,13 @@ const _lenMaxSec = 300.0;
 const _lenStepSec = 5;
 
 String formatKb(double kb) {
-  if (kb >= _sizeMaxKb) return 'No limit';
+  if (kb >= _sizeMaxKb) return l10n.noLimit;
   if (kb >= 1000) return '${(kb / 1000).toStringAsFixed(kb % 1000 == 0 ? 0 : 1)} MB';
   return '${kb.round()} KB';
 }
 
 String formatSec(double s) {
-  if (s >= _lenMaxSec) return 'No limit';
+  if (s >= _lenMaxSec) return l10n.noLimit;
   final m = s ~/ 60, sec = (s % 60).round();
   return '$m:${sec.toString().padLeft(2, '0')}';
 }
@@ -81,23 +82,22 @@ class _LibraryFilterGroupState extends ConsumerState<LibraryFilterGroup> {
         children: [
           Row(
             children: [
-              Expanded(child: Text('Library filter', style: AppTypography.bodyMd)),
+              Expanded(child: Text(l10n.libraryFilter, style: AppTypography.bodyMd)),
               if (filter != TrackFilter.defaults)
                 GestureDetector(
                   onTap: () => ref.read(trackFilterProvider.notifier).reset(),
-                  child: Text('Reset', style: AppTypography.labelMd.copyWith(color: AppColors.cyan)),
+                  child: Text(l10n.reset, style: AppTypography.labelMd.copyWith(color: AppColors.cyan)),
                 ),
             ],
           ),
           const SizedBox(height: 2),
           Text(
-            'Only songs inside both ranges are shown. Hides voice notes, ringtones and half-downloaded files.'
-            '${shown == null ? '' : '  •  $shown songs shown'}',
+            l10n.libraryFilterHint + (shown == null ? '' : '  •  ${l10n.songsShown(shown)}'),
             style: AppTypography.labelSm.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.md),
           _RangeRow(
-            title: 'By size',
+            title: l10n.bySize,
             label: '${formatKb(size.start)} – ${formatKb(size.end)}',
             values: size,
             max: _sizeMaxKb,
@@ -108,12 +108,12 @@ class _LibraryFilterGroupState extends ConsumerState<LibraryFilterGroup> {
           ),
           const SizedBox(height: AppSpacing.sm),
           _RangeRow(
-            title: 'By length',
+            title: l10n.byLength,
             label: '${formatSec(length.start)} – ${formatSec(length.end)}',
             values: length,
             max: _lenMaxSec,
             divisions: _lenMaxSec ~/ _lenStepSec,
-            ends: const ('0 sec', '5 min+'),
+            ends: (l10n.zeroSec, l10n.fiveMinPlus),
             onChanged: (v) => setState(() => _length = v),
             onChangeEnd: (_) => _commit(),
           ),

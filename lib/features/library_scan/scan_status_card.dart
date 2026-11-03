@@ -8,6 +8,7 @@ import '../../core/theme/glass.dart';
 import '../../data/services/library_scanner.dart';
 import 'permission_gate.dart';
 import 'scan_controller.dart';
+import '../../l10n/l10n.dart';
 
 /// At the top of Home: "Allow access" without permission, progress during the first
 /// scan, "Scan now" when the library is empty. Draws nothing otherwise.
@@ -29,9 +30,9 @@ class ScanStatusCard extends ConsumerWidget {
       return _Card(
         child: _Action(
           icon: Icons.lock_outline_rounded,
-          title: 'Storage access blocked',
-          subtitle: 'Enable "Music and audio" for Nocturne in system settings',
-          button: 'Open settings',
+          title: l10n.storageBlocked,
+          subtitle: l10n.storageBlockedHint,
+          button: l10n.openSettings,
           onTap: ctrl.openSystemSettings,
         ),
       );
@@ -41,9 +42,9 @@ class ScanStatusCard extends ConsumerWidget {
       return _Card(
         child: _Action(
           icon: Icons.library_music_outlined,
-          title: 'Find your music',
-          subtitle: 'Nocturne needs access to audio files on this device',
-          button: 'Allow & scan',
+          title: l10n.findYourMusic,
+          subtitle: l10n.findYourMusicHint,
+          button: l10n.allowAndScan,
           onTap: ctrl.requestAndScan,
         ),
       );
@@ -54,9 +55,9 @@ class ScanStatusCard extends ConsumerWidget {
       return _Card(
         child: _Action(
           icon: Icons.radar_rounded,
-          title: err == null ? 'No tracks found yet' : 'Scan failed',
-          subtitle: err ?? 'Drop MP3/FLAC files into Music, Download or snaptube/download',
-          button: 'Scan now',
+          title: err == null ? l10n.noTracksYet : l10n.scanFailed,
+          subtitle: err ?? l10n.noTracksHint,
+          button: l10n.scanNow,
           onTap: ctrl.requestAndScan,
         ),
       );
@@ -86,9 +87,9 @@ class _Progress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = switch (p.phase) {
-      ScanPhase.enumerating => 'Looking for audio files…',
-      ScanPhase.reading => 'Reading tags  ${p.done}/${p.total}',
-      ScanPhase.finalizing => 'Finishing…',
+      ScanPhase.enumerating => l10n.lookingForFiles,
+      ScanPhase.reading => l10n.readingTagsSpaced(p.done, p.total),
+      ScanPhase.finalizing => l10n.finishing,
       _ => '',
     };
     final file = p.currentFile;

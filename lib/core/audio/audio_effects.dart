@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+import '../../l10n/l10n.dart';
 
 /// One EQ band reported by the device.
 class EqBand {
@@ -21,6 +22,21 @@ class EqPreset {
   final String name;
   final List<double> curve; // dB, 10 values
   final String? icon;
+
+  /// [name] is the id saved in the settings; this is what the screen shows.
+  String get label => switch (name) {
+        'Flat' => l10n.presetFlat,
+        'Bass Boost' => l10n.presetBassBoost,
+        'Vocal' => l10n.presetVocal,
+        'Treble' => l10n.presetTreble,
+        'Rock' => l10n.presetRock,
+        'Pop' => l10n.presetPop,
+        'Electronic' => l10n.presetElectronic,
+        'Headphones' => l10n.presetHeadphones,
+        'Speaker' => l10n.presetSpeaker,
+        'Custom' => l10n.presetCustom,
+        _ => name,
+      };
 
   static const freqs = [31.0, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 

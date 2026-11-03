@@ -119,10 +119,12 @@ final vibeResultsProvider = Provider<Map<int, VibeResult>?>((ref) {
 enum SmartGroupKind { mood, genre }
 
 class SmartGroup {
-  const SmartGroup({required this.kind, required this.id, required this.title, required this.emoji, required this.tracks});
+  const SmartGroup({required this.kind, required this.id, required this.emoji, required this.tracks});
   final SmartGroupKind kind;
   final String id; // Mood.name / Genre.name
-  final String title;
+  /// Read on every build, not stored: the groups outlive a language change.
+  String get title =>
+      kind == SmartGroupKind.mood ? Mood.values.byName(id).label : Genre.values.byName(id).label;
   final String emoji;
   final List<Track> tracks;
 
@@ -162,12 +164,12 @@ SmartGroups buildSmartGroups(List<Track> tracks, Map<int, VibeResult> vibes) {
     moods: [
       for (final m in Mood.values)
         if (byMood[m] case final l?)
-          SmartGroup(kind: SmartGroupKind.mood, id: m.name, title: m.label, emoji: m.emoji, tracks: l),
+          SmartGroup(kind: SmartGroupKind.mood, id: m.name, emoji: m.emoji, tracks: l),
     ],
     // Largest genre first
     genres: [
       for (final e in byGenre.entries)
-        SmartGroup(kind: SmartGroupKind.genre, id: e.key.name, title: e.key.label, emoji: e.key.emoji, tracks: e.value),
+        SmartGroup(kind: SmartGroupKind.genre, id: e.key.name, emoji: e.key.emoji, tracks: e.value),
     ]..sort((a, b) => b.tracks.length.compareTo(a.tracks.length)),
   );
 }

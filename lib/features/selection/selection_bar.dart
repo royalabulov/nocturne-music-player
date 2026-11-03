@@ -11,6 +11,7 @@ import '../../shared/delete_track.dart';
 import '../player/player_providers.dart';
 import '../playlists/add_to_playlist_sheet.dart';
 import 'track_selection.dart';
+import '../../l10n/l10n.dart';
 
 /// Replaces the mini player + dock at the bottom of the shell while multi-select is active.
 class SelectionBar extends ConsumerWidget {
@@ -48,16 +49,16 @@ class SelectionBar extends ConsumerWidget {
             Row(
               children: [
                 IconButton(
-                  tooltip: 'Cancel',
+                  tooltip: l10n.cancel,
                   onPressed: selector.clear,
                   icon: const Icon(Icons.close_rounded),
                   color: AppColors.textPrimary,
                 ),
-                Expanded(child: Text('$n selected', style: AppTypography.titleSm, maxLines: 1)),
+                Expanded(child: Text(l10n.selectedCount(n), style: AppTypography.titleSm, maxLines: 1)),
                 TextButton.icon(
                   onPressed: selector.toggleAll,
                   icon: Icon(sel.allSelected ? Icons.deselect_rounded : Icons.select_all_rounded, size: 18),
-                  label: Text(sel.allSelected ? 'Deselect all' : 'Select all'),
+                  label: Text(sel.allSelected ? l10n.deselectAll : l10n.selectAll),
                   style: TextButton.styleFrom(foregroundColor: AppColors.cyan),
                 ),
               ],
@@ -66,7 +67,7 @@ class SelectionBar extends ConsumerWidget {
               children: [
                 _Action(
                   icon: Icons.play_arrow_rounded,
-                  label: 'Play',
+                  label: l10n.play,
                   onTap: () {
                     ref.read(audioHandlerProvider).playTracks(tracks);
                     done(null);
@@ -74,15 +75,15 @@ class SelectionBar extends ConsumerWidget {
                 ),
                 _Action(
                   icon: Icons.queue_rounded,
-                  label: 'Queue',
+                  label: l10n.queueShort,
                   onTap: () {
                     ref.read(audioHandlerProvider).enqueue(tracks);
-                    done('Added $n to queue');
+                    done(l10n.addedToQueue(n));
                   },
                 ),
                 _Action(
                   icon: Icons.playlist_add_rounded,
-                  label: 'Playlist',
+                  label: l10n.playlistShort,
                   onTap: () {
                     showAddTracksToPlaylistSheet(context, tracks);
                     done(null);
@@ -90,26 +91,26 @@ class SelectionBar extends ConsumerWidget {
                 ),
                 _Action(
                   icon: allFav ? Icons.heart_broken_outlined : Icons.favorite_rounded,
-                  label: allFav ? 'Unfavorite' : 'Favorite',
+                  label: allFav ? l10n.unfavorite : l10n.favorite,
                   onTap: () async {
                     await ref.read(libraryRepositoryProvider).setFavorites([for (final t in tracks) t.id], !allFav);
-                    done(allFav ? 'Removed $n from favorites' : 'Added $n to favorites');
+                    done(allFav ? l10n.removedFromFavorites(n) : l10n.addedToFavorites(n));
                   },
                 ),
                 if (onRemove != null)
                   _Action(
                     icon: Icons.playlist_remove_rounded,
-                    label: 'Remove',
+                    label: l10n.remove,
                     onTap: () {
                       for (final t in tracks) {
                         onRemove(t);
                       }
-                      done('Removed $n from playlist');
+                      done(l10n.removedFromPlaylist(n));
                     },
                   ),
                 _Action(
                   icon: Icons.delete_outline_rounded,
-                  label: 'Delete',
+                  label: l10n.delete,
                   destructive: true,
                   onTap: () async {
                     // If declined, the selection stays — you can try again

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../di/providers.dart';
 import '../ui/toast.dart';
 import 'network_monitor.dart';
+import '../../l10n/l10n.dart';
 
 final networkMonitorProvider = Provider<NetworkMonitor>((_) => NetworkMonitor());
 
@@ -141,16 +142,16 @@ Future<void> toggleOnlineMode(WidgetRef ref) async {
   if (s.status == OnlineStatus.checking && !s.enabled) return; // check in progress
   if (s.enabled) {
     await ctrl.disable();
-    showToast('Offline mode — Nocturne won’t use the network');
+    showToast(l10n.toastOfflineMode);
     return;
   }
   switch (await ctrl.enable()) {
     case EnableResult.ok:
-      showToast('Online via ${ctrl.network.label}');
+      showToast(l10n.toastOnlineVia(ctrl.network.label));
     case EnableResult.noNetwork:
-      showToast('No connection. Turn on Wi‑Fi or mobile data first.');
+      showToast(l10n.toastNoConnection);
     case EnableResult.noInternet:
-      showToast('Connected, but there’s no internet. Staying offline.');
+      showToast(l10n.toastNoInternet);
     case EnableResult.cancelled:
       break;
   }

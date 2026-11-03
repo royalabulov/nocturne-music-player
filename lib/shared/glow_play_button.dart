@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/theme/glass.dart';
+import '../l10n/l10n.dart';
 
 /// Round play button. [filled] = primary orb (gradient + glow),
 /// otherwise the outline variant (in lists).
@@ -24,7 +25,7 @@ class GlowPlayButton extends StatelessWidget {
     // A bare GestureDetector has no name for TalkBack → label it, no visual change
     return Semantics(
       button: true,
-      label: playing ? 'Pause' : 'Play',
+      label: playing ? l10n.pause : l10n.play,
       child: GestureDetector(
         onTap: onTap,
         child: Container(

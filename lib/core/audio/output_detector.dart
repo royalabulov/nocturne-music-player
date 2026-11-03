@@ -1,16 +1,25 @@
 // ignore_for_file: experimental_member_use
 import 'package:audio_session/audio_session.dart';
 import 'package:rxdart/rxdart.dart';
+import '../../l10n/l10n.dart';
 
 /// Output type. Auto EQ preset + the Settings "Output" row.
 enum OutputKind {
-  headphones('Wired headphones', 'WIRED'),
-  bluetooth('Bluetooth', 'BT'),
-  speaker('Phone speaker', 'SPEAKER');
+  headphones,
+  bluetooth,
+  speaker;
 
-  const OutputKind(this.label, this.chip);
-  final String label;
-  final String chip;
+  String get chip => switch (this) {
+        headphones => l10n.chipWired,
+        bluetooth => l10n.chipBluetooth,
+        speaker => l10n.chipSpeaker,
+      };
+
+  String get label => switch (this) {
+        headphones => l10n.outputWired,
+        bluetooth => l10n.outputBluetooth,
+        speaker => l10n.outputSpeaker,
+      };
 }
 
 class OutputDetector {

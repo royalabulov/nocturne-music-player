@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../../domain/repositories/analysis_repository.dart';
 import 'vibe_classifier.dart';
+import '../../l10n/l10n.dart';
 
 /// "Check groups": user answers → corrections + an accuracy measure.
 
@@ -16,12 +17,12 @@ Genre? genreOf(String key) => Genre.values.where((g) => g.name == key).firstOrNu
 
 String moodTitle(String key) => switch (moodOf(key)) {
       final m? => '${m.emoji} ${m.label}',
-      null => 'No clear mood',
+      null => l10n.noClearMood,
     };
 
 String genreTitle(String key) => switch (genreOf(key)) {
       final g? => '${g.emoji} ${g.label}',
-      null => 'Other / none',
+      null => l10n.otherNone,
     };
 
 /// The user's answer overrides the prediction (manual correction).

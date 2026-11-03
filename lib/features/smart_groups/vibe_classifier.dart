@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import '../../domain/repositories/analysis_repository.dart';
+import '../../l10n/l10n.dart';
 
 /// Smart groups: mood and genre groups.
 ///
@@ -13,33 +14,53 @@ import '../../domain/repositories/analysis_repository.dart';
 /// mood it stands out in most (if it stands out in none, it stays ungrouped).
 
 enum Mood {
-  sad('Sad & Melancholic', '😢'),
-  calm('Calm & Chill', '🌙'),
-  happy('Happy & Upbeat', '😊'),
-  energetic('Energetic', '⚡');
+  sad('😢'),
+  calm('🌙'),
+  happy('😊'),
+  energetic('⚡');
 
-  const Mood(this.label, this.emoji);
-  final String label;
+  const Mood(this.emoji);
   final String emoji;
+
+  String get label => switch (this) {
+        sad => l10n.moodSad,
+        calm => l10n.moodCalm,
+        happy => l10n.moodHappy,
+        energetic => l10n.moodEnergetic,
+      };
 }
 
 enum Genre {
-  hipHop('Rap & Hip-Hop', '🎤'),
-  pop('Pop', '🎧'),
-  rock('Rock & Metal', '🎸'),
-  electronic('Electronic & Dance', '🎛️'),
-  rnb('R&B & Soul', '💜'),
-  jazz('Jazz & Blues', '🎷'),
-  classical('Classical', '🎻'),
-  eastern('Eastern & Traditional', '🪕'),
-  folk('Folk & Country', '🌾'),
-  latin('Latin & World', '🌴'),
-  ambient('Ambient', '☁️'),
-  soundtrack('Soundtrack', '🎬');
+  hipHop('🎤'),
+  pop('🎧'),
+  rock('🎸'),
+  electronic('🎛️'),
+  rnb('💜'),
+  jazz('🎷'),
+  classical('🎻'),
+  eastern('🪕'),
+  folk('🌾'),
+  latin('🌴'),
+  ambient('☁️'),
+  soundtrack('🎬');
 
-  const Genre(this.label, this.emoji);
-  final String label;
+  const Genre(this.emoji);
   final String emoji;
+
+  String get label => switch (this) {
+        hipHop => l10n.genreHipHop,
+        pop => l10n.genrePop,
+        rock => l10n.genreRock,
+        electronic => l10n.genreElectronic,
+        rnb => l10n.genreRnb,
+        jazz => l10n.genreJazz,
+        classical => l10n.genreClassical,
+        eastern => l10n.genreEastern,
+        folk => l10n.genreFolk,
+        latin => l10n.genreLatin,
+        ambient => l10n.genreAmbient,
+        soundtrack => l10n.genreSoundtrack,
+      };
 }
 
 class VibeResult {

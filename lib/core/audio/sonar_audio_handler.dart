@@ -8,6 +8,7 @@ import 'package:rxdart/rxdart.dart';
 
 import '../../domain/entities/track.dart';
 import 'audio_effects.dart';
+import '../../l10n/l10n.dart';
 
 /// Two just_audio players (A/B) take turns:
 /// one plays while the other preloads the next track and waits.
@@ -339,12 +340,12 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   static const _cycleModeAction = 'cycleMode';
 
   MediaControl _modeControl() => switch (playMode) {
-        PlayMode.sequential => const MediaControl(
-            androidIcon: 'drawable/ic_mode_sequential', label: 'In order', action: MediaAction.custom, customAction: CustomMediaAction(name: _cycleModeAction)),
-        PlayMode.repeatOne => const MediaControl(
-            androidIcon: 'drawable/ic_mode_repeat_one', label: 'Repeat one', action: MediaAction.custom, customAction: CustomMediaAction(name: _cycleModeAction)),
-        PlayMode.shuffle => const MediaControl(
-            androidIcon: 'drawable/ic_mode_shuffle', label: 'Shuffle', action: MediaAction.custom, customAction: CustomMediaAction(name: _cycleModeAction)),
+        PlayMode.sequential => MediaControl(
+            androidIcon: 'drawable/ic_mode_sequential', label: l10n.modeInOrder, action: MediaAction.custom, customAction: CustomMediaAction(name: _cycleModeAction)),
+        PlayMode.repeatOne => MediaControl(
+            androidIcon: 'drawable/ic_mode_repeat_one', label: l10n.modeRepeatOne, action: MediaAction.custom, customAction: CustomMediaAction(name: _cycleModeAction)),
+        PlayMode.shuffle => MediaControl(
+            androidIcon: 'drawable/ic_mode_shuffle', label: l10n.shuffle, action: MediaAction.custom, customAction: CustomMediaAction(name: _cycleModeAction)),
       };
 
   

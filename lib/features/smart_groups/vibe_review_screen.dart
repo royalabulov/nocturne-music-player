@@ -15,6 +15,7 @@ import '../player/player_providers.dart';
 import 'smart_groups.dart';
 import 'vibe_classifier.dart';
 import 'vibe_review.dart';
+import '../../l10n/l10n.dart';
 
 const _sampleSize = 40;
 const _all = (sort: TrackSort.recentlyAdded, query: '');
@@ -106,10 +107,10 @@ class _VibeReviewScreenState extends ConsumerState<VibeReviewScreen> {
       final byId = {for (final t in tracks) t.id: t};
       final queue = _queue!.where(byId.containsKey).toList();
       if (queue.isEmpty && labels.isEmpty) {
-        body = const _Message(
+        body = _Message(
           icon: Icons.hourglass_top_rounded,
-          title: 'Not enough analyzed songs yet',
-          text: 'Let Nocturne finish analyzing your library (Menu → Your Vibes), then come back.',
+          title: l10n.notEnoughAnalyzed,
+          text: l10n.notEnoughAnalyzedHint,
         );
       } else if (_i >= queue.length) {
         body = _Results(
@@ -154,7 +155,7 @@ class _VibeReviewScreenState extends ConsumerState<VibeReviewScreen> {
                   icon: const Icon(Icons.arrow_back_rounded),
                   color: AppColors.textPrimary,
                 ),
-                Expanded(child: Text('Check smart groups', style: AppTypography.headlineMd)),
+                Expanded(child: Text(l10n.checkSmartGroups, style: AppTypography.headlineMd)),
               ],
             ),
             Expanded(child: body),
@@ -198,11 +199,10 @@ class _ReviewCard extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 0, AppSpacing.screenH, AppSpacing.xxl),
       children: [
-        Text('Song $position of $total', style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
+        Text(l10n.songPosition(position, total), style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
         if (report != null)
           Text(
-            'So far: mood ${_pct(report!.moodAccuracy)} • genre ${_pct(report!.genreAccuracy)} '
-            '(${report!.total} answers)',
+            l10n.soFar(_pct(report!.moodAccuracy), _pct(report!.genreAccuracy), report!.total),
             style: AppTypography.labelSm,
           ),
         const SizedBox(height: AppSpacing.xs),
@@ -228,7 +228,7 @@ class _ReviewCard extends StatelessWidget {
                   Text(track.artist, style: AppTypography.bodySm, maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: AppSpacing.xs),
                   _Chip(
-                    label: clipPlaying ? 'Pause' : 'Play a clip',
+                    label: clipPlaying ? l10n.pause : l10n.playAClip,
                     icon: clipPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                     selected: false,
                     onTap: onPlay,
@@ -244,14 +244,14 @@ class _ReviewCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('AI GUESSED', style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
+              Text(l10n.aiGuessed, style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
               const SizedBox(height: 4),
               Text('${moodTitle(predictedMood)}  •  ${genreTitle(predictedGenre)}', style: AppTypography.titleSm),
             ],
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        Text('What mood is it really?', style: AppTypography.titleSm),
+        Text(l10n.whatMood, style: AppTypography.titleSm),
         const SizedBox(height: AppSpacing.xs),
         Wrap(
           spacing: AppSpacing.xs,
@@ -262,7 +262,7 @@ class _ReviewCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
-        Text('And the genre?', style: AppTypography.titleSm),
+        Text(l10n.andGenre, style: AppTypography.titleSm),
         const SizedBox(height: AppSpacing.xs),
         Wrap(
           spacing: AppSpacing.xs,
@@ -282,12 +282,12 @@ class _ReviewCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           ),
           icon: Icon(correct ? Icons.check_rounded : Icons.edit_rounded, size: 18),
-          label: Text(correct ? 'AI is right — next' : 'Save correction'),
+          label: Text(correct ? l10n.aiIsRight : l10n.saveCorrection),
         ),
         const SizedBox(height: AppSpacing.xs),
         TextButton(
           onPressed: onSkip,
-          child: Text("Don't know this song — skip",
+          child: Text(l10n.dontKnowSkip,
               style: AppTypography.labelMd.copyWith(color: AppColors.textSecondary)),
         ),
       ],
@@ -309,32 +309,32 @@ class _Results extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 0, AppSpacing.screenH, AppSpacing.xxl),
       children: [
-        Text('RESULTS', style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
+        Text(l10n.resultsCaps, style: AppTypography.labelSm.copyWith(color: AppColors.cyan)),
         Text(
-          'Based on ${report.total} answers${answeredNow > 0 ? ' ($answeredNow just now)' : ''}',
+          l10n.basedOnAnswers(report.total) + (answeredNow > 0 ? l10n.justNowCount(answeredNow) : ''),
           style: AppTypography.bodySm,
         ),
         const SizedBox(height: AppSpacing.md),
         // Main number = current model; the result at answer time below, for comparison
         Row(
           children: [
-            Expanded(child: _Score(title: 'Mood', value: current.moodAccuracy, ok: current.moodCorrect, n: current.total)),
+            Expanded(child: _Score(title: l10n.mood, value: current.moodAccuracy, ok: current.moodCorrect, n: current.total)),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(child: _Score(title: 'Genre', value: current.genreAccuracy, ok: current.genreCorrect, n: current.total)),
+            Expanded(child: _Score(title: l10n.genre, value: current.genreAccuracy, ok: current.genreCorrect, n: current.total)),
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'When you checked: mood ${_pct(report.moodAccuracy)} • genre ${_pct(report.genreAccuracy)}',
+          l10n.whenYouChecked(_pct(report.moodAccuracy), _pct(report.genreAccuracy)),
           style: AppTypography.labelSm.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: AppSpacing.lg),
-        _Errors(title: 'Most common mood mistakes', errors: current.moodErrors, name: moodTitle),
+        _Errors(title: l10n.commonMoodMistakes, errors: current.moodErrors, name: moodTitle),
         const SizedBox(height: AppSpacing.md),
-        _Errors(title: 'Most common genre mistakes', errors: current.genreErrors, name: genreTitle),
+        _Errors(title: l10n.commonGenreMistakes, errors: current.genreErrors, name: genreTitle),
         const SizedBox(height: AppSpacing.lg),
         Text(
-          'Your answers are kept as corrections — those songs now sit in the groups you chose.',
+          l10n.answersKept,
           style: AppTypography.labelSm.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: AppSpacing.lg),
@@ -342,7 +342,7 @@ class _Results extends StatelessWidget {
           onPressed: onMore,
           style: FilledButton.styleFrom(backgroundColor: AppColors.electric, foregroundColor: Colors.white),
           icon: const Icon(Icons.refresh_rounded, size: 18),
-          label: const Text('Check more songs'),
+          label: Text(l10n.checkMoreSongs),
         ),
       ],
     );
@@ -367,7 +367,7 @@ class _Score extends StatelessWidget {
         children: [
           Text(title, style: AppTypography.labelMd),
           Text(_pct(value), style: AppTypography.headlineXl.copyWith(color: color)),
-          Text('$ok of $n correct', style: AppTypography.labelSm),
+          Text(l10n.correctOf(ok, n), style: AppTypography.labelSm),
         ],
       ),
     );
@@ -389,12 +389,12 @@ class _Errors extends StatelessWidget {
         children: [
           Text(title, style: AppTypography.titleSm),
           const SizedBox(height: AppSpacing.xs),
-          if (errors.isEmpty) Text('None 🎉', style: AppTypography.bodySm),
+          if (errors.isEmpty) Text(l10n.noneParty, style: AppTypography.bodySm),
           for (final e in errors.take(5))
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                'AI said ${name(e.predicted)} → really ${name(e.actual)}  ·  ${e.count}×',
+                l10n.aiSaidReally(name(e.predicted), name(e.actual), e.count),
                 style: AppTypography.bodySm,
               ),
             ),

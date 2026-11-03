@@ -3,16 +3,22 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import '../../l10n/l10n.dart';
 
 enum NetworkKind {
-  none('No connection'),
-  wifi('Wi‑Fi'),
-  mobile('Mobile data'),
-  ethernet('Ethernet'),
-  other('Network');
+  none,
+  wifi,
+  mobile,
+  ethernet,
+  other;
 
-  const NetworkKind(this.label);
-  final String label;
+  String get label => switch (this) {
+        none => l10n.networkNone,
+        wifi => l10n.networkWifi,
+        mobile => l10n.networkMobile,
+        ethernet => l10n.networkEthernet,
+        other => l10n.networkOther,
+      };
 }
 
 /// The phone's network state: which connection is up + whether the internet is really reachable.

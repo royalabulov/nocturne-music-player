@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_typography.dart';
+import '../l10n/l10n.dart';
 
 /// Shared bottom sheet shell: handle + title + content.
 Future<T?> showSonarSheet<T>(
@@ -113,7 +114,7 @@ Future<String?> showNameDialog(
   BuildContext context, {
   required String title,
   String initial = '',
-  String hint = 'Name',
+  String? hint,
 }) {
   final ctrl = TextEditingController(text: initial);
   return showDialog<String>(
@@ -129,7 +130,7 @@ Future<String?> showNameDialog(
         cursorColor: AppColors.cyan,
         textCapitalization: TextCapitalization.sentences,
         decoration: InputDecoration(
-          hintText: hint,
+          hintText: hint ?? l10n.name,
           hintStyle: AppTypography.bodyMd.copyWith(color: AppColors.textMuted),
           filled: true,
           fillColor: AppColors.surfaceContainer,
@@ -138,11 +139,11 @@ Future<String?> showNameDialog(
         onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
         FilledButton(
           onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
           style: FilledButton.styleFrom(backgroundColor: AppColors.electric),
-          child: const Text('Save'),
+          child: Text(l10n.save),
         ),
       ],
     ),

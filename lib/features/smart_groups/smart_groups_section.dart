@@ -8,6 +8,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
 import '../../domain/repositories/analysis_repository.dart';
 import 'smart_groups.dart';
+import '../../l10n/l10n.dart';
 
 /// Side menu → "Your Vibes": mood cards + genre chips. Used to be a section
 /// on Home; moved to its own screen because Home was too crowded.
@@ -44,9 +45,9 @@ class VibesScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Your Vibes', style: AppTypography.headlineXl),
+                      Text(l10n.menuYourVibes, style: AppTypography.headlineXl),
                       const SizedBox(height: AppSpacing.xxs),
-                      Text('Your songs sorted by mood and genre — worked out on this phone.',
+                      Text(l10n.vibesSubtitle,
                           style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary)),
                     ],
                   ),
@@ -59,10 +60,10 @@ class VibesScreen extends ConsumerWidget {
                 if (empty && !running)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
-                    child: Text('Smart grouping is off. Turn it on in Settings → Smart analysis.',
+                    child: Text(l10n.smartGroupingOff,
                         style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary)),
                   ),
-                if (groups != null && groups.moods.isNotEmpty) const _Label('Moods'),
+                if (groups != null && groups.moods.isNotEmpty) _Label(l10n.moods),
               ],
             ),
             if (groups != null && groups.moods.isNotEmpty)
@@ -80,7 +81,7 @@ class VibesScreen extends ConsumerWidget {
               children: [
                 if (groups != null && groups.genres.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.xl),
-                  const _Label('Genres'),
+                  _Label(l10n.genres),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
                     child: Wrap(
@@ -135,9 +136,9 @@ class _AccuracyCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Check accuracy', style: AppTypography.titleSm),
+                Text(l10n.checkAccuracy, style: AppTypography.titleSm),
                 const SizedBox(height: 2),
-                Text('Rate a few songs to see how well the grouping works',
+                Text(l10n.rateAFewSongs,
                     style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary)),
               ],
             ),
@@ -162,7 +163,7 @@ class _AnalyzingBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Listening to your songs on this device to sort them by mood and genre…',
+            l10n.analyzingHint,
             style: AppTypography.labelSm.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -253,7 +254,7 @@ class _MoodCard extends StatelessWidget {
                     style: AppTypography.titleSm.copyWith(color: Colors.white, height: 1.15),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis),
-                Text('${group.tracks.length} tracks',
+                Text(l10n.trackCount(group.tracks.length),
                     style: AppTypography.labelSm.copyWith(color: Colors.white70)),
               ],
             ),

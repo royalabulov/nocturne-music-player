@@ -29,15 +29,17 @@ import '../smart_groups/smart_groups.dart';
 import '../smart_groups/vibe_classifier.dart';
 import '../smart_groups/vibe_export.dart';
 import '../smart_groups/vibe_review.dart';
+import '../../shared/sort_sheet.dart';
 import 'library_filter_section.dart';
 import 'settings_controller.dart';
+import '../../l10n/l10n.dart';
 
 /// Storage qrupu → ScanController, Audio qrupu → AudioSettingsController.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   /// Big title here and in the compact bar (CollapsingTitle) after scrolling.
-  static const title = 'Settings';
+  static String get title => l10n.settings;
 
   @override
   Widget build(BuildContext context) {
@@ -47,33 +49,32 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight),
         children: [
           const SizedBox(height: AppSpacing.md),
-          const PageTitle(SettingsScreen.title),
+          PageTitle(SettingsScreen.title),
           const SizedBox(height: AppSpacing.sm),
 
           // Most used first (design review, 2026-11-02)
-          const _GroupTitle('Library'),
+          _GroupTitle(l10n.library),
           const _StorageGroup(),
 
-          const _GroupTitle('Smart groups'),
+          _GroupTitle(l10n.groupSmartGroups),
           const _SmartGroup(),
 
-          const _GroupTitle('Playback'),
+          _GroupTitle(l10n.groupPlayback),
           const _AudioGroup(),
 
-          const _GroupTitle('Network'),
+          _GroupTitle(l10n.groupNetwork),
           const _NetworkGroup(),
 
-          const _GroupTitle('Backup & data'),
+          _GroupTitle(l10n.language),
+          const _LanguageGroup(),
+
+          _GroupTitle(l10n.groupBackup),
           const _DataGroup(),
 
-          const _GroupTitle('About'),
-          const _Group(children: [
-            _InfoRow(title: 'Nocturne', subtitle: 'Version $kAppVersion'),
-            _InfoRow(
-              title: 'Privacy',
-              subtitle: 'No accounts, no analytics. Your music never leaves this device; '
-                  'the network is used only while Online mode is on.',
-            ),
+          _GroupTitle(l10n.groupAbout),
+          _Group(children: [
+            _InfoRow(title: 'Nocturne', subtitle: l10n.versionLabel(kAppVersion)),
+            _InfoRow(title: l10n.privacy, subtitle: l10n.privacyText),
           ]),
         ],
       ),
@@ -87,12 +88,12 @@ class _StorageGroup extends ConsumerWidget {
   const _StorageGroup();
 
   static String _fmt(DateTime? d) {
-    if (d == null) return 'never';
+    if (d == null) return l10n.agoNever;
     final diff = DateTime.now().difference(d);
-    if (diff.inMinutes < 1) return 'just now';
-    if (diff.inHours < 1) return '${diff.inMinutes} min ago';
-    if (diff.inDays < 1) return '${diff.inHours} h ago';
-    return '${diff.inDays} d ago';
+    if (diff.inMinutes < 1) return l10n.agoJustNow;
+    if (diff.inHours < 1) return l10n.agoMinutesShort(diff.inMinutes);
+    if (diff.inDays < 1) return l10n.agoHoursShort(diff.inHours);
+    return l10n.agoDaysShort(diff.inDays);
   }
 
   /// /storage/emulated/0/snaptube/download → snaptube/download
@@ -109,8 +110,8 @@ class _StorageGroup extends ConsumerWidget {
 
     final p = scan.progress;
     final scanSubtitle = scan.isRunning
-        ? (p.total == 0 ? 'Scanning…' : 'Reading tags ${p.done}/${p.total}')
-        : 'Last scan: ${_fmt(stats.lastScanAt)} • ${stats.trackCount} tracks';
+        ? (p.total == 0 ? l10n.scanning : l10n.readingTags(p.done, p.total))
+        : l10n.lastScan(_fmt(stats.lastScanAt), l10n.trackCount(stats.trackCount));
 
     return _Group(children: [
       // Scan folders — each row: toggle + remove
@@ -122,14 +123,14 @@ class _StorageGroup extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Scan folders', style: AppTypography.bodyMd),
+                  Text(l10n.scanFolders, style: AppTypography.bodyMd),
                   const SizedBox(height: 2),
-                  Text('Nocturne looks for audio files in these folders',
+                  Text(l10n.scanFoldersHint,
                       style: AppTypography.labelSm.copyWith(color: AppColors.textSecondary)),
                 ],
               ),
             ),
-            _SmallButton(label: 'Add', icon: Icons.create_new_folder_outlined, onTap: ctrl.pickAndAddFolder),
+            _SmallButton(label: l10n.add, icon: Icons.create_new_folder_outlined, onTap: ctrl.pickAndAddFolder),
           ],
         ),
       ),
@@ -161,11 +162,11 @@ class _StorageGroup extends ConsumerWidget {
         ),
       const SizedBox(height: AppSpacing.xs),
       _InfoRow(
-        title: 'Rescan library',
+        title: l10n.rescanLibrary,
         subtitle: scanSubtitle,
         subtitleAccent: scan.isRunning,
         trailing: _SmallButton(
-          label: scan.isRunning ? 'Scanning' : 'Rescan',
+          label: scan.isRunning ? l10n.scanningShort : l10n.rescan,
           icon: Icons.radar_rounded,
           primary: !scan.isRunning,
           onTap: scan.isRunning ? null : ctrl.requestAndScan,
@@ -173,17 +174,17 @@ class _StorageGroup extends ConsumerWidget {
       ),
       // Pick individual files to add → copied to Music/Sonar
       _InfoRow(
-        title: 'Import audio files',
-        subtitle: 'Pick songs from anywhere — copied to Music/Sonar',
+        title: l10n.importAudioFiles,
+        subtitle: l10n.importHint,
         trailing: _SmallButton(
-          label: 'Import',
+          label: l10n.import,
           icon: Icons.library_add_rounded,
           onTap: scan.isRunning ? null : () => ref.read(audioImportProvider).pickAndImport(),
         ),
       ),
       _ToggleRow(
-        title: 'Auto-scan on launch',
-        subtitle: 'Check local folders for newly added tracks',
+        title: l10n.autoScan,
+        subtitle: l10n.autoScanHint,
         value: autoScan,
         onChanged: (v) => repo.setSetting('autoScan', '$v'),
       ),
@@ -202,30 +203,30 @@ class _SmartGroup extends ConsumerWidget {
     final running = ref.watch(smartAnalysisProvider);
     final p = ref.watch(analysisProgressProvider).value ?? AnalysisProgress.empty;
     final subtitle = !enabled
-        ? 'Off — moods & genres use file tags only'
+        ? l10n.analysisOff
         : running
-            ? 'Analyzing ${p.done}/${p.total} songs on this device…'
-            : 'Analyzed ${p.done}/${p.total} • works fully offline';
+            ? l10n.analysisRunning(p.done, p.total)
+            : l10n.analysisDone(p.done, p.total);
     final labels = ref.watch(vibeLabelsProvider).value ?? const <VibeLabel>[];
     // The current model against your answers (changes after re-analysis)
     final predicted = ref.watch(vibePredictionsProvider).value ?? const <int, VibeResult>{};
     final report = currentAccuracy(labels, predicted);
     return _Group(children: [
       _ToggleRow(
-        title: 'Mood & genre analysis',
+        title: l10n.moodGenreAnalysis,
         subtitle: subtitle,
         value: enabled,
         onChanged: ref.read(smartAnalysisProvider.notifier).setEnabled,
       ),
       _InfoRow(
-        title: 'Check accuracy',
+        title: l10n.checkAccuracy,
         subtitle: report.total == 0
-            ? 'Rate 40 songs to measure how accurate the groups are'
-            : 'Accuracy from ${report.total} answers: mood ${(report.moodAccuracy * 100).round()}% • '
-                'genre ${(report.genreAccuracy * 100).round()}%',
+            ? l10n.accuracyHint
+            : l10n.accuracyReport(
+                report.total, (report.moodAccuracy * 100).round(), (report.genreAccuracy * 100).round()),
         subtitleAccent: report.total > 0,
         trailing: _SmallButton(
-          label: 'Check',
+          label: l10n.check,
           icon: Icons.fact_check_outlined,
           onTap: () => context.push(kVibeReviewRoute),
         ),
@@ -244,17 +245,17 @@ class _NetworkGroup extends ConsumerWidget {
     final s = ref.watch(onlineModeProvider);
     final checking = s.status == OnlineStatus.checking;
     final subtitle = switch (s.status) {
-      OnlineStatus.offline => 'Off — Nocturne never touches the network',
-      OnlineStatus.checking => 'Checking connection…',
-      OnlineStatus.online => 'Connected via ${s.network.label}',
+      OnlineStatus.offline => l10n.onlineOffDesc,
+      OnlineStatus.checking => l10n.checkingConnection,
+      OnlineStatus.online => l10n.connectedVia(s.network.label),
       OnlineStatus.noInternet => s.network == NetworkKind.none
-          ? 'Waiting for Wi‑Fi or mobile data…'
-          : '${s.network.label} connected, but no internet — retrying',
+          ? l10n.waitingForNetwork
+          : l10n.connectedNoInternet(s.network.label),
     };
 
     return _Group(children: [
       _InfoRow(
-        title: 'Online mode',
+        title: l10n.onlineMode,
         subtitle: subtitle,
         subtitleAccent: s.enabled,
         trailing: Switch(
@@ -265,14 +266,50 @@ class _NetworkGroup extends ConsumerWidget {
       ),
       if (s.status == OnlineStatus.noInternet && s.network != NetworkKind.none)
         _InfoRow(
-          title: 'Check again',
-          subtitle: 'Re-test the internet connection now',
+          title: l10n.checkAgain,
+          subtitle: l10n.checkAgainHint,
           trailing: _SmallButton(
-            label: 'Retry',
+            label: l10n.retry,
             icon: Icons.refresh_rounded,
             onTap: () => ref.read(onlineModeProvider.notifier).recheck(),
           ),
         ),
+    ]);
+  }
+}
+
+// ───────────────────────── language ─────────────────────────
+
+/// Phone language / English / Azərbaycanca. Language names are written in
+/// their own language, so anyone can find theirs.
+class _LanguageGroup extends ConsumerWidget {
+  const _LanguageGroup();
+
+  static String _label(String v) => switch (v) {
+        'en' => 'English',
+        'az' => 'Azərbaycanca',
+        _ => l10n.languageSystem,
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(stringSettingProvider(kLanguageKey)).value ?? 'system';
+    return _Group(children: [
+      InkWell(
+        onTap: () async {
+          final picked = await showSortSheet(context,
+              title: l10n.language, values: kLanguages, current: current, label: _label);
+          if (picked != null && picked != current) {
+            await ref.read(libraryRepositoryProvider).setSetting(kLanguageKey, picked);
+          }
+        },
+        child: _InfoRow(
+          title: l10n.appLanguage,
+          subtitle: _label(current),
+          subtitleAccent: true,
+          trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+        ),
+      ),
     ]);
   }
 }
@@ -294,7 +331,7 @@ class _GroupTitle extends StatelessWidget {
       child: Semantics(
         header: true,
         child: Text(
-          title.toUpperCase(),
+          upper(title),
           style: AppTypography.labelXs.copyWith(color: AppColors.textMuted, letterSpacing: 1.2),
         ),
       ),
@@ -471,13 +508,13 @@ class _AudioGroup extends ConsumerWidget {
 
     return _Group(children: [
       _InfoRow(
-        title: 'Output',
-        subtitle: '${output.label} • auto-detected',
+        title: l10n.output,
+        subtitle: l10n.outputAutoDetected(output.label),
         trailing: CodecChip(output.chip),
       ),
       _ToggleRow(
-        title: 'Auto EQ preset by output',
-        subtitle: 'Headphones / Bluetooth / Speaker',
+        title: l10n.autoEqPreset,
+        subtitle: l10n.autoEqPresetHint,
         value: s.autoPreset,
         onChanged: ctrl.setAutoPreset,
       ),
@@ -485,17 +522,18 @@ class _AudioGroup extends ConsumerWidget {
       InkWell(
         onTap: () => context.push('/settings/eq'),
         child: _InfoRow(
-          title: 'Equalizer & Bass Boost',
+          title: l10n.eqAndBass,
           subtitle: s.eqEnabled
-              ? 'Preset: ${preset.name}${s.bassBoost > 0 ? ' • Bass +${(s.bassBoost * 100).round()}%' : ''}'
-              : 'Off',
+              ? l10n.eqPresetLine(preset.label) +
+                  (s.bassBoost > 0 ? l10n.eqBassSuffix((s.bassBoost * 100).round()) : '')
+              : l10n.off,
           subtitleAccent: s.eqEnabled,
           trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
         ),
       ),
       _ToggleRow(
-        title: 'Crossfade',
-        subtitle: 'Fade into the next track as the current one ends',
+        title: l10n.crossfade,
+        subtitle: l10n.crossfadeHint,
         value: s.crossfade,
         onChanged: ctrl.setCrossfade,
       ),
@@ -503,19 +541,19 @@ class _AudioGroup extends ConsumerWidget {
         duration: const Duration(milliseconds: 200),
         child: s.crossfade
             ? _SliderRow(
-                title: 'Crossfade duration',
-                valueLabel: '${s.crossfadeSec.toStringAsFixed(1)}s',
+                title: l10n.crossfadeDuration,
+                valueLabel: l10n.seconds(s.crossfadeSec.toStringAsFixed(1)),
                 value: s.crossfadeSec,
                 min: 1,
                 max: 12,
                 onChanged: ctrl.setCrossfadeSec,
-                labels: const ['1s', '6s', '12s'],
+                labels: [l10n.seconds('1'), l10n.seconds('6'), l10n.seconds('12')],
               )
             : const SizedBox.shrink(),
       ),
       _ToggleRow(
-        title: 'Volume normalization (ReplayGain)',
-        subtitle: 'Evens out loudness between tracks (needs ReplayGain tags in the file)',
+        title: l10n.replayGain,
+        subtitle: l10n.replayGainHint,
         value: s.replayGain,
         onChanged: ctrl.setReplayGain,
       ),
@@ -546,12 +584,12 @@ class _DataGroup extends ConsumerWidget {
         fileName: name,
         bytes: utf8.encode(json),
         mimeType: 'application/json',
-        dialogTitle: 'Save Nocturne backup',
+        dialogTitle: l10n.saveBackupDialog,
       );
-      if (context.mounted && uri != null) _toast(context, 'Backup saved');
+      if (context.mounted && uri != null) _toast(context, l10n.backupSaved);
     } catch (e) {
       debugPrint('backup failed: $e');
-      if (context.mounted) _toast(context, 'Backup failed: $e');
+      if (context.mounted) _toast(context, l10n.backupFailed('$e'));
     }
   }
 
@@ -560,7 +598,7 @@ class _DataGroup extends ConsumerWidget {
     // Timeout: if the stream stays empty, the button shouldn't silently "do nothing".
     const limit = Duration(seconds: 20);
     void step(String s) => debugPrint('vibe export: $s');
-    showToast('Preparing export…');
+    showToast(l10n.preparingExport);
     try {
       step('start');
       final tracks = await ref.read(libraryRepositoryProvider).watchTracks().first.timeout(limit);
@@ -580,23 +618,23 @@ class _DataGroup extends ConsumerWidget {
       final saved = await MediaStoreSource.saveToDownloads(name, bytes, 'text/csv') ??
           await FilePicker.saveFile(fileName: name, bytes: bytes, mimeType: 'text/csv');
       step('saved: $saved');
-      if (saved != null) showToast('Saved ${tracks.length} songs → $saved');
+      if (saved != null) showToast(l10n.exportSaved(l10n.songCount(tracks.length), '$saved'));
     } catch (e) {
       step('failed: $e');
-      showToast('Export failed: $e');
+      showToast(l10n.exportFailed('$e'));
     }
   }
 
   Future<void> _restore(BuildContext context, WidgetRef ref) async {
     try {
-      final file = await FilePicker.pickFile(dialogTitle: 'Choose Nocturne backup');
+      final file = await FilePicker.pickFile(dialogTitle: l10n.chooseBackupDialog);
       if (file == null) return;
       final report = await ref.read(backupServiceProvider).restore(utf8.decode(await file.readAsBytes()));
       ref.invalidate(audioSettingsProvider); // reload audio settings from the DB
       if (context.mounted) _toast(context, report.toString());
     } catch (e) {
       debugPrint('restore failed: $e');
-      if (context.mounted) _toast(context, 'Restore failed: $e');
+      if (context.mounted) _toast(context, l10n.restoreFailed('$e'));
     }
   }
 
@@ -604,24 +642,24 @@ class _DataGroup extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return _Group(children: [
       _InfoRow(
-        title: 'Back up my data',
-        subtitle: 'Favorites, playlists, play history and audio settings → JSON file',
-        trailing: _SmallButton(label: 'Save', icon: Icons.save_alt_rounded, onTap: () => _backup(context, ref)),
+        title: l10n.backUpData,
+        subtitle: l10n.backUpDataHint,
+        trailing: _SmallButton(label: l10n.save, icon: Icons.save_alt_rounded, onTap: () => _backup(context, ref)),
       ),
       _InfoRow(
-        title: 'Restore from backup',
-        subtitle: 'Merges into the current library (scan your music first)',
-        trailing: _SmallButton(label: 'Open', icon: Icons.restore_rounded, onTap: () => _restore(context, ref)),
+        title: l10n.restoreBackup,
+        subtitle: l10n.restoreBackupHint,
+        trailing: _SmallButton(label: l10n.open, icon: Icons.restore_rounded, onTap: () => _restore(context, ref)),
       ),
       _InfoRow(
-        title: 'Export smart-group data',
-        subtitle: 'AI scores, guesses and your answers for every song → CSV file',
+        title: l10n.exportSmartData,
+        subtitle: l10n.exportSmartDataHint,
         trailing: _SmallButton(label: 'CSV', icon: Icons.table_chart_outlined, onTap: () => _exportVibes(context, ref)),
       ),
       _InfoRow(
-        title: 'Error log',
-        subtitle: 'Crashes and playback errors recorded on this device',
-        trailing: _SmallButton(label: 'View', icon: Icons.bug_report_outlined, onTap: () => _showLog(context)),
+        title: l10n.errorLog,
+        subtitle: l10n.errorLogHint,
+        trailing: _SmallButton(label: l10n.view, icon: Icons.bug_report_outlined, onTap: () => _showLog(context)),
       ),
     ]);
   }
@@ -644,9 +682,9 @@ class _DataGroup extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.xs, 0),
                 child: Row(
                   children: [
-                    Expanded(child: Text('Error log', style: AppTypography.headlineMd)),
+                    Expanded(child: Text(l10n.errorLog, style: AppTypography.headlineMd)),
                     IconButton(
-                      tooltip: 'Copy',
+                      tooltip: l10n.copy,
                       icon: const Icon(Icons.copy_rounded, color: AppColors.textPrimary),
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: text));
@@ -654,7 +692,7 @@ class _DataGroup extends ConsumerWidget {
                       },
                     ),
                     IconButton(
-                      tooltip: 'Clear',
+                      tooltip: l10n.clear,
                       icon: const Icon(Icons.delete_sweep_outlined, color: AppColors.textPrimary),
                       onPressed: () async {
                         await CrashLog.clear();

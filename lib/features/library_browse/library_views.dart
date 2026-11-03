@@ -8,6 +8,7 @@ import '../../core/theme/glass.dart';
 import '../../shared/album_art.dart';
 import '../../shared/empty_state.dart';
 import 'library_groups.dart';
+import '../../l10n/l10n.dart';
 
 enum LibraryView { songs, albums, artists }
 
@@ -19,7 +20,7 @@ class LibraryViewSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labels = {LibraryView.songs: 'Songs', LibraryView.albums: 'Albums', LibraryView.artists: 'Artists'};
+    final labels = {LibraryView.songs: l10n.tabSongs, LibraryView.albums: l10n.tabAlbums, LibraryView.artists: l10n.tabArtists};
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
       child: Container(
@@ -67,8 +68,8 @@ class AlbumGridSliver extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (albums.isEmpty) {
-      return const SliverToBoxAdapter(
-        child: EmptyState(icon: Icons.album_outlined, title: 'No albums yet'),
+      return SliverToBoxAdapter(
+        child: EmptyState(icon: Icons.album_outlined, title: l10n.noAlbums),
       );
     }
     return SliverPadding(
@@ -143,8 +144,8 @@ class ArtistListSliver extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (artists.isEmpty) {
-      return const SliverToBoxAdapter(
-        child: EmptyState(icon: Icons.person_outline_rounded, title: 'No artists yet'),
+      return SliverToBoxAdapter(
+        child: EmptyState(icon: Icons.person_outline_rounded, title: l10n.noArtists),
       );
     }
     return SliverList.builder(
@@ -180,8 +181,8 @@ class ArtistTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   [
-                    if (albums > 0) '$albums ${albums == 1 ? 'album' : 'albums'}',
-                    '${a.tracks.length} ${a.tracks.length == 1 ? 'track' : 'tracks'}',
+                    if (albums > 0) l10n.albumCount(albums),
+                    l10n.trackCount(a.tracks.length),
                   ].join(' • '),
                   style: AppTypography.bodySm,
                 ),

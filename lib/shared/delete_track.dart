@@ -9,6 +9,7 @@ import '../core/theme/app_typography.dart';
 import '../core/ui/toast.dart';
 import '../domain/entities/track.dart';
 import '../features/player/player_providers.dart';
+import '../l10n/l10n.dart';
 
 /// Confirm → the file is deleted from the phone (Android 11+ may also show a system dialog)
 /// → removed from the DB → if it was playing, move to the next one.
@@ -27,17 +28,17 @@ Future<void> confirmAndDeleteTrack(BuildContext context, Track track) async {
     builder: (ctx) => AlertDialog(
       backgroundColor: AppColors.surfaceLow,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
-      title: Text('Delete from device?', style: AppTypography.headlineMd),
+      title: Text(l10n.deleteFromDeviceQ, style: AppTypography.headlineMd),
       content: Text(
-        '"${track.title}" will be permanently deleted from this phone. This cannot be undone.',
+        l10n.deleteOneWarning(track.title),
         style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
         FilledButton(
           onPressed: () => Navigator.pop(ctx, true),
           style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-          child: const Text('Delete'),
+          child: Text(l10n.delete),
         ),
       ],
     ),
@@ -47,14 +48,14 @@ Future<void> confirmAndDeleteTrack(BuildContext context, Track track) async {
   try {
     final ok = await container.read(libraryRepositoryProvider).deleteTrack(track.id);
     if (!ok) {
-      showToast('Delete cancelled');
+      showToast(l10n.deleteCancelled);
       return;
     }
     await container.read(audioHandlerProvider).removeTrack(track.id);
-    showToast('Deleted "${track.title}"');
+    showToast(l10n.deletedOne(track.title));
   } catch (e, st) {
     debugPrint('delete failed: $e\n$st');
-    showToast('Could not delete: $e');
+    showToast(l10n.couldNotDelete('$e'));
   }
 }
 
@@ -76,17 +77,17 @@ Future<bool> confirmAndDeleteTracks(BuildContext context, List<Track> tracks) as
     builder: (ctx) => AlertDialog(
       backgroundColor: AppColors.surfaceLow,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
-      title: Text('Delete $n tracks?', style: AppTypography.headlineMd),
+      title: Text(l10n.deleteManyQ(n), style: AppTypography.headlineMd),
       content: Text(
-        '$n tracks will be permanently deleted from this phone. This cannot be undone.',
+        l10n.deleteManyWarning(n),
         style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
         FilledButton(
           onPressed: () => Navigator.pop(ctx, true),
           style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-          child: Text('Delete $n'),
+          child: Text(l10n.deleteCount(n)),
         ),
       ],
     ),
@@ -100,14 +101,14 @@ Future<bool> confirmAndDeleteTracks(BuildContext context, List<Track> tracks) as
       await handler.removeTrack(id);
     }
     showToast(switch (deleted.length) {
-      0 => 'Delete cancelled',
-      final d when d == n => 'Deleted $n tracks',
-      final d => 'Deleted $d of $n tracks',
+      0 => l10n.deleteCancelled,
+      final d when d == n => l10n.deletedMany(n),
+      final d => l10n.deletedSome(d, n),
     });
     return deleted.isNotEmpty;
   } catch (e, st) {
     debugPrint('delete batch failed: $e\n$st');
-    showToast('Could not delete: $e');
+    showToast(l10n.couldNotDelete('$e'));
     return false;
   }
 }

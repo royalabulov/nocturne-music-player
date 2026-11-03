@@ -4,6 +4,7 @@ import '../../core/di/providers.dart';
 import '../../data/datasources/tag_reader.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../l10n/l10n.dart';
 
 /// Album / artist views. There's no separate DB table — grouped from the
 /// in-memory library (a few ms even for 2000+ tracks).
@@ -134,12 +135,15 @@ List<ArtistGroup> groupArtists(List<Track> tracks) {
 
 /// Order of the Albums / Artists views (Home → Library header).
 enum GroupSort {
-  name('A–Z'),
-  mostSongs('Most songs'),
-  recentlyAdded('Recently added');
+  name,
+  mostSongs,
+  recentlyAdded;
 
-  const GroupSort(this.label);
-  final String label;
+  String get label => switch (this) {
+        name => l10n.sortAZ,
+        mostSongs => l10n.sortMostSongs,
+        recentlyAdded => l10n.sortRecentlyAdded,
+      };
 }
 
 int _newest(List<Track> tracks) =>

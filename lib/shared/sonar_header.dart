@@ -6,6 +6,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_typography.dart';
 import '../features/shell/side_menu.dart';
+import '../l10n/l10n.dart';
 
 /// The "◎ Nocturne ........ ● Offline" row at the top of every screen.
 class SonarHeader extends StatelessWidget {
@@ -38,7 +39,7 @@ class _MenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Open menu',
+      label: l10n.openMenu,
       child: Material(
         type: MaterialType.transparency,
         shape: const StadiumBorder(),
@@ -76,15 +77,15 @@ class OnlineModePill extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(onlineModeProvider);
     final (label, color) = switch (s.status) {
-      OnlineStatus.offline => ('Offline', AppColors.cyan),
-      OnlineStatus.checking => ('Checking…', AppColors.textSecondary),
-      OnlineStatus.online => ('Online', AppColors.online),
-      OnlineStatus.noInternet => ('No internet', AppColors.warning),
+      OnlineStatus.offline => (l10n.netOffline, AppColors.cyan),
+      OnlineStatus.checking => (l10n.netChecking, AppColors.textSecondary),
+      OnlineStatus.online => (l10n.netOnline, AppColors.online),
+      OnlineStatus.noInternet => (l10n.netNoInternet, AppColors.warning),
     };
 
     return Semantics(
       button: true,
-      label: 'Network mode: $label. Tap to switch.',
+      label: l10n.netModeSemantics(label),
       child: Material(
         color: AppColors.surfaceHigh,
         shape: const StadiumBorder(),

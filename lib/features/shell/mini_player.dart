@@ -8,6 +8,7 @@ import '../../core/theme/glass.dart';
 import '../../domain/entities/track.dart';
 import '../../shared/album_art.dart';
 import '../../shared/cover_color.dart';
+import '../../l10n/l10n.dart';
 
 /// Hero tag for the cover between the mini player and Now Playing.
 const kNowPlayingArtHero = 'now-playing-art';
@@ -80,14 +81,14 @@ class MiniPlayer extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        tooltip: playing ? 'Pause' : 'Play',
+                        tooltip: playing ? l10n.pause : l10n.play,
                         onPressed: onPlayPause,
                         icon: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
                         color: AppColors.textPrimary,
                         iconSize: 28,
                       ),
                       IconButton(
-                        tooltip: 'Next song',
+                        tooltip: l10n.nextSong,
                         onPressed: onNext,
                         icon: const Icon(Icons.skip_next_rounded),
                         color: AppColors.textPrimary,

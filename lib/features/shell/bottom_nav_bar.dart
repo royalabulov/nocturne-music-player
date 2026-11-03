@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../l10n/l10n.dart';
 
 class NavItem {
   const NavItem(this.label, this.icon, this.activeIcon);
@@ -11,18 +12,18 @@ class NavItem {
   final IconData activeIcon;
 }
 
-const navItems = <NavItem>[
-  NavItem('Home', Icons.home_outlined, Icons.home_rounded),
-  NavItem('Recent', Icons.history_rounded, Icons.history_rounded),
-  NavItem('Favorites', Icons.favorite_border_rounded, Icons.favorite_rounded),
-  NavItem('Playlists', Icons.queue_music_rounded, Icons.queue_music_rounded),
+List<NavItem> get navItems => [
+  NavItem(l10n.navHome, Icons.home_outlined, Icons.home_rounded),
+  NavItem(l10n.navRecent, Icons.history_rounded, Icons.history_rounded),
+  NavItem(l10n.navFavorites, Icons.favorite_border_rounded, Icons.favorite_rounded),
+  NavItem(l10n.navPlaylists, Icons.queue_music_rounded, Icons.queue_music_rounded),
 ];
 
 /// Last slot: opens the side menu (not a tab). Highlighted while Settings
 /// (branch index navItems.length) is open. Labelled "Menu", not "Settings":
 /// the slot opens the drawer, and a "Settings" tab that opens something else
 /// broke the label ↔ action promise (design review, 2026-11-02).
-const _menuItem = NavItem('Menu', Icons.menu_rounded, Icons.menu_open_rounded);
+NavItem get _menuItem => NavItem(l10n.navMenu, Icons.menu_rounded, Icons.menu_open_rounded);
 
 const _barHeight = AppSpacing.bottomNavHeight;
 const _gap = 10.0;

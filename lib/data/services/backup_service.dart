@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../db/app_database.dart';
+import '../../l10n/l10n.dart';
 
 /// Restore result — shown in a Settings snackbar.
 class RestoreReport {
@@ -16,8 +17,9 @@ class RestoreReport {
   final int favorites, playlists, playlistTracks, plays, missingTracks;
 
   @override
-  String toString() => '$favorites favorites, $playlists playlists ($playlistTracks tracks), '
-      '$plays plays restored${missingTracks > 0 ? ' • $missingTracks tracks not found on this device' : ''}';
+  String toString() =>
+      l10n.restoreReport(favorites, playlists, playlistTracks, plays) +
+      (missingTracks > 0 ? l10n.restoreMissing(missingTracks) : '');
 }
 
 /// User data (favorites, playlists, history, audio settings, scan folders)

@@ -14,6 +14,7 @@ import '../../shared/sonar_header.dart';
 import '../import/audio_import.dart';
 import '../library_scan/scan_controller.dart';
 import '../smart_groups/smart_groups.dart';
+import '../../l10n/l10n.dart';
 
 /// Key of the shell Scaffold — the logo in the header opens the side menu with it.
 final sideMenuKey = GlobalKey<ScaffoldState>();
@@ -68,7 +69,7 @@ class SideMenu extends ConsumerWidget {
                       children: [
                         Text('Nocturne', style: AppTypography.headlineLg),
                         if (stats.trackCount > 0)
-                          Text('${stats.trackCount} songs  ·  ${stats.totalDuration.hm}', style: AppTypography.labelSm),
+                          Text('${l10n.songCount(stats.trackCount)}  ·  ${stats.totalDuration.hm}', style: AppTypography.labelSm),
                       ],
                     ),
                   ),
@@ -80,36 +81,36 @@ class SideMenu extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
                 children: [
-                  const _Group('Discover'),
+                  _Group(l10n.menuDiscover),
                   _Item(
                     icon: Icons.auto_awesome_mosaic_rounded,
-                    label: 'Your Vibes',
-                    hint: 'Mood & genre groups',
+                    label: l10n.menuYourVibes,
+                    hint: l10n.menuYourVibesHint,
                     active: location.startsWith(kVibesRoute),
                     onTap: () => go(kVibesRoute),
                   ),
                   _Item(
                     icon: Icons.fact_check_outlined,
-                    label: 'Check accuracy',
+                    label: l10n.checkAccuracy,
                     active: location.startsWith(kVibeReviewRoute),
                     onTap: () => go(kVibeReviewRoute),
                   ),
-                  const _Group('Library'),
+                  _Group(l10n.library),
                   _Item(
                     icon: Icons.library_add_rounded,
-                    label: 'Import audio files',
+                    label: l10n.importAudioFiles,
                     onTap: scanning ? null : () => run(() => ref.read(audioImportProvider).pickAndImport()),
                   ),
                   _Item(
                     icon: Icons.radar_rounded,
-                    label: scanning ? 'Scanning…' : 'Rescan library',
+                    label: scanning ? l10n.scanning : l10n.rescanLibrary,
                     onTap: scanning
                         ? null
                         : () => run(() => ref.read(scanControllerProvider.notifier).requestAndScan()),
                   ),
                   _Item(
                     icon: Icons.equalizer_rounded,
-                    label: 'Equalizer',
+                    label: l10n.equalizer,
                     active: location.startsWith('${Routes.settings}/eq'),
                     onTap: () => go('${Routes.settings}/eq'),
                   ),
@@ -121,7 +122,7 @@ class SideMenu extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSpacing.sm),
               child: _Item(
                 icon: Icons.settings_outlined,
-                label: 'Settings',
+                label: l10n.settings,
                 trailing: Text('v$kAppVersion', style: AppTypography.monoSm.copyWith(color: AppColors.textMuted)),
                 active: location == Routes.settings,
                 onTap: () => go(Routes.settings),
@@ -142,7 +143,7 @@ class _Group extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.md, AppSpacing.sm, AppSpacing.xs),
     child: Text(
-      title.toUpperCase(),
+      upper(title),
       style: AppTypography.labelXs.copyWith(color: AppColors.textMuted, letterSpacing: 1.2),
     ),
   );

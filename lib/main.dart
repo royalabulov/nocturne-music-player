@@ -20,6 +20,7 @@ import 'features/library_scan/scan_controller.dart';
 import 'features/player/player_providers.dart';
 import 'features/settings/settings_controller.dart';
 import 'features/smart_groups/smart_groups.dart';
+import 'l10n/l10n.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,14 +51,14 @@ Future<void> main() async {
       onTrackStarted: (t) => container.read(listenTrackerProvider).trackStarted(t.id),
       onTrackUnavailable: (t) {
         container.read(libraryRepositoryProvider).markMissing(t.id);
-        showToast('"${t.title}" is no longer on this device — skipped');
+        showToast(l10n.toastTrackMissing(t.title));
       },
       // Web demo: no real files → synthesized WAV
       sourceBuilder: kIsWeb ? DemoAudio.sourceFor : null,
     ),
-    config: const AudioServiceConfig(
+    config: AudioServiceConfig(
       androidNotificationChannelId: 'com.royal.sonar.playback',
-      androidNotificationChannelName: 'Nocturne playback',
+      androidNotificationChannelName: l10n.notificationChannel,
       // Stay in foreground while paused too: otherwise Samsung kills the process in the
       // background, and startForeground again from the background crashes on Android 12+.
       androidNotificationOngoing: false,
@@ -76,6 +77,10 @@ Future<void> main() async {
   // Cover paths are needed synchronously (Image.file) → prepare the folder up front.
   if (!kIsWeb) await container.read(coverCacheProvider).warmUp();
   await sessionReady;
+
+  // Settings → Language before the first frame: otherwise the app starts in the
+  // phone's language and only then switches
+  initialLanguage = await container.read(libraryRepositoryProvider).getSetting(kLanguageKey);
 
   runApp(UncontrolledProviderScope(container: container, child: const SonarApp()));
 

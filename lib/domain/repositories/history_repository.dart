@@ -1,4 +1,5 @@
 import '../entities/track.dart';
+import '../../l10n/l10n.dart';
 
 /// Track + how many times it was played (for Most Played / Recommended).
 class PlayedTrack {
@@ -11,13 +12,17 @@ class PlayedTrack {
 /// Recent screen: Today / Week / Month / All time. Calendar periods — from midnight,
 /// from Monday, from the 1st; All time = the whole history.
 enum PlayPeriod {
-  day('Today'),
-  week('Week'),
-  month('Month'),
-  all('All time');
+  day,
+  week,
+  month,
+  all;
 
-  const PlayPeriod(this.label);
-  final String label;
+  String get label => switch (this) {
+        day => l10n.periodToday,
+        week => l10n.periodWeek,
+        month => l10n.periodMonth,
+        all => l10n.periodAll,
+      };
 
   DateTime start(DateTime now) => switch (this) {
         day => DateTime(now.year, now.month, now.day),

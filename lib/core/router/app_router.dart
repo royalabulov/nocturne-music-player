@@ -61,16 +61,16 @@ final appRouter = GoRouter(
           ],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: Routes.recent, builder: (_, _) => const TabScrollToTop(tab: 1, child: CollapsingTitle(title: RecentScreen.title, child: RecentScreen())))],
+          routes: [GoRoute(path: Routes.recent, builder: (_, _) => TabScrollToTop(tab: 1, child: CollapsingTitle(title: RecentScreen.title, child: const RecentScreen())))],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: Routes.favorites, builder: (_, _) => const TabScrollToTop(tab: 2, child: CollapsingTitle(title: FavoritesScreen.title, child: FavoritesScreen())))],
+          routes: [GoRoute(path: Routes.favorites, builder: (_, _) => TabScrollToTop(tab: 2, child: CollapsingTitle(title: FavoritesScreen.title, child: const FavoritesScreen())))],
         ),
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: Routes.playlists,
-              builder: (_, _) => const TabScrollToTop(tab: 3, child: CollapsingTitle(title: PlaylistsScreen.title, child: PlaylistsScreen())),
+              builder: (_, _) => TabScrollToTop(tab: 3, child: CollapsingTitle(title: PlaylistsScreen.title, child: const PlaylistsScreen())),
               routes: [
                 GoRoute(
                   path: ':id',
@@ -84,7 +84,7 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: Routes.settings,
-              builder: (_, _) => const CollapsingTitle(title: SettingsScreen.title, child: SettingsScreen()),
+              builder: (_, _) => CollapsingTitle(title: SettingsScreen.title, child: const SettingsScreen()),
               routes: [GoRoute(path: 'eq', builder: (_, _) => const EqualizerScreen())],
             ),
           ],

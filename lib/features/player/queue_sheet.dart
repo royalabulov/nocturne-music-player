@@ -9,6 +9,7 @@ import '../../core/utils/duration_format.dart';
 import '../../domain/entities/track.dart';
 import '../../shared/album_art.dart';
 import 'player_providers.dart';
+import '../../l10n/l10n.dart';
 
 /// The queue — bottom sheet. Tap → jump to that track.
 Future<void> showQueueSheet(BuildContext context) => showModalBottomSheet(
@@ -91,12 +92,12 @@ class _QueueSheetState extends ConsumerState<_QueueSheet> {
                 ),
                 child: Row(
                   children: [
-                    Text('Queue', style: AppTypography.headlineMd),
+                    Text(l10n.queue, style: AppTypography.headlineMd),
                     const Spacer(),
                     Text(
                       currentIndex >= 0
-                          ? '${currentIndex + 1} of ${queue.length}'
-                          : '${queue.length} tracks',
+                          ? l10n.queuePosition(currentIndex + 1, queue.length)
+                          : l10n.trackCount(queue.length),
                       style: AppTypography.labelMd,
                     ),
                   ],

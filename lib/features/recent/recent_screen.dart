@@ -14,6 +14,7 @@ import '../../shared/filter_chip_row.dart';
 import '../../shared/glow_play_button.dart';
 import '../../shared/track_sliver_list.dart';
 import '../player/player_providers.dart';
+import '../../l10n/l10n.dart';
 
 /// Only listening history here — "Recently added" and "A–Z" were Home's sort
 /// orders repeated (design review, 2026-11-02).
@@ -23,7 +24,7 @@ class RecentScreen extends ConsumerStatefulWidget {
   const RecentScreen({super.key});
 
   /// Big title here and in the compact bar (CollapsingTitle) after scrolling.
-  static const title = 'Recent';
+  static String get title => l10n.recentTitle;
 
   @override
   ConsumerState<RecentScreen> createState() => _RecentScreenState();
@@ -58,19 +59,20 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
     }
 
     final emptyText = switch (_period) {
-      PlayPeriod.day => 'Nothing played today yet.',
-      PlayPeriod.week => 'Nothing played this week yet.',
-      PlayPeriod.month => 'Nothing played this month yet.',
-      PlayPeriod.all => 'Nothing played yet — tap any track in Home.',
+      PlayPeriod.day => l10n.emptyToday,
+      PlayPeriod.week => l10n.emptyWeek,
+      PlayPeriod.month => l10n.emptyMonth,
+      PlayPeriod.all => l10n.emptyAll,
     };
 
     // The stats card became the subtitle: "24 plays · 9 songs · 1h 27m this week"
     final statsLine = period.plays == 0
-        ? 'No plays ${_periodPhrase(_period)}'
+        ? l10n.noPlays(_periodPhrase(_period))
         : [
-            '${period.plays} ${period.plays == 1 ? 'play' : 'plays'}',
-            '${period.songs} ${period.songs == 1 ? 'song' : 'songs'}',
-            '${period.listened.inMinutes < 1 ? '<1m' : period.listened.hm} ${_periodPhrase(_period)}',
+            l10n.playCount(period.plays),
+            l10n.songCount(period.songs),
+            l10n.listenedIn(period.listened.inMinutes < 1 ? l10n.durUnderMinute : period.listened.hm,
+                _periodPhrase(_period)),
           ].join('  ·  ');
 
     return SafeArea(
@@ -80,7 +82,13 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
         slivers: [
           SliverList.list(children: [
             const SizedBox(height: AppSpacing.md),
-            PageTitle(RecentScreen.title, subtitle: statsLine),
+            // The period sits by the title: it changes the stats line under it too.
+            // Next to the chips it left no room for longer labels ("Ən çox dinlənən").
+            PageTitle(
+              RecentScreen.title,
+              subtitle: statsLine,
+              trailing: _PeriodButton(value: _period, onChanged: (p) => setState(() => _period = p)),
+            ),
             const SizedBox(height: AppSpacing.lg),
             // The most useful thing here comes first
             if (hasResume) ...[
@@ -90,20 +98,11 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
             ],
-            // One control row: what to list | which period
-            Row(
-              children: [
-                Expanded(
-                  child: FilterChipRow(
-                    items: const ['Played', 'Most played'],
-                    icons: const [Icons.schedule_rounded, Icons.local_fire_department_outlined],
-                    selected: _filter.index,
-                    onSelected: (i) => setState(() => _filter = _Filter.values[i]),
-                  ),
-                ),
-                _PeriodButton(value: _period, onChanged: (p) => setState(() => _period = p)),
-                const SizedBox(width: AppSpacing.screenH - AppSpacing.xs),
-              ],
+            FilterChipRow(
+              items: [l10n.filterPlayed, l10n.filterMostPlayed],
+              icons: const [Icons.schedule_rounded, Icons.local_fire_department_outlined],
+              selected: _filter.index,
+              onSelected: (i) => setState(() => _filter = _Filter.values[i]),
             ),
             const SizedBox(height: AppSpacing.md),
           ]),
@@ -122,21 +121,21 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
   static String _ago(DateTime? d) {
     if (d == null) return '';
     final diff = DateTime.now().difference(d);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
-    if (diff.inDays < 1) return '${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 30) return '${diff.inDays} days ago';
+    if (diff.inMinutes < 1) return l10n.agoJustNowCap;
+    if (diff.inHours < 1) return l10n.agoMinutes(diff.inMinutes);
+    if (diff.inDays < 1) return l10n.agoHours(diff.inHours);
+    if (diff.inDays == 1) return l10n.yesterday;
+    if (diff.inDays < 30) return l10n.agoDays(diff.inDays);
     return '${d.day}.${d.month}.${d.year}';
   }
 }
 
 /// 'this week', 'today' ... — end of the stats line under the title.
 String _periodPhrase(PlayPeriod p) => switch (p) {
-      PlayPeriod.day => 'today',
-      PlayPeriod.week => 'this week',
-      PlayPeriod.month => 'this month',
-      PlayPeriod.all => 'in total',
+      PlayPeriod.day => l10n.phraseToday,
+      PlayPeriod.week => l10n.phraseWeek,
+      PlayPeriod.month => l10n.phraseMonth,
+      PlayPeriod.all => l10n.phraseAll,
     };
 
 /// 'This week ▾' — picks the period for the stats line and the lists. Replaces
@@ -146,17 +145,12 @@ class _PeriodButton extends StatelessWidget {
   final PlayPeriod value;
   final ValueChanged<PlayPeriod> onChanged;
 
-  static String _label(PlayPeriod p) => switch (p) {
-        PlayPeriod.day => 'Today',
-        PlayPeriod.week => 'This week',
-        PlayPeriod.month => 'This month',
-        PlayPeriod.all => 'All time',
-      };
+  static String _label(PlayPeriod p) => p.label;
 
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<PlayPeriod>(
-      tooltip: 'Period',
+      tooltip: l10n.period,
       initialValue: value,
       onSelected: onChanged,
       color: AppColors.surfaceHigh,
@@ -216,9 +210,9 @@ class _ContinueListeningCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Continue listening', style: AppTypography.titleSm),
+                Text(l10n.continueListening, style: AppTypography.titleSm),
                 const SizedBox(height: 2),
-                Text('${resume.track.title}  ·  from ${resume.position.mmss}',
+                Text(l10n.resumeFrom(resume.track.title, resume.position.mmss),
                     style: AppTypography.labelSm, maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),

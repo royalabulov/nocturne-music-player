@@ -10,6 +10,7 @@ import 'empty_state.dart';
 import 'favorite_button.dart';
 import 'track_actions_sheet.dart';
 import 'track_tile.dart';
+import '../l10n/l10n.dart';
 
 /// Lazy track list — inside a CustomScrollView. Only visible tiles are
 /// built; ListView(children: [...]) froze with 400+ tracks.
@@ -75,7 +76,7 @@ class TrackSliverList extends ConsumerWidget {
                     children: [
                       FavoriteButton(trackId: t.id, size: 20, quiet: true),
                       IconButton(
-                        tooltip: 'More',
+                        tooltip: l10n.more,
                         onPressed: onLongPress,
                         visualDensity: VisualDensity.compact,
                         iconSize: 20,

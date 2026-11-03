@@ -10,6 +10,7 @@ import '../../core/theme/glass.dart';
 import '../../shared/codec_chip.dart';
 import '../player/player_providers.dart';
 import 'settings_controller.dart';
+import '../../l10n/l10n.dart';
 
 /// System EQ (Android Equalizer). The number of bands depends on the device (usually 5).
 class EqualizerScreen extends ConsumerStatefulWidget {
@@ -64,7 +65,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                   icon: const Icon(Icons.arrow_back_rounded),
                   color: AppColors.textPrimary,
                 ),
-                Expanded(child: Text('Equalizer', style: AppTypography.headlineLg)),
+                Expanded(child: Text(l10n.equalizer, style: AppTypography.headlineLg)),
                 Padding(
                   padding: const EdgeInsets.only(right: AppSpacing.md),
                   child: Switch(value: s.eqEnabled, onChanged: ctrl.setEqEnabled),
@@ -81,7 +82,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                   const SizedBox(width: 8),
                   if (s.autoPreset) const CodecChip('AUTO'),
                   const Spacer(),
-                  Text(preset.name, style: AppTypography.labelMd.copyWith(color: AppColors.cyan)),
+                  Text(preset.label, style: AppTypography.labelMd.copyWith(color: AppColors.cyan)),
                 ],
               ),
             ),
@@ -109,7 +110,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                         boxShadow: active ? Glow.accent : null,
                       ),
-                      child: Text(p.name,
+                      child: Text(p.label,
                           style: AppTypography.labelMd.copyWith(
                               color: active ? Colors.white : AppColors.textSecondary)),
                     ),
@@ -128,7 +129,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                     ? Padding(
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         child: Text(
-                          'Play any track first — the system equalizer becomes available once audio is initialised.',
+                          l10n.eqUnavailable,
                           textAlign: TextAlign.center,
                           style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
                         ),
@@ -172,7 +173,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                       children: [
                         const Icon(Icons.speaker_rounded, size: 18, color: AppColors.cyan),
                         const SizedBox(width: 8),
-                        Expanded(child: Text('Bass Boost', style: AppTypography.bodyMd)),
+                        Expanded(child: Text(l10n.bassBoost, style: AppTypography.bodyMd)),
                         Text('${(s.bassBoost * 100).round()}%',
                             style: AppTypography.labelMd.copyWith(color: AppColors.cyan)),
                       ],
@@ -190,8 +191,8 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
               child: Text(
                 s.autoPreset
-                    ? 'Auto preset is on: the preset you pick here is remembered for "${output.label}" and switches when you change output.'
-                    : 'Auto preset is off: this preset applies to every output.',
+                    ? l10n.autoPresetOn(output.label)
+                    : l10n.autoPresetOff,
                 style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
               ),
             ),

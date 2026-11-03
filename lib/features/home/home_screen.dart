@@ -26,6 +26,7 @@ import '../library_browse/library_views.dart';
 import '../library_scan/scan_status_card.dart';
 import '../player/player_providers.dart';
 import '../shell/scroll_to_top.dart';
+import '../../l10n/l10n.dart';
 
 /// Home: greeting, search, Recommended (from play history) and the Library
 /// (Songs / Albums / Artists) — all from the local database.
@@ -71,16 +72,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _pickSort() async {
     final picked = await showSortSheet(context,
-        title: 'Sort songs by', values: TrackSort.values, current: _sort, label: (s) => s.label);
+        title: l10n.sortSongsBy, values: TrackSort.values, current: _sort, label: (s) => s.label);
     if (picked == null || picked == _sort || !mounted) return;
     setState(() => _sort = picked);
     ref.read(libraryRepositoryProvider).setSetting('librarySort', picked.name);
   }
 
   Future<void> _pickGroupSort() async {
-    final what = _view == LibraryView.albums ? 'albums' : 'artists';
+    final title = _view == LibraryView.albums ? l10n.sortAlbumsBy : l10n.sortArtistsBy;
     final picked = await showSortSheet(context,
-        title: 'Sort $what by', values: GroupSort.values, current: _groupSort, label: (s) => s.label);
+        title: title, values: GroupSort.values, current: _groupSort, label: (s) => s.label);
     if (picked == null || picked == _groupSort || !mounted) return;
     setState(() => _groupSort = picked);
     ref.read(libraryRepositoryProvider).setSetting('groupSort', picked.name);
@@ -246,25 +247,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: SectionHeader(
-                  title: 'Results',
+                  title: l10n.results,
                   icon: Icons.search_rounded,
-                  action: '${library.length} tracks',
+                  action: l10n.trackCount(library.length),
                 ),
               ),
             ),
             TrackSliverList(
               tracks: library,
               emptyIcon: Icons.search_off_rounded,
-              emptyTitle: 'Nothing matches "$_query"',
-              emptyText: 'Try a song title, artist or album name.',
+              emptyTitle: l10n.nothingMatches(_query),
+              emptyText: l10n.searchTryHint,
             ),
           ] else ...[
             SliverList.list(
               children: [
                 const SizedBox(height: AppSpacing.md),
                 if (recommended.length >= 3) ...[
-                  const SectionHeader(
-                    title: 'Recommended For You',
+                  SectionHeader(
+                    title: l10n.recommendedForYou,
                     icon: Icons.auto_awesome_rounded,
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -275,7 +276,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // Your Vibes and playlists have their own screens (side menu / Playlists tab)
                 if (library.isNotEmpty) ...[
                   SectionHeader(
-                    title: 'Library',
+                    title: l10n.library,
                     icon: Icons.library_music_outlined,
                     action: switch (_view) {
                       LibraryView.songs => '${_sort.label}  ▾',
@@ -332,17 +333,17 @@ class _Greeting extends ConsumerWidget {
 
   String get _greeting {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return l10n.goodMorning;
+    if (h < 18) return l10n.goodAfternoon;
+    return l10n.goodEvening;
   }
 
   /// Used to be in three places: "467 LOCAL TRACKS READY • Scanning…", a spinner
   /// button on the right and a "Local Vault Loaded … 100% OFF" card. Now one quiet line.
   String get _statsLine => [
-        '${stats.trackCount} ${stats.trackCount == 1 ? 'song' : 'songs'}',
+        l10n.songCount(stats.trackCount),
         if (stats.totalDuration > Duration.zero) stats.totalDuration.hm,
-        if (stats.losslessCount > 0) '${stats.losslessCount} lossless',
+        if (stats.losslessCount > 0) l10n.losslessCount(stats.losslessCount),
       ].join('  ·  ');
 
   @override
@@ -396,7 +397,7 @@ class _ScanLine extends ConsumerWidget {
           const SizedBox(width: AppSpacing.xs),
           Flexible(
             child: Text(
-              'Adding new songs  ${p.done}/${p.total}',
+              l10n.addingNewSongs(p.done, p.total),
               style: AppTypography.labelSm.copyWith(color: AppColors.cyan),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -448,7 +449,7 @@ class _SearchField extends StatelessWidget {
                 decoration: InputDecoration(
                   isCollapsed: true,
                   border: InputBorder.none,
-                  hintText: 'Search songs, artists, albums',
+                  hintText: l10n.searchHint,
                   hintStyle: AppTypography.bodyMd.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -462,7 +463,7 @@ class _SearchField extends StatelessWidget {
                   ? const SizedBox.shrink()
                   // IconButton, not a bare 20px icon: 48dp tap target + TalkBack name
                   : IconButton(
-                      tooltip: 'Clear search',
+                      tooltip: l10n.clearSearch,
                       onPressed: onClear,
                       iconSize: 20,
                       color: AppColors.textSecondary,

@@ -24,6 +24,7 @@ import '../shell/mini_player.dart';
 import 'player_providers.dart';
 import 'queue_sheet.dart';
 import 'sleep_timer.dart';
+import '../../l10n/l10n.dart';
 
 /// Full-screen player. Not in the original design — drawn to match the design system.
 class NowPlayingScreen extends ConsumerWidget {
@@ -70,7 +71,7 @@ class NowPlayingScreen extends ConsumerWidget {
                     children: [
                       // 1 icon on the left, 2 on the right → a title inside the Row was off-centre
                       Text(
-                        'NOW PLAYING',
+                        l10n.nowPlaying,
                         style: AppTypography.labelSm.copyWith(
                           letterSpacing: 1.2,
                         ),
@@ -78,7 +79,7 @@ class NowPlayingScreen extends ConsumerWidget {
                       Row(
                         children: [
                           IconButton(
-                            tooltip: 'Close player',
+                            tooltip: l10n.closePlayer,
                             onPressed: () => Navigator.of(context).maybePop(),
                             icon: const Icon(
                               Icons.keyboard_arrow_down_rounded,
@@ -90,13 +91,13 @@ class NowPlayingScreen extends ConsumerWidget {
                           // Two icons in the same style. "Show in library" (was a cyan
                           // "target" icon that looked like an active state) → in the ••• menu
                           IconButton(
-                            tooltip: 'Queue',
+                            tooltip: l10n.queue,
                             onPressed: () => showQueueSheet(context),
                             icon: const Icon(Icons.queue_music_rounded),
                             color: AppColors.textPrimary,
                           ),
                           IconButton(
-                            tooltip: 'More',
+                            tooltip: l10n.more,
                             onPressed: () => showTrackActions(
                               context,
                               t,
@@ -172,7 +173,7 @@ class NowPlayingScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       IconButton(
-                        tooltip: shuffle ? 'Shuffle: on' : 'Shuffle: off',
+                        tooltip: shuffle ? l10n.shuffleOn : l10n.shuffleOff,
                         onPressed: handler.toggleShuffle,
                         iconSize: 22,
                         icon: const Icon(Icons.shuffle_rounded),
@@ -181,7 +182,7 @@ class NowPlayingScreen extends ConsumerWidget {
                             : AppColors.textSecondary,
                       ),
                       IconButton(
-                        tooltip: 'Previous song',
+                        tooltip: l10n.previousSong,
                         onPressed: handler.skipToPrevious,
                         iconSize: 34,
                         icon: const Icon(Icons.skip_previous_rounded),
@@ -193,7 +194,7 @@ class NowPlayingScreen extends ConsumerWidget {
                         onTap: playing ? handler.pause : handler.play,
                       ),
                       IconButton(
-                        tooltip: 'Next song',
+                        tooltip: l10n.nextSong,
                         onPressed: handler.skipToNext,
                         iconSize: 34,
                         icon: const Icon(Icons.skip_next_rounded),
@@ -201,9 +202,9 @@ class NowPlayingScreen extends ConsumerWidget {
                       ),
                       IconButton(
                         tooltip: switch (repeat) {
-                          AudioServiceRepeatMode.one => 'Repeat: one song',
-                          AudioServiceRepeatMode.none => 'Repeat: off',
-                          _ => 'Repeat: all',
+                          AudioServiceRepeatMode.one => l10n.repeatOne,
+                          AudioServiceRepeatMode.none => l10n.repeatOff,
+                          _ => l10n.repeatAll,
                         },
                         onPressed: handler.cycleRepeat,
                         iconSize: 22,
@@ -349,9 +350,9 @@ class _BottomBar extends ConsumerWidget {
   const _BottomBar();
 
   static (IconData, String) _output(OutputKind k) => switch (k) {
-    OutputKind.headphones => (Icons.headphones_rounded, 'Headphones'),
-    OutputKind.bluetooth => (Icons.bluetooth_audio_rounded, 'Bluetooth'),
-    OutputKind.speaker => (Icons.speaker_phone_rounded, 'Speaker'),
+    OutputKind.headphones => (Icons.headphones_rounded, l10n.outputHeadphones),
+    OutputKind.bluetooth => (Icons.bluetooth_audio_rounded, l10n.outputBluetooth),
+    OutputKind.speaker => (Icons.speaker_phone_rounded, l10n.outputSpeakerShort),
   };
 
   @override
@@ -389,7 +390,7 @@ class _BottomBar extends ConsumerWidget {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: 'Up next  ',
+                            text: l10n.upNext,
                             style: AppTypography.labelSm.copyWith(
                               color: AppColors.cyan,
                             ),

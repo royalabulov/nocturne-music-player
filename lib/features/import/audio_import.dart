@@ -13,6 +13,7 @@ import '../../data/datasources/media_store_source.dart';
 import '../../domain/entities/track.dart';
 import '../library_scan/scan_controller.dart';
 import '../player/player_providers.dart';
+import '../../l10n/l10n.dart';
 
 class ImportResult {
   const ImportResult(this.tracks, {this.copied = 0, this.failed = 0});
@@ -107,16 +108,16 @@ class AudioImport {
       final uris = await _store.takeOpenedUris();
       if (uris.isEmpty) return;
       debugPrint('open with: ${uris.length} file(s)');
-      showToast(uris.length == 1 ? 'Opening…' : 'Adding ${uris.length} files…');
+      showToast(uris.length == 1 ? l10n.opening : l10n.addingFiles(uris.length));
       final r = await ingest(uris);
       if (r.tracks.isEmpty) {
-        showToast("Couldn't open this file");
+        showToast(l10n.couldNotOpenFile);
         return;
       }
       await _read(audioHandlerProvider).playTracks(r.tracks);
-      final saved = r.copied > 0 ? ' • saved to Music/Sonar' : '';
+      final saved = r.copied > 0 ? l10n.savedToMusicSonarSuffix : '';
       showToast(
-        r.tracks.length == 1 ? 'Playing "${r.tracks.single.title}"$saved' : 'Playing ${r.tracks.length} tracks$saved',
+        (r.tracks.length == 1 ? l10n.playingOne(r.tracks.single.title) : l10n.playingMany(r.tracks.length)) + saved,
       );
       if (appRouter.routerDelegate.currentConfiguration.uri.path != Routes.nowPlaying) {
         FocusManager.instance.primaryFocus?.unfocus();
@@ -124,7 +125,7 @@ class AudioImport {
       }
     } catch (e, st) {
       debugPrint('open with failed: $e\n$st');
-      showToast("Couldn't open this file");
+      showToast(l10n.couldNotOpenFile);
     } finally {
       _busy = false;
       if (_again) {
@@ -137,16 +138,16 @@ class AudioImport {
   /// Settings → "Import audio files": system picker (multi-select).
   Future<void> pickAndImport() async {
     if (kIsWeb) return;
-    final files = await FilePicker.pickFiles(type: FileType.audio, dialogTitle: 'Import audio files');
+    final files = await FilePicker.pickFiles(type: FileType.audio, dialogTitle: l10n.importAudioFiles);
     if (files.isEmpty) return;
-    showToast('Importing ${files.length} files…');
+    showToast(l10n.importingFiles(files.length));
     final r = await ingest([for (final f in files) f.uri.scheme == 'file' ? f.uri.toFilePath() : f.uri.toString()]);
     showToast(
       [
-        if (r.tracks.isNotEmpty) 'Added ${r.tracks.length} ${r.tracks.length == 1 ? 'track' : 'tracks'}',
-        if (r.copied > 0) 'saved to Music/Sonar',
-        if (r.failed > 0) '${r.failed} skipped',
-        if (r.tracks.isEmpty && r.failed == 0) 'Nothing imported',
+        if (r.tracks.isNotEmpty) l10n.addedTracks(r.tracks.length),
+        if (r.copied > 0) l10n.savedToMusicSonar,
+        if (r.failed > 0) l10n.skippedCount(r.failed),
+        if (r.tracks.isEmpty && r.failed == 0) l10n.nothingImported,
       ].join(' • '),
     );
   }

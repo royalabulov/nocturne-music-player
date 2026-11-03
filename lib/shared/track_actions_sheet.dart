@@ -16,6 +16,7 @@ import 'album_art.dart';
 import 'delete_track.dart';
 import 'sonar_sheet.dart';
 import 'track_tile.dart';
+import '../l10n/l10n.dart';
 
 /// Long-press on a track: play next / queue / playlist / favorite / info.
 /// "Remove from playlist" shows when [onRemove] is given, "Select" (multi-select
@@ -113,7 +114,7 @@ class _TrackActions extends ConsumerWidget {
         if (onSelect != null)
           SheetAction(
             icon: Icons.checklist_rounded,
-            label: 'Select multiple',
+            label: l10n.selectMultiple,
             accent: true,
             onTap: () {
               close();
@@ -122,7 +123,7 @@ class _TrackActions extends ConsumerWidget {
           ),
         SheetAction(
           icon: Icons.playlist_play_rounded,
-          label: 'Play next',
+          label: l10n.playNext,
           onTap: () {
             handler.playNext(track);
             close();
@@ -130,7 +131,7 @@ class _TrackActions extends ConsumerWidget {
         ),
         SheetAction(
           icon: Icons.queue_rounded,
-          label: 'Add to queue',
+          label: l10n.addToQueue,
           onTap: () {
             handler.enqueue([track]);
             close();
@@ -138,7 +139,7 @@ class _TrackActions extends ConsumerWidget {
         ),
         SheetAction(
           icon: Icons.playlist_add_rounded,
-          label: 'Add to playlist…',
+          label: l10n.addToPlaylistEllipsis,
           onTap: () {
             close();
             showAddToPlaylistSheet(parent, track);
@@ -146,7 +147,7 @@ class _TrackActions extends ConsumerWidget {
         ),
         SheetAction(
           icon: isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-          label: isFav ? 'Remove from favorites' : 'Add to favorites',
+          label: isFav ? l10n.removeFromFavorites : l10n.addToFavorites,
           accent: isFav,
           onTap: () {
             ref.read(libraryRepositoryProvider).toggleFavorite(track.id);
@@ -157,7 +158,7 @@ class _TrackActions extends ConsumerWidget {
         // closes Now Playing if called from there)
         SheetAction(
           icon: Icons.album_outlined,
-          label: 'Go to album',
+          label: l10n.goToAlbum,
           onTap: () {
             final router = GoRouter.of(parent);
             close();
@@ -166,7 +167,7 @@ class _TrackActions extends ConsumerWidget {
         ),
         SheetAction(
           icon: Icons.person_outline_rounded,
-          label: 'Go to artist',
+          label: l10n.goToArtist,
           onTap: () {
             final router = GoRouter.of(parent);
             close();
@@ -175,22 +176,22 @@ class _TrackActions extends ConsumerWidget {
         ),
         SheetAction(
           icon: Icons.edit_outlined,
-          label: 'Edit artist',
+          label: l10n.editArtist,
           onTap: () async {
             final repo = ref.read(libraryRepositoryProvider);
             close();
             final name = await showNameDialog(parent,
-                title: 'Edit artist', initial: track.artist, hint: 'Artist');
+                title: l10n.editArtist, initial: track.artist, hint: l10n.artistField);
             if (name != null && name != track.artist) {
               await repo.setArtist(track.id, name);
-              showToast('Artist changed to $name');
+              showToast(l10n.artistChanged(name));
             }
           },
         ),
         if (onShowInLibrary != null)
           SheetAction(
             icon: Icons.my_location_rounded,
-            label: 'Show in library',
+            label: l10n.showInLibrary,
             onTap: () {
               close();
               onShowInLibrary!();
@@ -199,7 +200,7 @@ class _TrackActions extends ConsumerWidget {
         if (onRemove != null)
           SheetAction(
             icon: Icons.remove_circle_outline_rounded,
-            label: 'Remove from playlist',
+            label: l10n.removeFromPlaylist,
             destructive: true,
             onTap: () {
               onRemove!();
@@ -208,7 +209,7 @@ class _TrackActions extends ConsumerWidget {
           ),
         SheetAction(
           icon: Icons.delete_outline_rounded,
-          label: 'Delete from device',
+          label: l10n.deleteFromDevice,
           destructive: true,
           onTap: () {
             close();

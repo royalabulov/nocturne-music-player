@@ -13,12 +13,13 @@ import '../../shared/page_title.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/album_art.dart';
 import '../../shared/sonar_sheet.dart';
+import '../../l10n/l10n.dart';
 
 class PlaylistsScreen extends ConsumerWidget {
   const PlaylistsScreen({super.key});
 
   /// Big title here and in the compact bar (CollapsingTitle) after scrolling.
-  static const title = 'Playlists';
+  static String get title => l10n.navPlaylists;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,18 +35,14 @@ class PlaylistsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           PageTitle(
             PlaylistsScreen.title,
-            subtitle: switch (playlists.length) {
-              0 => 'No playlists yet',
-              1 => '1 playlist',
-              final n => '$n playlists',
-            },
+            subtitle: playlists.isEmpty ? l10n.noPlaylists : l10n.playlistCount(playlists.length),
           ),
           const SizedBox(height: AppSpacing.lg),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
             child: GestureDetector(
               onTap: () async {
-                final name = await showNameDialog(context, title: 'New playlist', hint: 'Playlist name');
+                final name = await showNameDialog(context, title: l10n.newPlaylist, hint: l10n.playlistName);
                 if (name == null) return;
                 final id = await repo.create(name);
                 if (context.mounted) context.push('/playlists/$id');
@@ -62,7 +59,7 @@ class PlaylistsScreen extends ConsumerWidget {
                   children: [
                     const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
                     const SizedBox(width: 8),
-                    Text('Create New Playlist', style: AppTypography.titleSm.copyWith(color: Colors.white)),
+                    Text(l10n.createNewPlaylist, style: AppTypography.titleSm.copyWith(color: Colors.white)),
                   ],
                 ),
               ),
@@ -71,10 +68,10 @@ class PlaylistsScreen extends ConsumerWidget {
           // Rescan lives in Settings; the page title already says what this is
           const SizedBox(height: AppSpacing.lg),
           if (playlists.isEmpty)
-            const EmptyState(
+            EmptyState(
               icon: Icons.queue_music_rounded,
-              title: 'No playlists yet',
-              message: 'Create one above, or long-press any track → "Add to playlist".',
+              title: l10n.noPlaylists,
+              message: l10n.noPlaylistsHint,
             )
           else
             Padding(
@@ -138,7 +135,7 @@ class _PlaylistCard extends ConsumerWidget {
                 Text(p.name, style: AppTypography.titleSm, maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
                 // One line: the card height is computed for two lines of text
-                Text('${p.trackCount} tracks • ${p.totalDuration.hm}',
+                Text('${l10n.trackCount(p.trackCount)} • ${p.totalDuration.hm}',
                     style: AppTypography.labelSm, maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
@@ -157,19 +154,19 @@ Future<void> showPlaylistActions(BuildContext context, WidgetRef ref, Playlist p
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SheetTitle(p.name, subtitle: '${p.trackCount} tracks'),
+        SheetTitle(p.name, subtitle: l10n.trackCount(p.trackCount)),
         SheetAction(
           icon: Icons.edit_outlined,
-          label: 'Rename',
+          label: l10n.rename,
           onTap: () async {
             Navigator.pop(context);
-            final name = await showNameDialog(context, title: 'Rename playlist', initial: p.name);
+            final name = await showNameDialog(context, title: l10n.renamePlaylist, initial: p.name);
             if (name != null) await repo.rename(p.id, name);
           },
         ),
         SheetAction(
           icon: Icons.delete_outline_rounded,
-          label: 'Delete playlist',
+          label: l10n.deletePlaylist,
           destructive: true,
           onTap: () async {
             Navigator.pop(context);

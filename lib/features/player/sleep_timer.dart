@@ -9,6 +9,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/ui/toast.dart';
 import '../../shared/sonar_sheet.dart';
 import 'player_providers.dart';
+import '../../l10n/l10n.dart';
 
 /// Sleep timer: after a set time, fades the volume down and stops,
 /// or stops when the current song ends. Works in the background too
@@ -113,20 +114,20 @@ class _SleepTimerButtonState extends ConsumerState<SleepTimerButton> {
       _tick?.cancel();
       _tick = null;
     }
-    final label = s.endOfTrack ? 'End of track' : (s.remaining != null ? _fmt(s.remaining!) : null);
+    final label = s.endOfTrack ? l10n.endOfTrack : (s.remaining != null ? _fmt(s.remaining!) : null);
     final color = s.active ? AppColors.cyan : AppColors.textSecondary;
     // TalkBack: "12:34" alone didn't say what it was, and off there was no text at all
     final minutes = s.remaining == null ? 0 : (s.remaining!.inSeconds / 60).ceil();
     final spoken = !s.active
-        ? 'Sleep timer: off'
+        ? l10n.sleepTimerOffSpoken
         : s.endOfTrack
-            ? 'Sleep timer: end of track'
-            : 'Sleep timer: $minutes ${minutes == 1 ? 'minute' : 'minutes'} left';
+            ? l10n.sleepTimerEndSpoken
+            : l10n.sleepTimerLeftSpoken(minutes);
 
     // The visible pill is ~30×26 → an invisible 48×48 tap area around it
     // (taps on the pill itself still go to its InkWell and show the ripple)
     return Tooltip(
-      message: 'Sleep timer',
+      message: l10n.sleepTimer,
       excludeFromSemantics: true,
       child: Semantics(
         button: true,
@@ -189,38 +190,38 @@ Future<void> showSleepTimerSheet(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           children: [
             SheetTitle(
-              'Sleep timer',
+              l10n.sleepTimer,
               subtitle: s.endOfTrack
-                  ? 'Stops when this track ends'
+                  ? l10n.stopsWhenTrackEnds
                   : s.remaining != null
-                      ? 'Stops in ${_fmt(s.remaining!)}'
-                      : 'Music fades out and pauses',
+                      ? l10n.stopsIn(_fmt(s.remaining!))
+                      : l10n.fadesOutAndPauses,
             ),
             for (final m in presets)
               SheetAction(
                 icon: Icons.timer_outlined,
-                label: m < 60 ? '$m minutes' : (m == 60 ? '1 hour' : '${m ~/ 60} h ${m % 60} min'),
-                onTap: () => pick(() => timer.start(Duration(minutes: m)), 'Sleep timer: $m min'),
+                label: m < 60 ? l10n.minutesLong(m) : (m == 60 ? l10n.oneHour : l10n.hoursMinutesLong(m ~/ 60, m % 60)),
+                onTap: () => pick(() => timer.start(Duration(minutes: m)), l10n.sleepTimerSetTo(m)),
               ),
             SheetAction(
               icon: Icons.music_off_outlined,
-              label: 'End of current track',
+              label: l10n.endOfCurrentTrack,
               accent: s.endOfTrack,
-              onTap: () => pick(timer.endOfTrack, 'Stops when this track ends'),
+              onTap: () => pick(timer.endOfTrack, l10n.stopsWhenTrackEnds),
             ),
             if (s.endsAt != null)
               SheetAction(
                 icon: Icons.more_time_rounded,
-                label: '+10 minutes',
+                label: l10n.plusTenMinutes,
                 accent: true,
-                onTap: () => pick(() => timer.extend(const Duration(minutes: 10)), 'Added 10 minutes'),
+                onTap: () => pick(() => timer.extend(const Duration(minutes: 10)), l10n.addedTenMinutes),
               ),
             if (s.active)
               SheetAction(
                 icon: Icons.timer_off_outlined,
-                label: 'Turn off',
+                label: l10n.turnOff,
                 destructive: true,
-                onTap: () => pick(timer.cancel, 'Sleep timer off'),
+                onTap: () => pick(timer.cancel, l10n.sleepTimerOff),
               ),
             const SizedBox(height: AppSpacing.sm),
           ],
