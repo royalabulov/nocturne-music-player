@@ -9,9 +9,14 @@ abstract final class AppTypography {
   static const String body = 'PlusJakartaSans';
   static const String mono = 'JetBrainsMono';
 
+  /// Sora has no ə (Azerbaijani) → that letter comes from Plus Jakarta Sans,
+  /// not from the system font (looked out of place in titles).
+  static const List<String> _displayFallback = [body];
+
   // Headlines — Sora
   static const TextStyle headlineXl = TextStyle(
     fontFamily: display,
+    fontFamilyFallback: _displayFallback,
     fontSize: 30,
     fontWeight: FontWeight.w700,
     height: 38 / 30,
@@ -21,6 +26,7 @@ abstract final class AppTypography {
 
   static const TextStyle headlineLg = TextStyle(
     fontFamily: display,
+    fontFamilyFallback: _displayFallback,
     fontSize: 24,
     fontWeight: FontWeight.w600,
     height: 32 / 24,
@@ -30,6 +36,7 @@ abstract final class AppTypography {
 
   static const TextStyle headlineMd = TextStyle(
     fontFamily: display,
+    fontFamilyFallback: _displayFallback,
     fontSize: 20,
     fontWeight: FontWeight.w600,
     height: 28 / 20,
@@ -39,6 +46,7 @@ abstract final class AppTypography {
 
   static const TextStyle titleSm = TextStyle(
     fontFamily: display,
+    fontFamilyFallback: _displayFallback,
     fontSize: 16,
     fontWeight: FontWeight.w600,
     height: 22 / 16,
