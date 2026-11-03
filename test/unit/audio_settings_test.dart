@@ -36,6 +36,16 @@ void main() {
     expect(back.copyWith(crossfade: false).crossfadeDuration, Duration.zero);
   });
 
+  test('pocket knock: off by default, survives JSON, sensitivity clamped', () {
+    expect(const AudioSettings().pocketKnock, false);
+    final back = AudioSettings.decode(const AudioSettings(pocketKnock: true, knockSensitivity: 2).encode());
+    expect(back.pocketKnock, true);
+    expect(back.knockSensitivity, 2);
+    // Settings saved before this feature → defaults
+    expect(AudioSettings.decode('{"crossfade":true}').knockSensitivity, 1);
+    expect(AudioSettings.decode('{"knockSensitivity":9}').knockSensitivity, 2);
+  });
+
   test('corrupt settings fall back to defaults', () {
     final s = AudioSettings.decode('{not json');
     expect(s.crossfade, false);

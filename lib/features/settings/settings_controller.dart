@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/audio/audio_effects.dart';
 import '../../core/audio/output_detector.dart';
+import '../../core/audio/pocket_knock.dart';
 import '../../core/di/providers.dart';
 import '../player/player_providers.dart';
 import 'audio_settings.dart';
@@ -12,6 +13,12 @@ final outputDetectorProvider = Provider<OutputDetector>((ref) {
   final d = OutputDetector();
   ref.onDispose(d.dispose);
   return d;
+});
+
+final pocketKnockProvider = Provider<PocketKnock>((ref) {
+  final k = PocketKnock(ref.watch(audioHandlerProvider));
+  ref.onDispose(k.dispose);
+  return k;
 });
 
 final outputKindProvider = StreamProvider<OutputKind>(
@@ -50,6 +57,7 @@ class AudioSettingsController extends Notifier<AudioSettings> {
     final h = ref.read(audioHandlerProvider);
     h.crossfade = state.crossfadeDuration;
     h.replayGain = state.replayGain;
+    ref.read(pocketKnockProvider).configure(enabled: state.pocketKnock, sensitivity: state.knockSensitivity);
     await h.applyGainNow();
     await _applyEq();
   }
@@ -83,6 +91,8 @@ class AudioSettingsController extends Notifier<AudioSettings> {
   Future<void> setEqEnabled(bool on) => _update(state.copyWith(eqEnabled: on));
   Future<void> setAutoPreset(bool on) => _update(state.copyWith(autoPreset: on));
   Future<void> setBassBoost(double v) => _update(state.copyWith(bassBoost: v.clamp(0, 1)));
+  Future<void> setPocketKnock(bool on) => _update(state.copyWith(pocketKnock: on));
+  Future<void> setKnockSensitivity(int v) => _update(state.copyWith(knockSensitivity: v.clamp(0, 2)));
 
   /// With auto preset on, saved for the current output; otherwise globally.
   Future<void> setPreset(String name) {

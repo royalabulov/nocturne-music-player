@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Pocket knock (KnockDetector): a short buzz confirms the song changed -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Online mode (default OFF): Wi-Fi/mobile data state + internet check.
          The code uses the network only after the user turns Online on (core/network). -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

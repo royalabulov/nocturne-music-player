@@ -113,6 +113,24 @@ class MainActivity : AudioServiceActivity() {
                     else -> result.notImplemented()
                 }
             }
+
+        // Pocket knock. The detector lives outside the activity (the audio_service engine
+        // keeps running when the activity is gone), so onDestroy doesn't stop it.
+        val knock = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.nocturne/knock")
+        KnockDetector.init(applicationContext)
+        KnockDetector.onKnock = { count -> knock.invokeMethod("knock", count) }
+        knock.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "update" -> {
+                    KnockDetector.update(
+                        call.argument<Boolean>("on") ?: false,
+                        call.argument<Int>("sensitivity") ?: 1,
+                    )
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
 
     // ── open with / share ─────────────────────────────────

@@ -362,6 +362,25 @@ class L10nEn extends L10n {
       'Evens out loudness between tracks (needs ReplayGain tags in the file)';
 
   @override
+  String get pocketKnock => 'Knock to skip';
+
+  @override
+  String get pocketKnockHint =>
+      'With the screen off (e.g. in your pocket), knock on the phone twice for the next song, three times for the previous one. Walking and shaking don\'t count';
+
+  @override
+  String get knockSensitivity => 'Knock sensitivity';
+
+  @override
+  String get knockLow => 'Low';
+
+  @override
+  String get knockMedium => 'Medium';
+
+  @override
+  String get knockHigh => 'High';
+
+  @override
   String get saveBackupDialog => 'Save Nocturne backup';
 
   @override

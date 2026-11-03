@@ -565,7 +565,59 @@ class _AudioGroup extends ConsumerWidget {
         value: s.replayGain,
         onChanged: ctrl.setReplayGain,
       ),
+      _ToggleRow(
+        title: l10n.pocketKnock,
+        subtitle: l10n.pocketKnockHint,
+        value: s.pocketKnock,
+        onChanged: ctrl.setPocketKnock,
+      ),
+      AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        child: s.pocketKnock
+            ? _ChoiceRow(
+                title: l10n.knockSensitivity,
+                options: [l10n.knockLow, l10n.knockMedium, l10n.knockHigh],
+                selected: s.knockSensitivity,
+                onSelected: ctrl.setKnockSensitivity,
+              )
+            : const SizedBox.shrink(),
+      ),
     ]);
+  }
+}
+
+/// Title + one-of-N chips (e.g. knock sensitivity).
+class _ChoiceRow extends StatelessWidget {
+  const _ChoiceRow({required this.title, required this.options, required this.selected, required this.onSelected});
+  final String title;
+  final List<String> options;
+  final int selected;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.md, AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: AppTypography.bodyMd),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            children: [
+              for (var i = 0; i < options.length; i++)
+                ChoiceChip(
+                  label: Text(options[i]),
+                  selected: i == selected,
+                  showCheckmark: false,
+                  onSelected: (_) => onSelected(i),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

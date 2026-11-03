@@ -363,6 +363,25 @@ class L10nAz extends L10n {
       'Bəzi mahnılar digərlərindən bərk çalırsa, səsi bərabərləşdirir (faylda ReplayGain məlumatı olmalıdır)';
 
   @override
+  String get pocketKnock => 'Vuraraq mahnı dəyiş';
+
+  @override
+  String get pocketKnockHint =>
+      'Ekran sönülü olanda (məsələn, cibdə) telefona 2 dəfə vur — növbəti mahnı, 3 dəfə vur — əvvəlki mahnı. Yerimək və silkələnmə sayılmır';
+
+  @override
+  String get knockSensitivity => 'Həssaslıq';
+
+  @override
+  String get knockLow => 'Aşağı';
+
+  @override
+  String get knockMedium => 'Orta';
+
+  @override
+  String get knockHigh => 'Yüksək';
+
+  @override
   String get saveBackupDialog => 'Nocturne ehtiyat nüsxəsini saxla';
 
   @override

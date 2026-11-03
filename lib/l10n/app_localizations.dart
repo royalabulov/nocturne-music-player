@@ -679,6 +679,42 @@ abstract class L10n {
   /// **'Evens out loudness between tracks (needs ReplayGain tags in the file)'**
   String get replayGainHint;
 
+  /// No description provided for @pocketKnock.
+  ///
+  /// In en, this message translates to:
+  /// **'Knock to skip'**
+  String get pocketKnock;
+
+  /// No description provided for @pocketKnockHint.
+  ///
+  /// In en, this message translates to:
+  /// **'With the screen off (e.g. in your pocket), knock on the phone twice for the next song, three times for the previous one. Walking and shaking don\'t count'**
+  String get pocketKnockHint;
+
+  /// No description provided for @knockSensitivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Knock sensitivity'**
+  String get knockSensitivity;
+
+  /// No description provided for @knockLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get knockLow;
+
+  /// No description provided for @knockMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get knockMedium;
+
+  /// No description provided for @knockHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get knockHigh;
+
   /// No description provided for @saveBackupDialog.
   ///
   /// In en, this message translates to:

@@ -15,6 +15,8 @@ class AudioSettings {
     this.autoPreset = true,
     this.presetByOutput = defaultPresetByOutput,
     this.replayGain = true,
+    this.pocketKnock = false,
+    this.knockSensitivity = 1,
   });
 
   /// Default per output while auto preset is on.
@@ -42,6 +44,12 @@ class AudioSettings {
   final Map<String, String> presetByOutput;
   final bool replayGain;
 
+  /// Knock on the phone in the pocket: 2× next, 3× previous (core/audio/pocket_knock.dart).
+  final bool pocketKnock;
+
+  /// 0 = low, 1 = medium, 2 = high.
+  final int knockSensitivity;
+
   /// The preset applied right now (auto → by output).
   EqPreset effectivePreset(OutputKind output) => EqPreset.byName(
         autoPreset ? (presetByOutput[output.name] ?? defaultPresetByOutput[output.name]) : preset,
@@ -59,6 +67,8 @@ class AudioSettings {
     bool? autoPreset,
     Map<String, String>? presetByOutput,
     bool? replayGain,
+    bool? pocketKnock,
+    int? knockSensitivity,
   }) =>
       AudioSettings(
         crossfade: crossfade ?? this.crossfade,
@@ -70,6 +80,8 @@ class AudioSettings {
         autoPreset: autoPreset ?? this.autoPreset,
         presetByOutput: presetByOutput ?? this.presetByOutput,
         replayGain: replayGain ?? this.replayGain,
+        pocketKnock: pocketKnock ?? this.pocketKnock,
+        knockSensitivity: knockSensitivity ?? this.knockSensitivity,
       );
 
   Map<String, dynamic> toJson() => {
@@ -82,6 +94,8 @@ class AudioSettings {
         'autoPreset': autoPreset,
         'presetByOutput': presetByOutput,
         'replayGain': replayGain,
+        'pocketKnock': pocketKnock,
+        'knockSensitivity': knockSensitivity,
       };
 
   static AudioSettings fromJson(Map<String, dynamic> j) => AudioSettings(
@@ -97,6 +111,8 @@ class AudioSettings {
           ...((j['presetByOutput'] as Map?)?.cast<String, String>() ?? const {}),
         },
         replayGain: j['replayGain'] as bool? ?? true,
+        pocketKnock: j['pocketKnock'] as bool? ?? false,
+        knockSensitivity: ((j['knockSensitivity'] as num?)?.toInt() ?? 1).clamp(0, 2),
       );
 
   String encode() => jsonEncode(toJson());
