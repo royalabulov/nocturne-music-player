@@ -157,7 +157,7 @@
   "add": "Add",
   "scanningShort": "Scanning",
   "rescan": "Rescan",
-  "importHint": "Pick songs from anywhere — copied to Music/Sonar",
+  "importHint": "Pick songs from anywhere — copied to Music/Nocturne",
   "import": "Import",
   "autoScan": "Auto-scan on launch",
   "autoScanHint": "Check local folders for newly added tracks",
@@ -818,7 +818,7 @@
     }
   },
   "couldNotOpenFile": "Couldn't open this file",
-  "savedToMusicSonarSuffix": " • saved to Music/Sonar",
+  "savedToMusicSonarSuffix": " • saved to Music/Nocturne",
   "playingOne": "Playing \"{title}\"",
   "@playingOne": {
     "placeholders": {
@@ -851,7 +851,7 @@
       }
     }
   },
-  "savedToMusicSonar": "saved to Music/Sonar",
+  "savedToMusicSonar": "saved to Music/Nocturne",
   "skippedCount": "{count} skipped",
   "@skippedCount": {
     "placeholders": {

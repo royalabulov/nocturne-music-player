@@ -241,7 +241,7 @@ class L10nAz extends L10n {
 
   @override
   String get importHint =>
-      'Telefondakı istənilən mahnını seçin — Music/Sonar qovluğuna köçürülür';
+      'Telefondakı istənilən mahnını seçin — Music/Nocturne qovluğuna köçürülür';
 
   @override
   String get import => 'Əlavə et';
@@ -1172,7 +1172,8 @@ class L10nAz extends L10n {
   String get couldNotOpenFile => 'Bu faylı açmaq alınmadı';
 
   @override
-  String get savedToMusicSonarSuffix => ' • Music/Sonar qovluğuna saxlanıldı';
+  String get savedToMusicSonarSuffix =>
+      ' • Music/Nocturne qovluğuna saxlanıldı';
 
   @override
   String playingOne(String title) {
@@ -1200,7 +1201,7 @@ class L10nAz extends L10n {
   }
 
   @override
-  String get savedToMusicSonar => 'Music/Sonar qovluğuna saxlanıldı';
+  String get savedToMusicSonar => 'Music/Nocturne qovluğuna saxlanıldı';
 
   @override
   String skippedCount(int count) {

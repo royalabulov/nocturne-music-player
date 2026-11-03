@@ -172,7 +172,7 @@ class _StorageGroup extends ConsumerWidget {
           onTap: scan.isRunning ? null : ctrl.requestAndScan,
         ),
       ),
-      // Pick individual files to add → copied to Music/Sonar
+      // Pick individual files to add → copied to Music/Nocturne
       _InfoRow(
         title: l10n.importAudioFiles,
         subtitle: l10n.importHint,

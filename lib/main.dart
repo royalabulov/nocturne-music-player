@@ -57,7 +57,7 @@ Future<void> main() async {
       sourceBuilder: kIsWeb ? DemoAudio.sourceFor : null,
     ),
     config: AudioServiceConfig(
-      androidNotificationChannelId: 'com.royal.sonar.playback',
+      androidNotificationChannelId: 'com.nocturne.playback',
       androidNotificationChannelName: l10n.notificationChannel,
       // Stay in foreground while paused too: otherwise Samsung kills the process in the
       // background, and startForeground again from the background crashes on Android 12+.

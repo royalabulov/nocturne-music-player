@@ -1,4 +1,4 @@
-package com.royal.sonar
+package com.nocturne
 
 import android.content.ContentValues
 import android.content.Context
@@ -16,11 +16,11 @@ import java.io.InputStream
 /// * [resolve]: if the content:// URI is already a readable file on the phone
 ///   (file manager, MediaStore) returns its path — no copy needed.
 /// * [import]: otherwise (Telegram FileProvider, file_picker cache) copies the file
-///   to `Music/Sonar/` (MediaStore insert — needs no permission) and returns
+///   to `Music/Nocturne/` (MediaStore insert — needs no permission) and returns
 ///   the new file's path. If the same name + size already exists, it isn't copied again.
 class AudioImporter(private val context: Context) {
     private val resolver get() = context.contentResolver
-    private val folder = Environment.DIRECTORY_MUSIC + "/Sonar"
+    private val folder = Environment.DIRECTORY_MUSIC + "/Nocturne"
 
     data class Info(val path: String?, val name: String, val size: Long)
 
@@ -53,7 +53,7 @@ class AudioImporter(private val context: Context) {
         return Info(path, name, size)
     }
 
-    /// Copy the file to Music/Sonar; path of the new (or already existing identical) file.
+    /// Copy the file to Music/Nocturne; path of the new (or already existing identical) file.
     fun import(source: String): String {
         val info = resolve(source)
         val name = safeName(info.name)
@@ -70,7 +70,7 @@ class AudioImporter(private val context: Context) {
             // Android 9 and older: writing to a public folder needs permission → the app's own
             // Music folder; the Dart side then notifies MediaScanner so
             // MediaStore enumerate finds it
-            val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "Sonar").apply { mkdirs() }
+            val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "Nocturne").apply { mkdirs() }
             val out = uniqueFile(dir, name)
             out.outputStream().use { input.copyTo(it) }
             return out.absolutePath
@@ -95,12 +95,12 @@ class AudioImporter(private val context: Context) {
         return dataOf(item) ?: error("imported file has no path")
     }
 
-    /// Same name + size in Music/Sonar → that file (when shared a second time).
+    /// Same name + size in Music/Nocturne → that file (when shared a second time).
     private fun existing(name: String, size: Long): String? {
         if (size <= 0) return null
         val dir = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
-            File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "Sonar")
-        else File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "Sonar")
+            File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "Nocturne")
+        else File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "Nocturne")
         val f = File(dir, name)
         return if (f.exists() && f.length() == size) f.absolutePath else null
     }

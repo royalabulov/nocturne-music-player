@@ -1,4 +1,4 @@
-package com.royal.sonar
+package com.nocturne
 
 import android.app.Activity
 import android.app.RecoverableSecurityException
@@ -21,7 +21,7 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
 class MainActivity : AudioServiceActivity() {
-    private val channelName = "com.royal.sonar/media_store"
+    private val channelName = "com.nocturne/media_store"
     private val deleteRequestCode = 4711
     private var pendingDelete: MethodChannel.Result? = null
     private var pendingDeletePath: String? = null
@@ -148,7 +148,7 @@ class MainActivity : AudioServiceActivity() {
 
     /// Only URIs another app may legitimately hand us. Any app can send this exported
     /// activity a file:// URI (or a bare path) pointing into our own storage — the importer
-    /// can read it and would copy it to the public Music/Sonar folder (e.g. the library
+    /// can read it and would copy it to the public Music/Nocturne folder (e.g. the library
     /// database). So: content:// from other apps' providers, file:// only on shared storage.
     private fun isSafeIncoming(uri: Uri): Boolean {
         when (uri.scheme) {

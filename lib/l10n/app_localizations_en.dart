@@ -243,7 +243,8 @@ class L10nEn extends L10n {
   String get rescan => 'Rescan';
 
   @override
-  String get importHint => 'Pick songs from anywhere — copied to Music/Sonar';
+  String get importHint =>
+      'Pick songs from anywhere — copied to Music/Nocturne';
 
   @override
   String get import => 'Import';
@@ -1178,7 +1179,7 @@ class L10nEn extends L10n {
   String get couldNotOpenFile => 'Couldn\'t open this file';
 
   @override
-  String get savedToMusicSonarSuffix => ' • saved to Music/Sonar';
+  String get savedToMusicSonarSuffix => ' • saved to Music/Nocturne';
 
   @override
   String playingOne(String title) {
@@ -1207,7 +1208,7 @@ class L10nEn extends L10n {
   }
 
   @override
-  String get savedToMusicSonar => 'saved to Music/Sonar';
+  String get savedToMusicSonar => 'saved to Music/Nocturne';
 
   @override
   String skippedCount(int count) {

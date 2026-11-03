@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 
 /// Kotlin `AudioAnalyzer` (MainActivity "analyzeAudio") — YAMNet, tam offline.
 class AudioAnalyzerSource {
-  static const _ch = MethodChannel('com.royal.sonar/media_store');
+  static const _ch = MethodChannel('com.nocturne/media_store');
 
   /// Analysis is only possible on Android (not in the web demo / tests).
   bool get supported => !kIsWeb && Platform.isAndroid;

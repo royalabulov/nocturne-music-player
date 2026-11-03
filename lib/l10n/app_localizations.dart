@@ -484,7 +484,7 @@ abstract class L10n {
   /// No description provided for @importHint.
   ///
   /// In en, this message translates to:
-  /// **'Pick songs from anywhere — copied to Music/Sonar'**
+  /// **'Pick songs from anywhere — copied to Music/Nocturne'**
   String get importHint;
 
   /// No description provided for @import.
@@ -1990,7 +1990,7 @@ abstract class L10n {
   /// No description provided for @savedToMusicSonarSuffix.
   ///
   /// In en, this message translates to:
-  /// **' • saved to Music/Sonar'**
+  /// **' • saved to Music/Nocturne'**
   String get savedToMusicSonarSuffix;
 
   /// No description provided for @playingOne.
@@ -2020,7 +2020,7 @@ abstract class L10n {
   /// No description provided for @savedToMusicSonar.
   ///
   /// In en, this message translates to:
-  /// **'saved to Music/Sonar'**
+  /// **'saved to Music/Nocturne'**
   String get savedToMusicSonar;
 
   /// No description provided for @skippedCount.

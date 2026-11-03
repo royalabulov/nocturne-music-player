@@ -15,7 +15,7 @@ val keyProps = Properties().apply {
 val useReleaseKey = keyProps.getProperty("enabled") == "true"
 
 android {
-    namespace = "com.royal.sonar"
+    namespace = "com.nocturne"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -25,7 +25,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.royal.sonar"
+        applicationId = "com.nocturne"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

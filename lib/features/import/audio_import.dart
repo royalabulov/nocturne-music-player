@@ -19,7 +19,7 @@ class ImportResult {
   const ImportResult(this.tracks, {this.copied = 0, this.failed = 0});
   final List<Track> tracks;
 
-  /// Number of files copied to Music/Sonar (the rest were already on the phone).
+  /// Number of files copied to Music/Nocturne (the rest were already on the phone).
   final int copied;
 
   /// Files that didn't open / didn't make it into the library (too short, corrupt).
@@ -30,7 +30,7 @@ class ImportResult {
 ///
 /// 1. File already in the library (by path or name+size) → that track.
 /// 2. A readable public file on the phone → MediaScanner + scan (no copy).
-/// 3. Otherwise (Telegram, file picker cache) → copy to Music/Sonar + scan.
+/// 3. Otherwise (Telegram, file picker cache) → copy to Music/Nocturne + scan.
 class AudioImport {
   AudioImport(this._read, {MediaStoreSource? store}) : _store = store ?? MediaStoreSource();
 

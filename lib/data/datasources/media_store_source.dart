@@ -8,7 +8,7 @@ import 'raw_audio.dart';
 /// Android MediaStore — the MethodChannel on the Kotlin side (MainActivity.kt).
 /// iOS has no MediaStore → empty list.
 class MediaStoreSource {
-  static const _ch = MethodChannel('com.royal.sonar/media_store');
+  static const _ch = MethodChannel('com.nocturne/media_store');
 
   Future<List<RawAudio>> enumerate() async {
     if (!Platform.isAndroid) return const [];
@@ -72,7 +72,7 @@ class MediaStoreSource {
     return (path: r['path'] as String?, name: r['name'] as String, size: (r['size'] as num).toInt());
   }
 
-  /// Copy the file to Music/Sonar → new path. Returns the existing one if name+size match.
+  /// Copy the file to Music/Nocturne → new path. Returns the existing one if name+size match.
   Future<String> importAudio(String source) async {
     final r = await _ch.invokeMethod<Object?>('importAudio', {'source': source});
     debugPrint('import "$source" → $r');
