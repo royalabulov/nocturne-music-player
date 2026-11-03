@@ -25,7 +25,8 @@ genre — no account, no cloud, no tracking.
   length; sort songs, albums and artists several ways.
 - **Robust tag reading** — repairs broken ID3v2 text frames (e.g. double-BOM UTF-16 from
   downloader apps) and guesses the artist from `Artist - Title` file names.
-- **Import & share** — "Open with" and Share from Telegram, WhatsApp or a file manager.
+- **Import & share** — "Open with" and Share from messengers, browsers or a file manager.
+- **Two languages** — English and Azerbaijani, switchable in Settings; respects large system fonts.
 - **Backup / restore** of favorites, playlists and play history as JSON.
 
 ## Tech stack
@@ -79,8 +80,12 @@ flutter build web
 
 ## Privacy
 
-Nocturne requests only the audio-file permission. It has no analytics, no ads and no
-network calls — an "Offline mode" switch in Settings blocks the network entirely.
+Nocturne collects no data: no account, no analytics, no ads, no crash reporting.
+Permissions: audio files (to build the library), foreground service + wake lock
+(background playback) and network state + internet. The network is used only after the
+user turns Online mode on (default: off), and then only for a connectivity check
+(an empty `generate_204` request to Cloudflare, falling back to Google). Songs, play
+history and AI analysis never leave the phone.
 
 ## Credits
 
