@@ -78,6 +78,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         extendBody: true,
         drawer: SideMenu(location: widget.location),
         drawerScrimColor: const Color(0xB3000000),
+        // Search kept its focus → when the menu closed, Flutter restored
+        // focus and the keyboard popped up (same as Now Playing)
+        onDrawerChanged: (open) {
+          if (open) FocusManager.instance.primaryFocus?.unfocus();
+        },
         body: navigationShell,
         bottomNavigationBar: selecting
             ? const SelectionBar()
