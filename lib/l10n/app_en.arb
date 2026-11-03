@@ -1021,5 +1021,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "unknownArtist": "Unknown Artist",
+  "unknownAlbum": "Unknown Album",
+  "variousArtists": "Various Artists"
 }

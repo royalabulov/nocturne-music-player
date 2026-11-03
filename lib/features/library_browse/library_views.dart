@@ -9,6 +9,7 @@ import '../../shared/album_art.dart';
 import '../../shared/empty_state.dart';
 import 'library_groups.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 enum LibraryView { songs, albums, artists }
 
@@ -119,10 +120,10 @@ class AlbumCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(a.title, style: AppTypography.titleSm, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(displayName(a.title), style: AppTypography.titleSm, maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
                 Text(
-                  '${a.artist} • ${a.tracks.length}',
+                  '${displayName(a.artist)} • ${a.tracks.length}',
                   style: AppTypography.labelSm,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -177,7 +178,7 @@ class ArtistTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(a.name, style: AppTypography.titleSm, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(displayName(a.name), style: AppTypography.titleSm, maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
                 Text(
                   [

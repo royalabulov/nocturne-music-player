@@ -383,5 +383,8 @@
   "chipWired": "SİMLİ",
   "chipBluetooth": "BT",
   "chipSpeaker": "DİNAMİK",
-  "seconds": "{value} san"
+  "seconds": "{value} san",
+  "unknownArtist": "Naməlum ifaçı",
+  "unknownAlbum": "Naməlum albom",
+  "variousArtists": "Müxtəlif ifaçılar"
 }

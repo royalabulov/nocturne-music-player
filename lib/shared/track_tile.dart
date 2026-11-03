@@ -6,6 +6,7 @@ import '../core/theme/app_typography.dart';
 import '../domain/entities/track.dart';
 import 'album_art.dart';
 import 'eq_bars.dart';
+import '../shared/display_names.dart';
 
 /// Universal track row. [trailing] changes the right side
 /// (heart, play, kebab, "Played 42x" ...).
@@ -102,7 +103,7 @@ String artistAlbumLine(Track t) {
   final album = t.album.trim().toLowerCase();
   final repeats = album == t.artist.trim().toLowerCase() || album == t.title.trim().toLowerCase();
   final unknown = album.isEmpty || album.startsWith('unknown');
-  return repeats || unknown ? t.artist : '${t.artist} • ${t.album.trim()}';
+  return repeats || unknown ? t.artistLabel : '${t.artistLabel} • ${t.album.trim()}';
 }
 
 /// Tick circle over the cover in selection mode.

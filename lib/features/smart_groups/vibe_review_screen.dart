@@ -16,6 +16,7 @@ import 'smart_groups.dart';
 import 'vibe_classifier.dart';
 import 'vibe_review.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 const _sampleSize = 40;
 const _all = (sort: TrackSort.recentlyAdded, query: '');
@@ -225,7 +226,7 @@ class _ReviewCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(track.title, style: AppTypography.headlineMd, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  Text(track.artist, style: AppTypography.bodySm, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(track.artistLabel, style: AppTypography.bodySm, maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: AppSpacing.xs),
                   _Chip(
                     label: clipPlaying ? l10n.pause : l10n.playAClip,

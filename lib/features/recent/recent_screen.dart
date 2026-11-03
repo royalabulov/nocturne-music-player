@@ -15,6 +15,7 @@ import '../../shared/glow_play_button.dart';
 import '../../shared/track_sliver_list.dart';
 import '../player/player_providers.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 /// Only listening history here — "Recently added" and "A–Z" were Home's sort
 /// orders repeated (design review, 2026-11-02).
@@ -50,12 +51,12 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
         final meta = {for (final p in items) p.track.id: p};
         tracks = [for (final p in items) p.track];
         // Plays within the chosen period (Today / This week / This month)
-        subtitle = (t) => '${meta[t.id]?.playCount ?? 0}× • ${_ago(meta[t.id]?.lastPlayedAt)} • ${t.artist}';
+        subtitle = (t) => '${meta[t.id]?.playCount ?? 0}× • ${_ago(meta[t.id]?.lastPlayedAt)} • ${t.artistLabel}';
       case _Filter.mostPlayed:
         final items = ref.watch(mostPlayedProvider(_period)).value ?? const <PlayedTrack>[];
         final meta = {for (final p in items) p.track.id: p};
         tracks = [for (final p in items) p.track];
-        subtitle = (t) => '${meta[t.id]?.playCount ?? 0}× • ${t.artist}';
+        subtitle = (t) => '${meta[t.id]?.playCount ?? 0}× • ${t.artistLabel}';
     }
 
     final emptyText = switch (_period) {

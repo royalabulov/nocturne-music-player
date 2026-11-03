@@ -2405,6 +2405,24 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'{value}s'**
   String seconds(String value);
+
+  /// No description provided for @unknownArtist.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Artist'**
+  String get unknownArtist;
+
+  /// No description provided for @unknownAlbum.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Album'**
+  String get unknownAlbum;
+
+  /// No description provided for @variousArtists.
+  ///
+  /// In en, this message translates to:
+  /// **'Various Artists'**
+  String get variousArtists;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

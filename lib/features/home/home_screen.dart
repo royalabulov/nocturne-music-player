@@ -27,6 +27,7 @@ import '../library_scan/scan_status_card.dart';
 import '../player/player_providers.dart';
 import '../shell/scroll_to_top.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 /// Home: greeting, search, Recommended (from play history) and the Library
 /// (Songs / Albums / Artists) — all from the local database.
@@ -515,7 +516,7 @@ class _RecommendedRow extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    '${item.playCount}×  ·  ${t.artist}',
+                    '${item.playCount}×  ·  ${t.artistLabel}',
                     style: AppTypography.labelSm,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

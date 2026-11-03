@@ -16,6 +16,7 @@ import '../../shared/glow_play_button.dart';
 import '../../shared/sort_sheet.dart';
 import '../../shared/track_sliver_list.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
@@ -125,7 +126,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
             ],
           ),
           if (_tab == 0)
-            TrackSliverList(tracks: tracks, subtitle: (t) => t.artist)
+            TrackSliverList(tracks: tracks, subtitle: (t) => t.artistLabel)
           else
             _GroupedSliver(tracks: tracks, byArtist: _tab == 2),
           const SliverPadding(
@@ -326,10 +327,10 @@ class _GroupedSliver extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(k, style: AppTypography.titleSm, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(displayName(k), style: AppTypography.titleSm, maxLines: 1, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 2),
                       Text(
-                        byArtist ? l10n.lovedTracks(g.length) : '${first.artist} • ${l10n.lovedTracks(g.length)}',
+                        byArtist ? l10n.lovedTracks(g.length) : '${first.artistLabel} • ${l10n.lovedTracks(g.length)}',
                         style: AppTypography.bodySm, maxLines: 1, overflow: TextOverflow.ellipsis,
                       ),
                     ],

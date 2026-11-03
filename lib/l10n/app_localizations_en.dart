@@ -1430,4 +1430,13 @@ class L10nEn extends L10n {
   String seconds(String value) {
     return '${value}s';
   }
+
+  @override
+  String get unknownArtist => 'Unknown Artist';
+
+  @override
+  String get unknownAlbum => 'Unknown Album';
+
+  @override
+  String get variousArtists => 'Various Artists';
 }

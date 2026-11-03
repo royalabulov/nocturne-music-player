@@ -10,6 +10,7 @@ import '../../domain/entities/track.dart';
 import '../../shared/album_art.dart';
 import 'player_providers.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 /// The queue — bottom sheet. Tap → jump to that track.
 Future<void> showQueueSheet(BuildContext context) => showModalBottomSheet(
@@ -134,7 +135,7 @@ class _QueueSheetState extends ConsumerState<_QueueSheet> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       subtitle: Text(
-                        t.artist,
+                        t.artistLabel,
                         style: AppTypography.labelSm,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

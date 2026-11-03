@@ -25,6 +25,7 @@ import 'player_providers.dart';
 import 'queue_sheet.dart';
 import 'sleep_timer.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 /// Full-screen player. Not in the original design — drawn to match the design system.
 class NowPlayingScreen extends ConsumerWidget {
@@ -140,7 +141,7 @@ class NowPlayingScreen extends ConsumerWidget {
                                   GoRouter.of(context)
                                       .go(artistRoute(artistKeyOf(t))),
                               child: Text(
-                                t.artist,
+                                t.artistLabel,
                                 style: AppTypography.bodyMd.copyWith(
                                   color: AppColors.textSecondary,
                                 ),

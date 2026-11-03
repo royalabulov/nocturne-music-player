@@ -16,6 +16,7 @@ import '../smart_groups/smart_groups.dart';
 import '../smart_groups/smart_groups_section.dart';
 import 'library_groups.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 class AlbumDetailScreen extends ConsumerWidget {
   const AlbumDetailScreen({super.key, required this.albumKey});
@@ -31,14 +32,14 @@ class AlbumDetailScreen extends ConsumerWidget {
     final year = a.year;
     return _DetailScaffold(
       label: l10n.albumLabel,
-      title: a.title,
-      subtitle: [a.artist, ?year?.toString()].join(' • '),
+      title: displayName(a.title),
+      subtitle: [displayName(a.artist), ?year?.toString()].join(' • '),
       meta: '${l10n.trackCount(a.tracks.length)} • ${a.totalDuration.hm}',
       art: AlbumArt(path: a.coverPath, seed: a.key.hashCode, size: 112, radius: AppRadius.xl),
       tracks: a.tracks,
       // In an album, the artist under each row (the album name is in the header)
-      subtitleOf: (t) => '${t.trackNo != null ? '${t.trackNo}. ' : ''}${t.artist}',
-      onSubtitleTap: a.artist == 'Various Artists'
+      subtitleOf: (t) => '${t.trackNo != null ? '${t.trackNo}. ' : ''}${t.artistLabel}',
+      onSubtitleTap: a.artist == kVariousArtists
           ? null
           : () => context.push(artistRoute(artistKeyOf(a.tracks.first))),
     );
@@ -62,7 +63,7 @@ class ArtistDetailScreen extends ConsumerWidget {
     final albumCount = a.albumCount;
     return _DetailScaffold(
       label: l10n.artistLabel,
-      title: a.name,
+      title: displayName(a.name),
       subtitle: [
         if (albumCount > 0) l10n.albumCount(albumCount),
         l10n.trackCount(a.tracks.length),
@@ -70,7 +71,7 @@ class ArtistDetailScreen extends ConsumerWidget {
       meta: a.tracks.fold(Duration.zero, (d, t) => d + t.duration).hm,
       art: AlbumArt(path: a.coverPath, seed: a.key.hashCode, size: 112, radius: 56),
       tracks: a.tracks,
-      subtitleOf: (t) => t.album,
+      subtitleOf: (t) => t.albumLabel,
       albums: albums.length > 1 ? albums : const [],
     );
   }
@@ -95,7 +96,7 @@ class SmartGroupDetailScreen extends ConsumerWidget {
       meta: '${l10n.trackCount(g.tracks.length)} • ${total.hm}',
       art: VibeArt(group: g, size: 112),
       tracks: g.tracks,
-      subtitleOf: (t) => t.artist,
+      subtitleOf: (t) => t.artistLabel,
     );
   }
 }

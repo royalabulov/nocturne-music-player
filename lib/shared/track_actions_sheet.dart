@@ -17,6 +17,7 @@ import 'delete_track.dart';
 import 'sonar_sheet.dart';
 import 'track_tile.dart';
 import '../l10n/l10n.dart';
+import '../data/datasources/tag_reader.dart';
 
 /// Long-press on a track: play next / queue / playlist / favorite / info.
 /// "Remove from playlist" shows when [onRemove] is given, "Select" (multi-select
@@ -181,7 +182,10 @@ class _TrackActions extends ConsumerWidget {
             final repo = ref.read(libraryRepositoryProvider);
             close();
             final name = await showNameDialog(parent,
-                title: l10n.editArtist, initial: track.artist, hint: l10n.artistField);
+                                // Unknown → an empty box, not "Unknown Artist" to delete first
+                title: l10n.editArtist,
+                initial: track.artist == TagReader.unknownArtist ? '' : track.artist,
+                hint: l10n.artistField);
             if (name != null && name != track.artist) {
               await repo.setArtist(track.id, name);
               showToast(l10n.artistChanged(name));

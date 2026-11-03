@@ -5,6 +5,7 @@ import '../../data/datasources/tag_reader.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 /// Album / artist views. There's no separate DB table — grouped from the
 /// in-memory library (a few ms even for 2000+ tracks).
@@ -94,7 +95,7 @@ List<AlbumGroup> groupAlbums(List<Track> tracks) {
         return AlbumGroup(
           key: e.key,
           title: list.first.album,
-          artist: artists.length == 1 ? primaryArtist(list.first.artist) : 'Various Artists',
+          artist: artists.length == 1 ? primaryArtist(list.first.artist) : kVariousArtists,
           tracks: list,
         );
       }(),

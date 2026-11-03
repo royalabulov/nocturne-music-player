@@ -1424,4 +1424,13 @@ class L10nAz extends L10n {
   String seconds(String value) {
     return '$value san';
   }
+
+  @override
+  String get unknownArtist => 'Naməlum ifaçı';
+
+  @override
+  String get unknownAlbum => 'Naməlum albom';
+
+  @override
+  String get variousArtists => 'Müxtəlif ifaçılar';
 }

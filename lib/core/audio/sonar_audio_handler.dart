@@ -9,6 +9,7 @@ import 'package:rxdart/rxdart.dart';
 import '../../domain/entities/track.dart';
 import 'audio_effects.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 /// Two just_audio players (A/B) take turns:
 /// one plays while the other preloads the next track and waits.
@@ -760,8 +761,9 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
   static MediaItem _toMediaItem(Track t) => MediaItem(
         id: '${t.id}',
         title: t.title,
-        artist: t.artist,
-        album: t.album,
+        // Lock screen / notification: same names as in the app
+        artist: t.artistLabel,
+        album: t.albumLabel,
         duration: t.duration,
         artUri: t.coverPath == null ? null : Uri.file(t.coverPath!),
         extras: {'trackId': t.id, 'path': t.path},

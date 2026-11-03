@@ -9,6 +9,7 @@ import '../../domain/entities/track.dart';
 import '../../shared/album_art.dart';
 import '../../shared/cover_color.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/display_names.dart';
 
 /// Hero tag for the cover between the mini player and Now Playing.
 const kNowPlayingArtHero = 'now-playing-art';
@@ -75,7 +76,7 @@ class MiniPlayer extends StatelessWidget {
                           children: [
                             Text(track.title, style: AppTypography.titleSm,
                                 maxLines: 1, overflow: TextOverflow.ellipsis),
-                            Text(track.artist, style: AppTypography.labelSm,
+                            Text(track.artistLabel, style: AppTypography.labelSm,
                                 maxLines: 1, overflow: TextOverflow.ellipsis),
                           ],
                         ),
