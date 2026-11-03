@@ -15,7 +15,7 @@ import java.io.InputStream
 ///
 /// * [resolve]: if the content:// URI is already a readable file on the phone
 ///   (file manager, MediaStore) returns its path — no copy needed.
-/// * [import]: otherwise (Telegram FileProvider, file_picker cache) copies the file
+/// * [import]: otherwise (a messenger's FileProvider, file_picker cache) copies the file
 ///   to `Music/Nocturne/` (MediaStore insert — needs no permission) and returns
 ///   the new file's path. If the same name + size already exists, it isn't copied again.
 class AudioImporter(private val context: Context) {

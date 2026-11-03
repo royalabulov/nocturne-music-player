@@ -254,7 +254,7 @@ class MainActivity : AudioServiceActivity() {
     // ── delete ────────────────────────────────────────────────
 
     /// Delete a file from the phone. Scoped storage (Android 10+): a file written by
-    /// another app (Snaptube, Telegram) can't be deleted directly → MediaStore
+    /// another app (downloader, messenger) can't be deleted directly → MediaStore
     /// delete request — the system shows a one-time confirmation dialog.
     ///
     /// Result (String, Dart writes it to the error log):

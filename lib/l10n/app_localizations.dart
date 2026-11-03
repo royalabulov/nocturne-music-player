@@ -1942,7 +1942,7 @@ abstract class L10n {
   /// No description provided for @noTracksHint.
   ///
   /// In en, this message translates to:
-  /// **'Drop MP3/FLAC files into Music, Download or snaptube/download'**
+  /// **'Drop MP3/FLAC files into Music or Download'**
   String get noTracksHint;
 
   /// No description provided for @scanNow.

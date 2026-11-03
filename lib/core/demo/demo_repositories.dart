@@ -20,8 +20,8 @@ class DemoLibraryRepository implements LibraryRepository {
   final _folders = BehaviorSubject<List<ScanFolder>>.seeded(const [
     ScanFolder(id: 1, path: '/storage/emulated/0/Music', enabled: true),
     ScanFolder(id: 2, path: '/storage/emulated/0/Download', enabled: true),
-    ScanFolder(id: 3, path: '/storage/emulated/0/snaptube/download', enabled: true),
-    ScanFolder(id: 4, path: '/storage/emulated/0/Telegram/Telegram Audio', enabled: false),
+    ScanFolder(id: 3, path: '/storage/emulated/0/Audiobooks', enabled: true),
+    ScanFolder(id: 4, path: '/storage/emulated/0/Recordings', enabled: false),
   ]);
   final _settings = BehaviorSubject<Map<String, String>>.seeded({
     'lastScanAt': DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),

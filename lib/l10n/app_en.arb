@@ -793,7 +793,7 @@
   "allowAndScan": "Allow & scan",
   "noTracksYet": "No tracks found yet",
   "scanFailed": "Scan failed",
-  "noTracksHint": "Drop MP3/FLAC files into Music, Download or snaptube/download",
+  "noTracksHint": "Drop MP3/FLAC files into Music or Download",
   "scanNow": "Scan now",
   "lookingForFiles": "Looking for audio files…",
   "readingTagsSpaced": "Reading tags  {done}/{total}",

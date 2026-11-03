@@ -107,13 +107,13 @@ abstract final class TagReader {
       albumArtist = raw['TPE2'] ?? albumArtist;
     }
 
-    // If the tag has no artist, take it from an "Artist - Title" name (YouTube downloads)
+    // If the tag has no artist, take it from an "Artist - Title" name (video-site downloads)
     final guessed = guessArtist(title ?? p.basenameWithoutExtension(path), artist);
 
     return TagInfo(
       title: guessed.title,
       artist: guessed.artist ?? unknownArtist,
-      // YouTube avto-kanal: albom "Michael Tai - Topic" → "Michael Tai"
+      // Video saytının avto-kanalı: albom "Michael Tai - Topic" → "Michael Tai"
       album: stripTopic(album) ?? unknownAlbum,
       albumArtist: albumArtist,
       genre: m?.genres.firstOrNull,
@@ -161,7 +161,7 @@ abstract final class TagReader {
     return t.isEmpty ? null : t;
   }
 
-  /// ID3v2 UTF-16 fix. Snaptube/ffmpeg (Lavf) write frames as "01 FE FF FE FF ..."
+  /// ID3v2 UTF-16 fix. Some downloaders (ffmpeg / Lavf) write frames as "01 FE FF FE FF ..."
   /// (a doubled big-endian BOM); audio_metadata_reader ignores the BOM and reads
   /// little-endian → CJK garbage like "㌀ⴀ挀". Sign: the string starts with
   /// U+FFFE (reversed BOM). Then we drop the BOMs and swap each code unit's bytes.
@@ -194,13 +194,13 @@ abstract final class TagReader {
   static final _quoted = RegExp('^(["“«][^"”»]+["”»]|[\'‘][^\'’]+[\'’])');
   static final _topic = RegExp(r'\s+-\s+Topic$', caseSensitive: false);
 
-  /// YouTube/Snaptube additions: "(MP3_320K)", "(Official Video)", "[Lyrics]"...
+  /// Video-download additions: "(MP3_320K)", "(Official Video)", "[Lyrics]"...
   static final _noise = RegExp(
     r'\s*[\(\[](mp3_?\d+k|official[^\)\]]*|lyrics?[^\)\]]*|audio|video|music video|visuali[sz]er|hd|hq|4k)[\)\]]',
     caseSensitive: false,
   );
 
-  /// "Michael Tai - Topic" → "Michael Tai" (YouTube auto-channel name). Null if nothing is left.
+  /// "Michael Tai - Topic" → "Michael Tai" (video-site auto-channel name). Null if nothing is left.
   static String? stripTopic(String? s) {
     final t = s?.replaceFirst(_topic, '').trim();
     return t == null || t.isEmpty ? null : t;
@@ -235,7 +235,7 @@ abstract final class TagReader {
     return (title: right, artist: left);
   }
 
-  /// Words that mark a YouTube channel / label rather than a performer.
+  /// Words that mark a video channel / label rather than a performer.
   static final _channelWord = RegExp(
     r'(vevo$|\brecords?\b|\brecordings\b|\bmusic\b|\bofficial\b|\btv\b|\bentertainment\b|\bproductions?\b|\bstudios?\b)',
     caseSensitive: false,
@@ -344,7 +344,7 @@ abstract final class TagReader {
       case 1 || 2:
         var bigEndian = enc == 2;
         var i = 0;
-        // There can be several BOMs (Snaptube: FE FF FE FF)
+        // There can be several BOMs (some downloaders: FE FF FE FF)
         while (i + 1 < data.length) {
           if (data[i] == 0xFE && data[i + 1] == 0xFF) {
             bigEndian = true;

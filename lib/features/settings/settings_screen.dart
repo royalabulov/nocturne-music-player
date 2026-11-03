@@ -96,7 +96,7 @@ class _StorageGroup extends ConsumerWidget {
     return l10n.agoDaysShort(diff.inDays);
   }
 
-  /// /storage/emulated/0/snaptube/download → snaptube/download
+  /// /storage/emulated/0/Download/Audio → Download/Audio
   static String _short(String p) => p.replaceFirst('/storage/emulated/0/', '');
 
   @override

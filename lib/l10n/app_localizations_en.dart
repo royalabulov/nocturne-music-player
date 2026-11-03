@@ -1150,8 +1150,7 @@ class L10nEn extends L10n {
   String get scanFailed => 'Scan failed';
 
   @override
-  String get noTracksHint =>
-      'Drop MP3/FLAC files into Music, Download or snaptube/download';
+  String get noTracksHint => 'Drop MP3/FLAC files into Music or Download';
 
   @override
   String get scanNow => 'Scan now';

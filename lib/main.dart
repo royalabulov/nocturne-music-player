@@ -59,7 +59,7 @@ Future<void> main() async {
     config: AudioServiceConfig(
       androidNotificationChannelId: 'com.nocturne.playback',
       androidNotificationChannelName: l10n.notificationChannel,
-      // Stay in foreground while paused too: otherwise Samsung kills the process in the
+      // Stay in foreground while paused too: otherwise some phones kill the process in the
       // background, and startForeground again from the background crashes on Android 12+.
       androidNotificationOngoing: false,
       androidStopForegroundOnPause: false,
@@ -104,7 +104,7 @@ Future<void> main() async {
       onMediaChanged: scan.scheduleAutoScan,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => importer.handleOpened());
-    // Also check when returning from another app (Telegram, Snaptube, browser) — files
+    // Also check when returning from another app (messenger, downloader, browser) — files
     // in those folders don't always reach MediaStore, so no event may arrive
     AppLifecycleListener(onResume: () => scan.scheduleAutoScan(delay: const Duration(milliseconds: 800)));
   }

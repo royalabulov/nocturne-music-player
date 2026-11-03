@@ -1144,7 +1144,7 @@ class L10nAz extends L10n {
 
   @override
   String get noTracksHint =>
-      'MP3/FLAC faylları Music, Download və ya snaptube/download qovluğuna köçürün';
+      'MP3/FLAC faylları Music və ya Download qovluğuna köçürün';
 
   @override
   String get scanNow => 'İndi axtar';

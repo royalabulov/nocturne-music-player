@@ -23,7 +23,7 @@ Uint8List _id3(Map<String, List<int>> frames) {
   ]);
 }
 
-/// UTF-16 big-endian with a doubled BOM, like Snaptube writes.
+/// UTF-16 big-endian with a doubled BOM, like some downloaders write.
 List<int> _doubleBom(String s) => [
       1, 0xFE, 0xFF, 0xFE, 0xFF,
       for (final u in s.codeUnits) ...[u >> 8, u & 0xFF],
@@ -31,7 +31,7 @@ List<int> _doubleBom(String s) => [
     ];
 
 void main() {
-  test('Snaptube double-BOM title keeps Ü (was "?ç Kalp")', () {
+  test('double-BOM title keeps Ü (was "?ç Kalp")', () {
     // Faylda olan baytlar: 01 FE FF FE FF 00 DC 00 E7 00 20 ...
     final tag = _id3({'TIT2': _doubleBom('Üç Kalp'), 'TPE1': _doubleBom('Hepsi'), 'TALB': _doubleBom('Hepsi Bir')});
     expect(TagReader.parseId3TextFrames(tag), {'TIT2': 'Üç Kalp', 'TPE1': 'Hepsi', 'TALB': 'Hepsi Bir'});
@@ -75,7 +75,7 @@ void main() {
       expect(g('Hepsi – Üç Kalp', '<unknown>'), (title: 'Üç Kalp', artist: 'Hepsi'));
     });
 
-    test('drops a leading track number and YouTube noise', () {
+    test('drops a leading track number and video-download noise', () {
       expect(g('01 - Ice Cube - Hello'), (title: 'Hello', artist: 'Ice Cube'));
       expect(g('Mareux - The Perfect Girl(MP3_320K)'), (title: 'The Perfect Girl', artist: 'Mareux'));
       expect(g('Xpert - Möhkəm (Official Video)'), (title: 'Möhkəm', artist: 'Xpert'));
@@ -109,7 +109,7 @@ void main() {
 
 
   group('findUploaders', () {
-    // Real artist/title pairs from the phone (YouTube/Snaptube downloads)
+    // Real artist/title pairs from the phone (video downloads)
     Set<String> f(List<(String, String)> l) =>
         TagReader.findUploaders([for (final (a, t) in l) (artist: a, title: t)]);
 
@@ -150,7 +150,7 @@ void main() {
     });
   });
 
-  test('stripTopic cleans YouTube auto-channel album names', () {
+  test('stripTopic cleans auto-channel album names', () {
     expect(TagReader.stripTopic('Michael Tai - Topic'), 'Michael Tai');
     expect(TagReader.stripTopic('Hepsi Bir'), 'Hepsi Bir');
     expect(TagReader.stripTopic(null), isNull);

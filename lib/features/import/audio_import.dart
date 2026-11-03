@@ -30,7 +30,7 @@ class ImportResult {
 ///
 /// 1. File already in the library (by path or name+size) → that track.
 /// 2. A readable public file on the phone → MediaScanner + scan (no copy).
-/// 3. Otherwise (Telegram, file picker cache) → copy to Music/Nocturne + scan.
+/// 3. Otherwise (messenger apps, file picker cache) → copy to Music/Nocturne + scan.
 class AudioImport {
   AudioImport(this._read, {MediaStoreSource? store}) : _store = store ?? MediaStoreSource();
 

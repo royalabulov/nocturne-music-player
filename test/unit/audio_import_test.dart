@@ -61,15 +61,15 @@ void main() {
     expect(scan.scans, 0);
   });
 
-  test('Telegram-style URI (no path) → copied to Music/Sonar, scanned, found', () async {
+  test('messenger-style URI (no path) → copied to Music/Nocturne, scanned, found', () async {
     // The "copied" file lands at the path that is in the library after the scan
     final target = demo[5];
     final store = _FakeStore(
-      {'content://telegram/9': (path: null, name: 'new song.mp3', size: 1)},
-      {'content://telegram/9': target.path},
+      {'content://messenger/9': (path: null, name: 'new song.mp3', size: 1)},
+      {'content://messenger/9': target.path},
     );
-    final r = await AudioImport(c.read, store: store).ingest(['content://telegram/9']);
-    expect(store.imported, ['content://telegram/9']);
+    final r = await AudioImport(c.read, store: store).ingest(['content://messenger/9']);
+    expect(store.imported, ['content://messenger/9']);
     expect(store.scanned, [target.path]);
     expect(scan.scans, greaterThanOrEqualTo(1));
     expect(r.copied, 1);

@@ -5,7 +5,7 @@ import 'package:path/path.dart' as p;
 import 'raw_audio.dart';
 
 /// Walks the chosen folders recursively with dart:io. To catch files that
-/// weren't reported to MediaStore (Snaptube, Telegram, browser).
+/// weren't reported to MediaStore (downloader apps, messengers, browser).
 class FolderSource {
   static const audioExtensions = {
     '.mp3', '.flac', '.m4a', '.aac', '.wav', '.ogg', '.opus', '.aiff', '.aif', '.ape',

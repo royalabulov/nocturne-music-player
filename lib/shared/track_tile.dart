@@ -97,7 +97,7 @@ class TrackTile extends StatelessWidget {
 }
 
 /// "artist • album" — just the artist if the album equals the artist or the song
-/// itself (YouTube-channel files give "Synaps Records • Synaps Records", singles
+/// itself (video-channel files give "Synaps Records • Synaps Records", singles
 /// "Xpert • MƏN BU FİLMƏ BAXMIŞAM") or is unknown.
 String artistAlbumLine(Track t) {
   final album = t.album.trim().toLowerCase();

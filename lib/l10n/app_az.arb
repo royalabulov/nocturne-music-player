@@ -307,7 +307,7 @@
   "allowAndScan": "İcazə ver və axtar",
   "noTracksYet": "Hələ mahnı tapılmayıb",
   "scanFailed": "Axtarış alınmadı",
-  "noTracksHint": "MP3/FLAC faylları Music, Download və ya snaptube/download qovluğuna köçürün",
+  "noTracksHint": "MP3/FLAC faylları Music və ya Download qovluğuna köçürün",
   "scanNow": "İndi axtar",
   "lookingForFiles": "Audio fayllar axtarılır…",
   "readingTagsSpaced": "Mahnı məlumatları oxunur  {done}/{total}",

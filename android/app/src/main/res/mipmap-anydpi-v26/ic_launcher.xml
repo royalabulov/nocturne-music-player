@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 8+: launcher forma (Samsung squircle, Pixel dairə) özü kəsir.
+<!-- Android 8+: launcher forma (squircle, dairə…) özü kəsir.
      Foreground tam doludur (fon da şəklin içindədir) — background görünmür. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background" />
