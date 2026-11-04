@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/di/providers.dart';
-import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_typography.dart';
-import '../core/ui/toast.dart';
 import '../core/utils/duration_format.dart';
 import '../domain/entities/track.dart';
 import '../features/player/player_providers.dart';
@@ -188,7 +186,6 @@ class _TrackActions extends ConsumerWidget {
                 hint: l10n.artistField);
             if (name != null && name != track.artist) {
               await repo.setArtist(track.id, name);
-              showToast(l10n.artistChanged(name));
             }
           },
         ),
@@ -220,20 +217,7 @@ class _TrackActions extends ConsumerWidget {
             confirmAndDeleteTrack(parent, track);
           },
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screenH,
-            AppSpacing.xs,
-            AppSpacing.screenH,
-            AppSpacing.sm,
-          ),
-          child: Text(
-            track.path,
-            style: AppTypography.labelXs.copyWith(color: AppColors.textMuted),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
+        const SizedBox(height: AppSpacing.sm),
       ],
     );
   }

@@ -94,7 +94,7 @@ class SelectionBar extends ConsumerWidget {
                   label: allFav ? l10n.unfavorite : l10n.favorite,
                   onTap: () async {
                     await ref.read(libraryRepositoryProvider).setFavorites([for (final t in tracks) t.id], !allFav);
-                    done(allFav ? l10n.removedFromFavorites(n) : l10n.addedToFavorites(n));
+                    done(null);
                   },
                 ),
                 if (onRemove != null)
@@ -105,7 +105,7 @@ class SelectionBar extends ConsumerWidget {
                       for (final t in tracks) {
                         onRemove(t);
                       }
-                      done(l10n.removedFromPlaylist(n));
+                      done(null);
                     },
                   ),
                 _Action(

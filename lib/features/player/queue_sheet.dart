@@ -51,7 +51,8 @@ class _QueueSheetState extends ConsumerState<_QueueSheet> {
 
     return DraggableScrollableSheet(
       initialChildSize: .6,
-      minChildSize: .3,
+      // Reaching the minimum closes it: a short pull down from the opening size
+      minChildSize: .48,
       maxChildSize: .92,
       expand: false,
       builder: (context, controller) {

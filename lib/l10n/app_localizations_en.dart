@@ -97,14 +97,6 @@ class L10nEn extends L10n {
   }
 
   @override
-  String get toastOfflineMode => 'Offline mode';
-
-  @override
-  String toastOnlineVia(String network) {
-    return 'Online via $network';
-  }
-
-  @override
   String get toastNoConnection => 'Turn on Wi‑Fi or mobile data first';
 
   @override
@@ -962,24 +954,13 @@ class L10nEn extends L10n {
   }
 
   @override
-  String sleepTimerSetTo(int count) {
-    return 'Sleep timer: $count min';
-  }
-
-  @override
   String get endOfCurrentTrack => 'End of current track';
 
   @override
   String get plusTenMinutes => '+10 minutes';
 
   @override
-  String get addedTenMinutes => 'Added 10 minutes';
-
-  @override
   String get turnOff => 'Turn off';
-
-  @override
-  String get sleepTimerOff => 'Sleep timer off';
 
   @override
   String get selectMultiple => 'Select multiple';
@@ -1006,11 +987,6 @@ class L10nEn extends L10n {
   String get artistField => 'Artist';
 
   @override
-  String artistChanged(String name) {
-    return 'Artist changed to $name';
-  }
-
-  @override
   String get showInLibrary => 'Show in library';
 
   @override
@@ -1029,14 +1005,6 @@ class L10nEn extends L10n {
 
   @override
   String get delete => 'Delete';
-
-  @override
-  String get deleteCancelled => 'Delete cancelled';
-
-  @override
-  String deletedOne(String title) {
-    return 'Deleted \"$title\"';
-  }
 
   @override
   String get couldNotDelete => 'Couldn’t delete';
@@ -1067,17 +1035,6 @@ class L10nEn extends L10n {
   @override
   String deleteCount(int count) {
     return 'Delete $count';
-  }
-
-  @override
-  String deletedMany(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Deleted $count tracks',
-      one: 'Deleted 1 track',
-    );
-    return '$_temp0';
   }
 
   @override
@@ -1114,22 +1071,7 @@ class L10nEn extends L10n {
   String get favorite => 'Favorite';
 
   @override
-  String removedFromFavorites(int count) {
-    return 'Removed $count from favorites';
-  }
-
-  @override
-  String addedToFavorites(int count) {
-    return 'Added $count to favorites';
-  }
-
-  @override
   String get remove => 'Remove';
-
-  @override
-  String removedFromPlaylist(int count) {
-    return 'Removed $count from playlist';
-  }
 
   @override
   String get storageBlocked => 'Storage access blocked';
@@ -1175,28 +1117,12 @@ class L10nEn extends L10n {
   String get finishing => 'Finishing…';
 
   @override
-  String get opening => 'Opening…';
-
-  @override
   String addingFiles(int count) {
     return 'Adding $count files…';
   }
 
   @override
   String get couldNotOpenFile => 'Couldn\'t open this file';
-
-  @override
-  String get savedToMusicSonarSuffix => ' • saved to Music/Nocturne';
-
-  @override
-  String playingOne(String title) {
-    return 'Playing \"$title\"';
-  }
-
-  @override
-  String playingMany(int count) {
-    return 'Playing $count tracks';
-  }
 
   @override
   String importingFiles(int count) {
@@ -1215,7 +1141,7 @@ class L10nEn extends L10n {
   }
 
   @override
-  String get savedToMusicSonar => 'saved to Music/Nocturne';
+  String get savedToMusicSonar => 'Saved to Music/Nocturne';
 
   @override
   String skippedCount(int count) {

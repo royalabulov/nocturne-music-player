@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
@@ -11,43 +13,123 @@ Future<T?> showSonarSheet<T>(
   required Widget child,
   bool scrollControlled = false,
   bool scrollable = false,
+  bool useRootNavigator = false,
 }) => showModalBottomSheet<T>(
   context: context,
+  useRootNavigator: useRootNavigator,
   isScrollControlled: scrollControlled,
+  // [_PullDownSheet] does it: Flutter's own drag closes only past half the sheet
+  enableDrag: false,
   constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .88),
   backgroundColor: Colors.transparent,
   // Material (not DecoratedBox): so the ListTiles' touch ripple inside is
   // visible — a coloured background used to hide the splash.
-  builder: (_) => Material(
-    color: AppColors.surface,
-    borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
-    clipBehavior: Clip.antiAlias,
-    child: Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: AppSpacing.sm),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.textMuted,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
+  builder: (_) => _PullDownSheet(
+    child: Material(
+      color: AppColors.surface,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textMuted,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            // [scrollable]: scrolls when the content doesn't fit (small screen / many actions).
-            // Sheets with their own ListView (add to playlist) don't use it.
-            if (scrollable) Flexible(child: SingleChildScrollView(child: child)) else child,
-          ],
+              const SizedBox(height: AppSpacing.sm),
+              // [scrollable]: scrolls when the content doesn't fit (small screen / many actions).
+              // Sheets with their own ListView (add to playlist) don't use it.
+              if (scrollable) Flexible(child: SingleChildScrollView(child: child)) else child,
+            ],
+          ),
         ),
       ),
     ),
   ),
 );
+
+/// Pull down anywhere on the sheet to close it — a short pull is enough, whatever
+/// the sheet's height. A list inside first scrolls back to its top, then the sheet follows.
+class _PullDownSheet extends StatefulWidget {
+  const _PullDownSheet({required this.child});
+  final Widget child;
+
+  @override
+  State<_PullDownSheet> createState() => _PullDownSheetState();
+}
+
+class _PullDownSheetState extends State<_PullDownSheet> with SingleTickerProviderStateMixin {
+  static const _closeAfter = 80.0;
+  static const _closeFling = 400.0;
+
+  late final _dy = AnimationController.unbounded(vsync: this);
+  bool _closing = false;
+
+  @override
+  void dispose() {
+    _dy.dispose();
+    super.dispose();
+  }
+
+  void _drag(double delta) => _dy.value = max(0, _dy.value + delta);
+
+  void _end(double velocity) {
+    if (_closing) return;
+    if (_dy.value > _closeAfter || velocity > _closeFling) {
+      _closing = true;
+      Navigator.of(context).maybePop();
+    } else {
+      _dy.animateTo(0, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic);
+    }
+  }
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.metrics.axis != Axis.vertical) return false;
+    switch (n) {
+      // The list is at its top and the finger keeps pulling
+      case OverscrollNotification(:final overscroll, :final dragDetails) when dragDetails != null && overscroll < 0:
+        _drag(-overscroll);
+      // Finger back up while pulled: the sheet returns first
+      case ScrollUpdateNotification(:final scrollDelta?, :final dragDetails)
+          when dragDetails != null && scrollDelta > 0 && _dy.value > 0:
+        _drag(-scrollDelta);
+      case ScrollEndNotification(:final dragDetails) when _dy.value > 0:
+        _end(dragDetails?.primaryVelocity ?? 0);
+      default:
+        break;
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: GestureDetector(
+        onVerticalDragUpdate: (d) => _drag(d.delta.dy),
+        onVerticalDragEnd: (d) => _end(d.primaryVelocity ?? 0),
+        child: AnimatedBuilder(
+          animation: _dy,
+          builder: (_, child) => Transform.translate(offset: Offset(0, _dy.value), child: child),
+          // No stretch/glow on the list: the sheet itself moves
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class SheetTitle extends StatelessWidget {
   const SheetTitle(this.title, {super.key, this.subtitle, this.trailing});

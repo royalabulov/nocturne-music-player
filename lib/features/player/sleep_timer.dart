@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/ui/toast.dart';
 import '../../shared/sonar_sheet.dart';
 import 'player_providers.dart';
 import '../../l10n/l10n.dart';
@@ -180,10 +179,9 @@ Future<void> showSleepTimerSheet(BuildContext context) {
       builder: (context, ref, _) {
         final s = ref.watch(sleepTimerProvider);
         final timer = ref.read(sleepTimerProvider.notifier);
-        void pick(VoidCallback action, String message) {
+        void pick(VoidCallback action) {
           action();
           Navigator.pop(context);
-          showToast(message);
         }
 
         return Column(
@@ -201,27 +199,27 @@ Future<void> showSleepTimerSheet(BuildContext context) {
               SheetAction(
                 icon: Icons.timer_outlined,
                 label: m < 60 ? l10n.minutesLong(m) : (m == 60 ? l10n.oneHour : l10n.hoursMinutesLong(m ~/ 60, m % 60)),
-                onTap: () => pick(() => timer.start(Duration(minutes: m)), l10n.sleepTimerSetTo(m)),
+                onTap: () => pick(() => timer.start(Duration(minutes: m))),
               ),
             SheetAction(
               icon: Icons.music_off_outlined,
               label: l10n.endOfCurrentTrack,
               accent: s.endOfTrack,
-              onTap: () => pick(timer.endOfTrack, l10n.stopsWhenTrackEnds),
+              onTap: () => pick(timer.endOfTrack),
             ),
             if (s.endsAt != null)
               SheetAction(
                 icon: Icons.more_time_rounded,
                 label: l10n.plusTenMinutes,
                 accent: true,
-                onTap: () => pick(() => timer.extend(const Duration(minutes: 10)), l10n.addedTenMinutes),
+                onTap: () => pick(() => timer.extend(const Duration(minutes: 10))),
               ),
             if (s.active)
               SheetAction(
                 icon: Icons.timer_off_outlined,
                 label: l10n.turnOff,
                 destructive: true,
-                onTap: () => pick(timer.cancel, l10n.sleepTimerOff),
+                onTap: () => pick(timer.cancel),
               ),
             const SizedBox(height: AppSpacing.sm),
           ],

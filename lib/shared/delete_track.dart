@@ -47,12 +47,8 @@ Future<void> confirmAndDeleteTrack(BuildContext context, Track track) async {
 
   try {
     final ok = await container.read(libraryRepositoryProvider).deleteTrack(track.id);
-    if (!ok) {
-      showToast(l10n.deleteCancelled);
-      return;
-    }
+    if (!ok) return; // cancelled in the system dialog
     await container.read(audioHandlerProvider).removeTrack(track.id);
-    showToast(l10n.deletedOne(track.title));
   } catch (e, st) {
     debugPrint('delete failed: $e\n$st');
     showToast(l10n.couldNotDelete, error: true);
@@ -100,11 +96,8 @@ Future<bool> confirmAndDeleteTracks(BuildContext context, List<Track> tracks) as
     for (final id in deleted) {
       await handler.removeTrack(id);
     }
-    showToast(switch (deleted.length) {
-      0 => l10n.deleteCancelled,
-      final d when d == n => l10n.deletedMany(n),
-      final d => l10n.deletedSome(d, n),
-    });
+    // The rows disappear by themselves; only a partial result needs words
+    if (deleted.isNotEmpty && deleted.length < n) showToast(l10n.deletedSome(deleted.length, n), error: true);
     return deleted.isNotEmpty;
   } catch (e, st) {
     debugPrint('delete batch failed: $e\n$st');

@@ -44,15 +44,6 @@
       }
     }
   },
-  "toastOfflineMode": "Offline mode",
-  "toastOnlineVia": "Online via {network}",
-  "@toastOnlineVia": {
-    "placeholders": {
-      "network": {
-        "type": "String"
-      }
-    }
-  },
   "toastNoConnection": "Turn on Wi‑Fi or mobile data first",
   "toastNoInternet": "Connected, but no internet",
   "networkNone": "No connection",
@@ -618,19 +609,9 @@
       }
     }
   },
-  "sleepTimerSetTo": "Sleep timer: {count} min",
-  "@sleepTimerSetTo": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "endOfCurrentTrack": "End of current track",
   "plusTenMinutes": "+10 minutes",
-  "addedTenMinutes": "Added 10 minutes",
   "turnOff": "Turn off",
-  "sleepTimerOff": "Sleep timer off",
   "selectMultiple": "Select multiple",
   "playNext": "Play next",
   "addToQueue": "Add to queue",
@@ -639,14 +620,6 @@
   "goToArtist": "Go to artist",
   "editArtist": "Edit artist",
   "artistField": "Artist",
-  "artistChanged": "Artist changed to {name}",
-  "@artistChanged": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "showInLibrary": "Show in library",
   "removeFromPlaylist": "Remove from playlist",
   "deleteFromDevice": "Delete from device",
@@ -660,15 +633,6 @@
     }
   },
   "delete": "Delete",
-  "deleteCancelled": "Delete cancelled",
-  "deletedOne": "Deleted \"{title}\"",
-  "@deletedOne": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
   "couldNotDelete": "Couldn’t delete",
   "deleteManyQ": "{count, plural, =1{Delete 1 track?} other{Delete {count} tracks?}}",
   "@deleteManyQ": {
@@ -688,14 +652,6 @@
   },
   "deleteCount": "Delete {count}",
   "@deleteCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "deletedMany": "{count, plural, =1{Deleted 1 track} other{Deleted {count} tracks}}",
-  "@deletedMany": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -735,31 +691,7 @@
   "playlistShort": "Playlist",
   "unfavorite": "Unfavorite",
   "favorite": "Favorite",
-  "removedFromFavorites": "Removed {count} from favorites",
-  "@removedFromFavorites": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "addedToFavorites": "Added {count} to favorites",
-  "@addedToFavorites": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "remove": "Remove",
-  "removedFromPlaylist": "Removed {count} from playlist",
-  "@removedFromPlaylist": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "storageBlocked": "Storage access blocked",
   "storageBlockedHint": "Enable \"Music and audio\" for Nocturne in system settings",
   "openSettings": "Open settings",
@@ -783,7 +715,6 @@
     }
   },
   "finishing": "Finishing…",
-  "opening": "Opening…",
   "addingFiles": "Adding {count} files…",
   "@addingFiles": {
     "placeholders": {
@@ -793,23 +724,6 @@
     }
   },
   "couldNotOpenFile": "Couldn't open this file",
-  "savedToMusicSonarSuffix": " • saved to Music/Nocturne",
-  "playingOne": "Playing \"{title}\"",
-  "@playingOne": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
-  "playingMany": "Playing {count} tracks",
-  "@playingMany": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "importingFiles": "Importing {count} files…",
   "@importingFiles": {
     "placeholders": {
@@ -826,7 +740,7 @@
       }
     }
   },
-  "savedToMusicSonar": "saved to Music/Nocturne",
+  "savedToMusicSonar": "Saved to Music/Nocturne",
   "skippedCount": "{count} skipped",
   "@skippedCount": {
     "placeholders": {

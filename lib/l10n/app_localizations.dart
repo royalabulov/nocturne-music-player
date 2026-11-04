@@ -235,18 +235,6 @@ abstract class L10n {
   /// **'Network mode: {mode}. Tap to switch.'**
   String netModeSemantics(String mode);
 
-  /// No description provided for @toastOfflineMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline mode'**
-  String get toastOfflineMode;
-
-  /// No description provided for @toastOnlineVia.
-  ///
-  /// In en, this message translates to:
-  /// **'Online via {network}'**
-  String toastOnlineVia(String network);
-
   /// No description provided for @toastNoConnection.
   ///
   /// In en, this message translates to:
@@ -1681,12 +1669,6 @@ abstract class L10n {
   /// **'{h} h {m} min'**
   String hoursMinutesLong(int h, int m);
 
-  /// No description provided for @sleepTimerSetTo.
-  ///
-  /// In en, this message translates to:
-  /// **'Sleep timer: {count} min'**
-  String sleepTimerSetTo(int count);
-
   /// No description provided for @endOfCurrentTrack.
   ///
   /// In en, this message translates to:
@@ -1699,23 +1681,11 @@ abstract class L10n {
   /// **'+10 minutes'**
   String get plusTenMinutes;
 
-  /// No description provided for @addedTenMinutes.
-  ///
-  /// In en, this message translates to:
-  /// **'Added 10 minutes'**
-  String get addedTenMinutes;
-
   /// No description provided for @turnOff.
   ///
   /// In en, this message translates to:
   /// **'Turn off'**
   String get turnOff;
-
-  /// No description provided for @sleepTimerOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Sleep timer off'**
-  String get sleepTimerOff;
 
   /// No description provided for @selectMultiple.
   ///
@@ -1765,12 +1735,6 @@ abstract class L10n {
   /// **'Artist'**
   String get artistField;
 
-  /// No description provided for @artistChanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Artist changed to {name}'**
-  String artistChanged(String name);
-
   /// No description provided for @showInLibrary.
   ///
   /// In en, this message translates to:
@@ -1807,18 +1771,6 @@ abstract class L10n {
   /// **'Delete'**
   String get delete;
 
-  /// No description provided for @deleteCancelled.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete cancelled'**
-  String get deleteCancelled;
-
-  /// No description provided for @deletedOne.
-  ///
-  /// In en, this message translates to:
-  /// **'Deleted \"{title}\"'**
-  String deletedOne(String title);
-
   /// No description provided for @couldNotDelete.
   ///
   /// In en, this message translates to:
@@ -1842,12 +1794,6 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Delete {count}'**
   String deleteCount(int count);
-
-  /// No description provided for @deletedMany.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{Deleted 1 track} other{Deleted {count} tracks}}'**
-  String deletedMany(int count);
 
   /// No description provided for @deletedSome.
   ///
@@ -1903,29 +1849,11 @@ abstract class L10n {
   /// **'Favorite'**
   String get favorite;
 
-  /// No description provided for @removedFromFavorites.
-  ///
-  /// In en, this message translates to:
-  /// **'Removed {count} from favorites'**
-  String removedFromFavorites(int count);
-
-  /// No description provided for @addedToFavorites.
-  ///
-  /// In en, this message translates to:
-  /// **'Added {count} to favorites'**
-  String addedToFavorites(int count);
-
   /// No description provided for @remove.
   ///
   /// In en, this message translates to:
   /// **'Remove'**
   String get remove;
-
-  /// No description provided for @removedFromPlaylist.
-  ///
-  /// In en, this message translates to:
-  /// **'Removed {count} from playlist'**
-  String removedFromPlaylist(int count);
 
   /// No description provided for @storageBlocked.
   ///
@@ -2005,12 +1933,6 @@ abstract class L10n {
   /// **'Finishing…'**
   String get finishing;
 
-  /// No description provided for @opening.
-  ///
-  /// In en, this message translates to:
-  /// **'Opening…'**
-  String get opening;
-
   /// No description provided for @addingFiles.
   ///
   /// In en, this message translates to:
@@ -2022,24 +1944,6 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Couldn\'t open this file'**
   String get couldNotOpenFile;
-
-  /// No description provided for @savedToMusicSonarSuffix.
-  ///
-  /// In en, this message translates to:
-  /// **' • saved to Music/Nocturne'**
-  String get savedToMusicSonarSuffix;
-
-  /// No description provided for @playingOne.
-  ///
-  /// In en, this message translates to:
-  /// **'Playing \"{title}\"'**
-  String playingOne(String title);
-
-  /// No description provided for @playingMany.
-  ///
-  /// In en, this message translates to:
-  /// **'Playing {count} tracks'**
-  String playingMany(int count);
 
   /// No description provided for @importingFiles.
   ///
@@ -2056,7 +1960,7 @@ abstract class L10n {
   /// No description provided for @savedToMusicSonar.
   ///
   /// In en, this message translates to:
-  /// **'saved to Music/Nocturne'**
+  /// **'Saved to Music/Nocturne'**
   String get savedToMusicSonar;
 
   /// No description provided for @skippedCount.

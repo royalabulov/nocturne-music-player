@@ -108,17 +108,15 @@ class AudioImport {
       final uris = await _store.takeOpenedUris();
       if (uris.isEmpty) return;
       debugPrint('open with: ${uris.length} file(s)');
-      showToast(uris.length == 1 ? l10n.opening : l10n.addingFiles(uris.length));
+      if (uris.length > 1) showToast(l10n.addingFiles(uris.length));
       final r = await ingest(uris);
       if (r.tracks.isEmpty) {
         showToast(l10n.couldNotOpenFile, error: true);
         return;
       }
       await _read(audioHandlerProvider).playTracks(r.tracks);
-      final saved = r.copied > 0 ? l10n.savedToMusicSonarSuffix : '';
-      showToast(
-        (r.tracks.length == 1 ? l10n.playingOne(r.tracks.single.title) : l10n.playingMany(r.tracks.length)) + saved,
-      );
+      // Now Playing shows what's playing; only the copy isn't visible anywhere
+      if (r.copied > 0) showToast(l10n.savedToMusicSonar);
       if (appRouter.routerDelegate.currentConfiguration.uri.path != Routes.nowPlaying) {
         FocusManager.instance.primaryFocus?.unfocus();
         unawaited(appRouter.push(Routes.nowPlaying));

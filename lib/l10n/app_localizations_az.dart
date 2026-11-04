@@ -95,14 +95,6 @@ class L10nAz extends L10n {
   }
 
   @override
-  String get toastOfflineMode => 'Oflayn rejim';
-
-  @override
-  String toastOnlineVia(String network) {
-    return 'Onlayn: $network';
-  }
-
-  @override
   String get toastNoConnection => 'Əvvəlcə Wi‑Fi və ya mobil interneti açın';
 
   @override
@@ -958,24 +950,13 @@ class L10nAz extends L10n {
   }
 
   @override
-  String sleepTimerSetTo(int count) {
-    return 'Yuxu taymeri: $count dəq';
-  }
-
-  @override
   String get endOfCurrentTrack => 'Bu mahnının sonunda';
 
   @override
   String get plusTenMinutes => '+10 dəqiqə';
 
   @override
-  String get addedTenMinutes => '10 dəqiqə əlavə olundu';
-
-  @override
   String get turnOff => 'Söndür';
-
-  @override
-  String get sleepTimerOff => 'Yuxu taymeri söndürüldü';
 
   @override
   String get selectMultiple => 'Bir neçə mahnı seç';
@@ -1002,11 +983,6 @@ class L10nAz extends L10n {
   String get artistField => 'İfaçı';
 
   @override
-  String artistChanged(String name) {
-    return 'İfaçı dəyişdirildi: $name';
-  }
-
-  @override
   String get showInLibrary => 'Kitabxanada göstər';
 
   @override
@@ -1025,14 +1001,6 @@ class L10nAz extends L10n {
 
   @override
   String get delete => 'Sil';
-
-  @override
-  String get deleteCancelled => 'Silmə ləğv edildi';
-
-  @override
-  String deletedOne(String title) {
-    return 'Silindi: «$title»';
-  }
 
   @override
   String get couldNotDelete => 'Silmək alınmadı';
@@ -1061,16 +1029,6 @@ class L10nAz extends L10n {
   @override
   String deleteCount(int count) {
     return '$count sil';
-  }
-
-  @override
-  String deletedMany(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count mahnı silindi',
-    );
-    return '$_temp0';
   }
 
   @override
@@ -1107,22 +1065,7 @@ class L10nAz extends L10n {
   String get favorite => 'Sevimli';
 
   @override
-  String removedFromFavorites(int count) {
-    return 'Sevimlilərdən $count mahnı çıxarıldı';
-  }
-
-  @override
-  String addedToFavorites(int count) {
-    return 'Sevimlilərə $count mahnı əlavə olundu';
-  }
-
-  @override
   String get remove => 'Çıxar';
-
-  @override
-  String removedFromPlaylist(int count) {
-    return 'Pleylistdən $count mahnı çıxarıldı';
-  }
 
   @override
   String get storageBlocked => 'Mahnılara giriş icazəsi yoxdur';
@@ -1169,29 +1112,12 @@ class L10nAz extends L10n {
   String get finishing => 'Tamamlanır…';
 
   @override
-  String get opening => 'Açılır…';
-
-  @override
   String addingFiles(int count) {
     return '$count fayl əlavə olunur…';
   }
 
   @override
   String get couldNotOpenFile => 'Bu faylı açmaq alınmadı';
-
-  @override
-  String get savedToMusicSonarSuffix =>
-      ' • Music/Nocturne qovluğuna saxlanıldı';
-
-  @override
-  String playingOne(String title) {
-    return 'Oxunur: «$title»';
-  }
-
-  @override
-  String playingMany(int count) {
-    return '$count mahnı oxunur';
-  }
 
   @override
   String importingFiles(int count) {

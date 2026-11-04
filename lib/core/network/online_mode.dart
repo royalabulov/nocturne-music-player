@@ -134,7 +134,8 @@ class OnlineModeController extends Notifier<OnlineState> {
 
 final onlineModeProvider = NotifierProvider<OnlineModeController, OnlineState>(OnlineModeController.new);
 
-/// The header pill and the Settings switch work the same way: switch + result toast.
+/// The header pill and the Settings switch work the same way. Both show the new
+/// state themselves → a toast only when the switch was refused.
 Future<void> toggleOnlineMode(WidgetRef ref) async {
   // The widget may be disposed after await → use ctrl, not ref
   final ctrl = ref.read(onlineModeProvider.notifier);
@@ -142,17 +143,14 @@ Future<void> toggleOnlineMode(WidgetRef ref) async {
   if (s.status == OnlineStatus.checking && !s.enabled) return; // check in progress
   if (s.enabled) {
     await ctrl.disable();
-    showToast(l10n.toastOfflineMode);
     return;
   }
   switch (await ctrl.enable()) {
-    case EnableResult.ok:
-      showToast(l10n.toastOnlineVia(ctrl.network.label));
     case EnableResult.noNetwork:
       showToast(l10n.toastNoConnection, error: true);
     case EnableResult.noInternet:
       showToast(l10n.toastNoInternet, error: true);
-    case EnableResult.cancelled:
+    case EnableResult.ok || EnableResult.cancelled:
       break;
   }
 }
