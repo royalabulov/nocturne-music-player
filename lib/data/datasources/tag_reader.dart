@@ -137,12 +137,12 @@ abstract final class TagReader {
       final raw = readAllMetadata(file, getImage: false);
       String? value;
       switch (raw) {
-        case Mp3Metadata m:
+        case final Mp3Metadata m:
           value = m.customMetadata.entries
               .where((e) => e.key.toUpperCase().trim() == 'REPLAYGAIN_TRACK_GAIN')
               .map((e) => e.value)
               .firstOrNull;
-        case VorbisMetadata m:
+        case final VorbisMetadata m:
           value = m.replayGainTrackGain.firstOrNull;
         default:
           value = null;

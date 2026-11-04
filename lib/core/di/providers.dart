@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/audio_analyzer_source.dart';
@@ -173,7 +175,7 @@ class TrackFilterController extends Notifier<TrackFilter> {
 
   @override
   TrackFilter build() {
-    _load();
+    unawaited(_load());
     return TrackFilter.defaults;
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
@@ -738,7 +739,7 @@ class _DataGroup extends ConsumerWidget {
                       tooltip: l10n.copy,
                       icon: const Icon(Icons.copy_rounded, color: AppColors.textPrimary),
                       onPressed: () {
-                        Clipboard.setData(ClipboardData(text: text));
+                        unawaited(Clipboard.setData(ClipboardData(text: text)));
                         Navigator.pop(ctx);
                       },
                     ),

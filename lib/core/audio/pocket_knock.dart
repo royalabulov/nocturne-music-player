@@ -20,7 +20,7 @@ class PocketKnock {
 
   static const _ch = MethodChannel('com.nocturne/knock');
   final SonarAudioHandler _handler;
-  StreamSubscription? _sub;
+  StreamSubscription<bool>? _sub;
   bool _enabled = false, _playing = false;
   int _sensitivity = 1;
 
@@ -33,9 +33,9 @@ class PocketKnock {
 
   void _push() {
     if (kIsWeb) return;
-    _ch.invokeMethod('update', {'on': _enabled && _playing, 'sensitivity': _sensitivity}).catchError(
+    unawaited(_ch.invokeMethod<void>('update', {'on': _enabled && _playing, 'sensitivity': _sensitivity}).catchError(
       (Object e) => debugPrint('pocket knock: $e'),
-    );
+    ));
   }
 
   Future<void> _onCall(MethodCall call) async {

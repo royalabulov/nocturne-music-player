@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -19,7 +20,7 @@ class ReminderSettingsController extends Notifier<ReminderSettings> {
 
   @override
   ReminderSettings build() {
-    _load();
+    unawaited(_load());
     return const ReminderSettings();
   }
 

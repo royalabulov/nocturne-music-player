@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -232,7 +234,7 @@ class _RuleCard extends ConsumerWidget {
                               selected: custom,
                               onTap: () async {
                                 final v = await _askDays(context, s.days);
-                                if (v != null) ctrl.set(days: v);
+                                if (v != null) unawaited(ctrl.set(days: v));
                               },
                             ),
                           ],
@@ -360,7 +362,7 @@ class _ReminderCard extends ConsumerWidget {
                                 final days = {...s.weekdays};
                                 // At least one day stays on (switch the reminder off instead)
                                 if (!days.remove(d)) days.add(d);
-                                if (days.isNotEmpty) ctrl.set(s.copyWith(weekdays: days));
+                                if (days.isNotEmpty) unawaited(ctrl.set(s.copyWith(weekdays: days)));
                               },
                             ),
                         ],
@@ -381,7 +383,7 @@ class _ReminderCard extends ConsumerWidget {
                                   child: child!,
                                 ),
                               );
-                              if (picked != null) ctrl.set(s.copyWith(hour: picked.hour, minute: picked.minute));
+                              if (picked != null) unawaited(ctrl.set(s.copyWith(hour: picked.hour, minute: picked.minute)));
                             },
                           ),
                         ],

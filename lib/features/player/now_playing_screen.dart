@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
@@ -551,9 +552,7 @@ class _ScrubberState extends ConsumerState<_Scrubber> {
             max: maxMs,
             onChanged: (v) => setState(() => _dragValue = v),
             onChangeEnd: (v) {
-              ref
-                  .read(audioHandlerProvider)
-                  .seek(Duration(milliseconds: v.round()));
+              unawaited(ref.read(audioHandlerProvider).seek(Duration(milliseconds: v.round())));
               setState(() => _dragValue = null);
             },
           ),

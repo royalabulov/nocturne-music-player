@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -69,7 +71,7 @@ class SelectionBar extends ConsumerWidget {
                   icon: Icons.play_arrow_rounded,
                   label: l10n.play,
                   onTap: () {
-                    ref.read(audioHandlerProvider).playTracks(tracks);
+                    unawaited(ref.read(audioHandlerProvider).playTracks(tracks));
                     done(null);
                   },
                 ),
@@ -77,7 +79,7 @@ class SelectionBar extends ConsumerWidget {
                   icon: Icons.queue_rounded,
                   label: l10n.queueShort,
                   onTap: () {
-                    ref.read(audioHandlerProvider).enqueue(tracks);
+                    unawaited(ref.read(audioHandlerProvider).enqueue(tracks));
                     done(l10n.addedToQueue(n));
                   },
                 ),
@@ -85,7 +87,7 @@ class SelectionBar extends ConsumerWidget {
                   icon: Icons.playlist_add_rounded,
                   label: l10n.playlistShort,
                   onTap: () {
-                    showAddTracksToPlaylistSheet(context, tracks);
+                    unawaited(showAddTracksToPlaylistSheet(context, tracks));
                     done(null);
                   },
                 ),

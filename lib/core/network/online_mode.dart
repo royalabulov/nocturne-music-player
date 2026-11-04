@@ -54,7 +54,7 @@ class OnlineModeController extends Notifier<OnlineState> {
   @override
   OnlineState build() {
     ref.onDispose(_stopWatching);
-    _load();
+    unawaited(_load());
     return const OnlineState();
   }
 
@@ -125,7 +125,7 @@ class OnlineModeController extends Notifier<OnlineState> {
   void _watch() => _sub ??= _net.changes.listen(recheck);
 
   void _stopWatching() {
-    _sub?.cancel();
+    unawaited(_sub?.cancel());
     _sub = null;
     _retry?.cancel();
     _retry = null;

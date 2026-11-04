@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -28,7 +30,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
   @override
   void initState() {
     super.initState();
-    _refresh();
+    unawaited(_refresh());
   }
 
   Future<void> _refresh() async {
@@ -151,7 +153,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                                   }),
                                   onChangeEnd: (v) {
                                     _dragging = null;
-                                    ctrl.setCustomGain(i, v, _bands.length);
+                                    unawaited(ctrl.setCustomGain(i, v, _bands.length));
                                   },
                                 )),
                             ],
@@ -180,7 +182,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                     ),
                     Slider(
                       value: s.bassBoost,
-                      onChanged: s.eqEnabled ? (v) => ctrl.setBassBoost(v) : null,
+                      onChanged: s.eqEnabled ? ctrl.setBassBoost : null,
                     ),
                   ],
                 ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -47,9 +48,9 @@ class _AlbumArtState extends State<AlbumArt> {
   void _checkBars() {
     final p = widget.path;
     if (kIsWeb || p == null || p.isEmpty || isCoverCropKnown(p)) return;
-    coverCrop(p).then((c) {
+    unawaited(coverCrop(p).then((c) {
       if (c != null && mounted && widget.path == p) setState(() {});
-    });
+    }));
   }
 
   double get size => widget.size;

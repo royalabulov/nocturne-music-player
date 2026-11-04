@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -124,7 +126,7 @@ class _TrackActions extends ConsumerWidget {
           icon: Icons.playlist_play_rounded,
           label: l10n.playNext,
           onTap: () {
-            handler.playNext(track);
+            unawaited(handler.playNext(track));
             close();
           },
         ),
@@ -132,7 +134,7 @@ class _TrackActions extends ConsumerWidget {
           icon: Icons.queue_rounded,
           label: l10n.addToQueue,
           onTap: () {
-            handler.enqueue([track]);
+            unawaited(handler.enqueue([track]));
             close();
           },
         ),
@@ -141,7 +143,7 @@ class _TrackActions extends ConsumerWidget {
           label: l10n.addToPlaylistEllipsis,
           onTap: () {
             close();
-            showAddToPlaylistSheet(parent, track);
+            unawaited(showAddToPlaylistSheet(parent, track));
           },
         ),
         SheetAction(
@@ -149,7 +151,7 @@ class _TrackActions extends ConsumerWidget {
           label: isFav ? l10n.removeFromFavorites : l10n.addToFavorites,
           accent: isFav,
           onTap: () {
-            ref.read(libraryRepositoryProvider).toggleFavorite(track.id);
+            unawaited(ref.read(libraryRepositoryProvider).toggleFavorite(track.id));
             close();
           },
         ),
@@ -214,7 +216,7 @@ class _TrackActions extends ConsumerWidget {
           destructive: true,
           onTap: () {
             close();
-            confirmAndDeleteTrack(parent, track);
+            unawaited(confirmAndDeleteTrack(parent, track));
           },
         ),
         const SizedBox(height: AppSpacing.sm),

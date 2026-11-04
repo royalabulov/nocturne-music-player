@@ -28,15 +28,15 @@ final outputKindProvider = StreamProvider<OutputKind>(
 /// Single source of audio settings. A change → write to the DB + apply to the handler/EQ.
 class AudioSettingsController extends Notifier<AudioSettings> {
   static const _key = 'audioSettings';
-  StreamSubscription? _outSub, _trackSub;
+  StreamSubscription<Object?>? _outSub, _trackSub;
 
   @override
   AudioSettings build() {
     ref.onDispose(() {
-      _outSub?.cancel();
-      _trackSub?.cancel();
+      unawaited(_outSub?.cancel());
+      unawaited(_trackSub?.cancel());
     });
-    _load();
+    unawaited(_load());
     // When the output changes (headphones plugged in / BT connected) the auto preset updates
     _outSub = ref.read(outputDetectorProvider).stream.listen((_) => _applyEq());
     // EQ parameters don't exist until the player's first load → re-apply on every track

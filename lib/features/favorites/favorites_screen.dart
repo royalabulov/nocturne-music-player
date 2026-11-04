@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -37,10 +39,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(libraryRepositoryProvider).getSetting('favoritesSort').then((v) {
+    unawaited(ref.read(libraryRepositoryProvider).getSetting('favoritesSort').then((v) {
       final s = _FavSort.values.where((x) => x.name == v).firstOrNull;
       if (s != null && mounted) setState(() => _sort = s);
-    });
+    }));
   }
 
   Future<void> _pickSort() async {
@@ -53,7 +55,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     );
     if (picked == null || picked == _sort || !mounted) return;
     setState(() => _sort = picked);
-    ref.read(libraryRepositoryProvider).setSetting('favoritesSort', picked.name);
+    unawaited(ref.read(libraryRepositoryProvider).setSetting('favoritesSort', picked.name));
   }
 
   @override

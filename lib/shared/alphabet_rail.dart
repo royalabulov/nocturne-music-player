@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -71,7 +73,7 @@ class _AlphabetRailState extends State<AlphabetRail> {
       row = _first[letters[j]];
     }
     if (row == null) return;
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     widget.onJump(row);
   }
 

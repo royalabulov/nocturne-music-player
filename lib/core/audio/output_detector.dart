@@ -1,4 +1,6 @@
 // ignore_for_file: experimental_member_use
+import 'dart:async';
+
 import 'package:audio_session/audio_session.dart';
 import 'package:rxdart/rxdart.dart';
 import '../../l10n/l10n.dart';
@@ -24,7 +26,7 @@ enum OutputKind {
 
 class OutputDetector {
   OutputDetector() {
-    _init();
+    unawaited(_init());
   }
 
   final _kind = BehaviorSubject<OutputKind>.seeded(OutputKind.speaker);

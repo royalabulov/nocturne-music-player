@@ -540,11 +540,11 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
       // "Cannot fire new event") — it goes to the serial queue, which checks
       // again that this player is still active and completed.
       _completionQueued = true;
-      _serial(() async {
+      unawaited(_serial(() async {
         _completionQueued = false;
         if (p != _active || p.processingState != ProcessingState.completed || _fading) return;
         await _onActiveCompleted();
-      });
+      }));
     }
   }
 
@@ -648,8 +648,8 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
 
     _pos = next;
     _swapRoles(); // _active = incoming
-    incoming.setVolume(0);
-    incoming.play();
+    unawaited(incoming.setVolume(0));
+    unawaited(incoming.play()); // completes only when the song ends
     _announce(nextTrack);
 
     final total = crossfade.inMilliseconds;
@@ -659,8 +659,8 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
       elapsed += step;
       final x = (elapsed / total).clamp(0.0, 1.0);
       // equal-power: cos/sin — no volume dip in the middle
-      old.setVolume(oldGain * cos(x * pi / 2));
-      incoming.setVolume(newGain * sin(x * pi / 2));
+      unawaited(old.setVolume(oldGain * cos(x * pi / 2)));
+      unawaited(incoming.setVolume(newGain * sin(x * pi / 2)));
       if (x >= 1) {
         t.cancel();
         _fadeTimer = null;
@@ -679,9 +679,9 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
     _fadeTimer = null;
     if (!_fading) return;
     _fading = false;
-    _standby.stop();
+    unawaited(_standby.stop());
     final t = _trackAt(_pos);
-    if (t != null) _active.setVolume(_gainFor(t));
+    if (t != null) unawaited(_active.setVolume(_gainFor(t)));
     unawaited(_serial(_preloadStandby));
   }
 

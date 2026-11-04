@@ -1,3 +1,6 @@
+// restore() still reads untyped JSON. A bad value throws and the transaction rolls
+// back, so nothing is half-written; typed, validated parsing will replace this.
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:convert';
 
 import 'package:drift/drift.dart';

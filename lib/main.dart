@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
@@ -31,7 +33,7 @@ Future<void> main() async {
   await CrashLog.init();
 
   // Edge-to-edge: status bar and nav bar transparent, content goes underneath.
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -45,7 +47,7 @@ Future<void> main() async {
   // Runs in parallel with AudioService.init (sequential awaits added up at startup).
   final sessionReady = AudioSession.instance
       .then((s) => s.configure(const AudioSessionConfiguration.music()))
-      .catchError((e) => debugPrint('AudioSession unavailable: $e'));
+      .catchError((Object e) => debugPrint('AudioSession unavailable: $e'));
 
   late final ProviderContainer container;
   final handler = await AudioService.init(
@@ -53,7 +55,7 @@ Future<void> main() async {
       // Records the play and measures how long it's really heard
       onTrackStarted: (t) => container.read(listenTrackerProvider).trackStarted(t.id),
       onTrackUnavailable: (t) {
-        container.read(libraryRepositoryProvider).markMissing(t.id);
+        unawaited(container.read(libraryRepositoryProvider).markMissing(t.id));
         showToast(l10n.toastTrackMissing(t.title), error: true);
       },
       // Web demo: no real files → synthesized WAV
@@ -93,7 +95,7 @@ Future<void> main() async {
   // Playback memory: save the position every 5 seconds while playing.
   handler.position.where((_) => handler.playing).throttleTime(const Duration(seconds: 5)).listen((pos) {
     final t = handler.currentTrackValue;
-    if (t != null) container.read(historyRepositoryProvider).saveResumePoint(t.id, pos);
+    if (t != null) unawaited(container.read(historyRepositoryProvider).saveResumePoint(t.id, pos));
   });
 
   // "Open with Nocturne" / Share: if the app was opened this way, take the file and play it;
@@ -115,20 +117,20 @@ Future<void> main() async {
   // Forgotten favorites reminder: plan the notifications on start and every time the
   // app goes to the background (also picks up a language change).
   final reminder = container.read(forgottenReminderProvider);
-  reminder
+  unawaited(reminder
       .init(onResponse: (id, play) => _openFromReminder(container, handler, id, play: play))
-      .then((_) => reminder.reschedule());
+      .then((_) => reminder.reschedule()));
   AppLifecycleListener(onPause: reminder.reschedule);
 
   // If autoScan is on and permission is granted, scan silently — 1.5 s after the first
   // frame, so the MediaStore/folder walk doesn't compete with Home's first render.
   WidgetsBinding.instance.addPostFrameCallback((_) {
     Future.delayed(const Duration(milliseconds: 1500), () {
-      container.read(scanControllerProvider.notifier).autoScanIfEnabled();
+      unawaited(container.read(scanControllerProvider.notifier).autoScanIfEnabled());
     });
     // Smart groups: unanalyzed songs in the background (also starts on its own after a scan)
     Future.delayed(const Duration(seconds: 4), () {
-      container.read(smartAnalysisProvider.notifier).start();
+      unawaited(container.read(smartAnalysisProvider.notifier).start());
     });
   });
 }

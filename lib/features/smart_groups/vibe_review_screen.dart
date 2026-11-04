@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -41,7 +43,7 @@ class _VibeReviewScreenState extends ConsumerState<VibeReviewScreen> {
 
   @override
   void dispose() {
-    if (_clipPlaying) _handler.pause();
+    if (_clipPlaying) unawaited(_handler.pause());
     super.dispose();
   }
 

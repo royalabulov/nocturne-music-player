@@ -61,14 +61,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _scroll.addListener(_onScroll);
     final repo = ref.read(libraryRepositoryProvider);
-    repo.getSetting('librarySort').then((v) {
+    unawaited(repo.getSetting('librarySort').then((v) {
       final s = TrackSort.values.where((x) => x.name == v).firstOrNull;
       if (s != null && mounted) setState(() => _sort = s);
-    });
-    repo.getSetting('groupSort').then((v) {
+    }));
+    unawaited(repo.getSetting('groupSort').then((v) {
       final s = GroupSort.values.where((x) => x.name == v).firstOrNull;
       if (s != null && mounted) setState(() => _groupSort = s);
-    });
+    }));
   }
 
   Future<void> _pickSort() async {
@@ -76,7 +76,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: l10n.sortSongsBy, values: TrackSort.values, current: _sort, label: (s) => s.label);
     if (picked == null || picked == _sort || !mounted) return;
     setState(() => _sort = picked);
-    ref.read(libraryRepositoryProvider).setSetting('librarySort', picked.name);
+    unawaited(ref.read(libraryRepositoryProvider).setSetting('librarySort', picked.name));
   }
 
   Future<void> _pickGroupSort() async {
@@ -85,7 +85,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: title, values: GroupSort.values, current: _groupSort, label: (s) => s.label);
     if (picked == null || picked == _groupSort || !mounted) return;
     setState(() => _groupSort = picked);
-    ref.read(libraryRepositoryProvider).setSetting('groupSort', picked.name);
+    unawaited(ref.read(libraryRepositoryProvider).setSetting('groupSort', picked.name));
   }
 
 
@@ -190,7 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // When the keyboard is closed with back, focus stays in the field → requestFocus
       // does nothing. In that case we open the keyboard directly.
       if (_searchFocus.hasFocus) {
-        SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+        unawaited(SystemChannels.textInput.invokeMethod<void>('TextInput.show'));
       } else {
         _searchFocus.requestFocus();
       }

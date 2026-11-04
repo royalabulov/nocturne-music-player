@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,7 +45,7 @@ class _PlaylistReorderListState extends ConsumerState<PlaylistReorderList> {
     // onReorderItem already gives newIndex as the final position (the repo expects that too)
     if (newIndex == oldIndex) return;
     setState(() => _items.insert(newIndex, _items.removeAt(oldIndex)));
-    ref.read(playlistRepositoryProvider).reorder(widget.playlistId, oldIndex, newIndex);
+    unawaited(ref.read(playlistRepositoryProvider).reorder(widget.playlistId, oldIndex, newIndex));
   }
 
   @override

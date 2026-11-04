@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -161,7 +163,7 @@ class _SyncedLyricsState extends ConsumerState<_SyncedLyrics> {
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
                     _userScrolledAt = DateTime(0);
-                    handler.seek(lines[i].time);
+                    unawaited(handler.seek(lines[i].time));
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),

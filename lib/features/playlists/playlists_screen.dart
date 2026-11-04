@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,7 +47,7 @@ class PlaylistsScreen extends ConsumerWidget {
                 final name = await showNameDialog(context, title: l10n.newPlaylist, hint: l10n.playlistName);
                 if (name == null) return;
                 final id = await repo.create(name);
-                if (context.mounted) context.push('/playlists/$id');
+                if (context.mounted) unawaited(context.push('/playlists/$id'));
               },
               child: Container(
                 height: 52,

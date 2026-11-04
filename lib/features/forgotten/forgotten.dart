@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
@@ -39,7 +41,7 @@ class ForgottenSettingsController extends Notifier<ForgottenSettings> {
 
   @override
   ForgottenSettings build() {
-    _load();
+    unawaited(_load());
     return const ForgottenSettings();
   }
 

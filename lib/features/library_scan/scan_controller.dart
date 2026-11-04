@@ -29,15 +29,15 @@ class ScanController extends Notifier<ScanState> {
     // Web demo: no scanner/DB, the library is in memory → permission granted, idle
     if (kIsWeb) return const ScanState(permission: MediaPermission.granted, progress: ScanProgress.idle);
     final scanner = ref.watch(libraryScannerProvider);
-    _sub?.cancel();
+    unawaited(_sub?.cancel());
     _sub = scanner.progress.listen((p) => state = state.copyWith(progress: p));
     ref.onDispose(() {
-      _sub?.cancel();
+      unawaited(_sub?.cancel());
       _debounce?.cancel();
     });
 
     // Check the permission status in the background
-    PermissionGate.check().then((p) => state = state.copyWith(permission: p));
+    unawaited(PermissionGate.check().then((p) => state = state.copyWith(permission: p)));
 
     return ScanState(permission: MediaPermission.denied, progress: scanner.last);
   }

@@ -32,7 +32,7 @@ class SmartAnalysisController extends Notifier<bool> {
     ref.onDispose(() => _stop = true);
     // Scan finished → there may be new songs
     ref.listen(scanControllerProvider.select((s) => s.isRunning), (was, now) {
-      if (was == true && !now) start();
+      if (was == true && !now) unawaited(start());
     });
     return false; // running
   }

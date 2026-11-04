@@ -47,13 +47,13 @@ class ListenTracker {
   /// Reads id + time synchronously, so a song change right after can't mix them up.
   void _save() {
     final id = _playId;
-    if (id != null) _history.saveListened(id, _watch.elapsed);
+    if (id != null) unawaited(_history.saveListened(id, _watch.elapsed));
   }
 
   void dispose() {
     _save();
     _flush?.cancel();
-    _sub.cancel();
+    unawaited(_sub.cancel());
   }
 }
 

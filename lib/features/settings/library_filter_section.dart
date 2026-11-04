@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -65,7 +67,7 @@ class _LibraryFilterGroupState extends ConsumerState<LibraryFilterGroup> {
     final f = ref.read(trackFilterProvider);
     final next = filterFromRanges(_size ?? _sizeOf(f), _length ?? _lengthOf(f));
     _size = _length = null;
-    ref.read(trackFilterProvider.notifier).set(next);
+    unawaited(ref.read(trackFilterProvider.notifier).set(next));
   }
 
   @override
