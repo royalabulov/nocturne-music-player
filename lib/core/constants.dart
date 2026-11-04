@@ -1,3 +1,6 @@
+/// Largest text scale the layout supports.
+const kMaxTextScale = 1.5;
+
 /// Library filter: keep voice notes, notification sounds and half-downloaded
 /// files out. Both must hold (length AND size).
 const kMinTrackDuration = Duration(seconds: 40);

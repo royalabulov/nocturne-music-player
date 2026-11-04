@@ -95,8 +95,7 @@ class L10nAz extends L10n {
   }
 
   @override
-  String get toastOfflineMode =>
-      'Oflayn rejim — Nocturne şəbəkədən istifadə etməyəcək';
+  String get toastOfflineMode => 'Oflayn rejim';
 
   @override
   String toastOnlineVia(String network) {
@@ -104,12 +103,10 @@ class L10nAz extends L10n {
   }
 
   @override
-  String get toastNoConnection =>
-      'Bağlantı yoxdur. Əvvəlcə Wi‑Fi və ya mobil interneti açın.';
+  String get toastNoConnection => 'Əvvəlcə Wi‑Fi və ya mobil interneti açın';
 
   @override
-  String get toastNoInternet =>
-      'Şəbəkəyə qoşulub, amma internet yoxdur. Oflayn rejimdə qalırıq.';
+  String get toastNoInternet => 'Şəbəkəyə qoşulub, amma internet yoxdur';
 
   @override
   String get networkNone => 'Bağlantı yoxdur';
@@ -154,7 +151,7 @@ class L10nAz extends L10n {
 
   @override
   String toastTrackMissing(String title) {
-    return '\"$title\" artıq bu cihazda yoxdur — keçildi';
+    return '«$title» tapılmadı, keçildi';
   }
 
   @override
@@ -388,30 +385,24 @@ class L10nAz extends L10n {
   String get backupSaved => 'Ehtiyat nüsxə saxlanıldı';
 
   @override
-  String backupFailed(String error) {
-    return 'Ehtiyat nüsxə alınmadı: $error';
-  }
+  String get backupFailed => 'Ehtiyat nüsxə yaradılmadı';
 
   @override
   String get preparingExport => 'İxrac hazırlanır…';
 
   @override
-  String exportSaved(String songs, String path) {
-    return 'Saxlanıldı: $songs → $path';
+  String exportSaved(String songs) {
+    return '$songs Download qovluğuna saxlanıldı';
   }
 
   @override
-  String exportFailed(String error) {
-    return 'İxrac alınmadı: $error';
-  }
+  String get exportFailed => 'İxrac alınmadı';
 
   @override
   String get chooseBackupDialog => 'Nocturne ehtiyat nüsxəsini seçin';
 
   @override
-  String restoreFailed(String error) {
-    return 'Bərpa alınmadı: $error';
-  }
+  String get restoreFailed => 'Bərpa alınmadı. Faylı yoxlayın.';
 
   @override
   String get backUpData => 'Ehtiyat nüsxə yarat';
@@ -791,7 +782,7 @@ class L10nAz extends L10n {
 
   @override
   String addedToPlaylist(String tracks, String name) {
-    return '\"$name\" pleylistinə əlavə olundu: $tracks';
+    return '$tracks «$name» pleylistinə əlavə olundu';
   }
 
   @override
@@ -1040,13 +1031,11 @@ class L10nAz extends L10n {
 
   @override
   String deletedOne(String title) {
-    return 'Silindi: \"$title\"';
+    return 'Silindi: «$title»';
   }
 
   @override
-  String couldNotDelete(String error) {
-    return 'Silmək alınmadı: $error';
-  }
+  String get couldNotDelete => 'Silmək alınmadı';
 
   @override
   String deleteManyQ(int count) {
@@ -1196,7 +1185,7 @@ class L10nAz extends L10n {
 
   @override
   String playingOne(String title) {
-    return 'Oxunur: \"$title\"';
+    return 'Oxunur: «$title»';
   }
 
   @override
@@ -1582,7 +1571,7 @@ class L10nAz extends L10n {
 
   @override
   String get reminderPermissionDenied =>
-      'Nocturne üçün bildirişlər bağlıdır — telefonun ayarlarında icazə ver.';
+      'Telefonun ayarlarında Nocturne üçün bildirişlərə icazə verin';
 
   @override
   String get reminderFrom => 'Xatırlatmadan';

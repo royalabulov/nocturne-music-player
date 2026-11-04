@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/constants.dart';
 import 'core/di/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/ui/toast.dart';
 import 'l10n/l10n.dart';
-
-/// Largest text scale the layout supports.
-const kMaxTextScale = 1.5;
 
 /// Language the UI was last built in.
 Locale? _shownLocale;

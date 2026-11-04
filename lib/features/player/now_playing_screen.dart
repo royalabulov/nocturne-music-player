@@ -60,6 +60,17 @@ class NowPlayingScreen extends ConsumerWidget {
     return _PullDownToClose(
       child: Scaffold(
       backgroundColor: AppColors.void_,
+      extendBody: true,
+      // The area below the controls used to be empty and the sleep timer
+      // "floated" alone in the chip row → all in one bottom row.
+      // Scaffold's bottom bar: toasts appear above it instead of over it.
+      bottomNavigationBar: const SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.sm),
+          child: _BottomBar(),
+        ),
+      ),
       body: Stack(
         children: [
           // Ambient glow + top wash in the cover's colour
@@ -224,10 +235,6 @@ class NowPlayingScreen extends ConsumerWidget {
                     ],
                   ),
                   const Spacer(),
-                  // The area below the controls used to be empty and the sleep timer
-                  // "floated" alone in the chip row → all in one bottom row
-                  const _BottomBar(),
-                  const SizedBox(height: AppSpacing.sm),
                 ],
               ),
             ),

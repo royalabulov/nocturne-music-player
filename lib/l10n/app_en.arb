@@ -44,7 +44,7 @@
       }
     }
   },
-  "toastOfflineMode": "Offline mode — Nocturne won’t use the network",
+  "toastOfflineMode": "Offline mode",
   "toastOnlineVia": "Online via {network}",
   "@toastOnlineVia": {
     "placeholders": {
@@ -53,8 +53,8 @@
       }
     }
   },
-  "toastNoConnection": "No connection. Turn on Wi‑Fi or mobile data first.",
-  "toastNoInternet": "Connected, but there’s no internet. Staying offline.",
+  "toastNoConnection": "Turn on Wi‑Fi or mobile data first",
+  "toastNoInternet": "Connected, but no internet",
   "networkNone": "No connection",
   "networkWifi": "Wi‑Fi",
   "networkMobile": "Mobile data",
@@ -78,7 +78,7 @@
       }
     }
   },
-  "toastTrackMissing": "\"{title}\" is no longer on this device — skipped",
+  "toastTrackMissing": "\"{title}\" wasn’t found — skipped",
   "@toastTrackMissing": {
     "placeholders": {
       "title": {
@@ -266,43 +266,19 @@
   "knockHigh": "High",
   "saveBackupDialog": "Save Nocturne backup",
   "backupSaved": "Backup saved",
-  "backupFailed": "Backup failed: {error}",
-  "@backupFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
+  "backupFailed": "Couldn’t create the backup",
   "preparingExport": "Preparing export…",
-  "exportSaved": "Saved {songs} → {path}",
+  "exportSaved": "{songs} saved to Download",
   "@exportSaved": {
     "placeholders": {
       "songs": {
         "type": "String"
-      },
-      "path": {
-        "type": "String"
       }
     }
   },
-  "exportFailed": "Export failed: {error}",
-  "@exportFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
+  "exportFailed": "Couldn’t export",
   "chooseBackupDialog": "Choose Nocturne backup",
-  "restoreFailed": "Restore failed: {error}",
-  "@restoreFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
+  "restoreFailed": "Couldn’t restore. Check the backup file.",
   "backUpData": "Back up my data",
   "backUpDataHint": "Favorites, playlists, play history and audio settings → JSON file",
   "save": "Save",
@@ -693,14 +669,7 @@
       }
     }
   },
-  "couldNotDelete": "Could not delete: {error}",
-  "@couldNotDelete": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
+  "couldNotDelete": "Couldn’t delete",
   "deleteManyQ": "{count, plural, =1{Delete 1 track?} other{Delete {count} tracks?}}",
   "@deleteManyQ": {
     "placeholders": {
@@ -1099,7 +1068,7 @@
   },
   "reminderPlay": "Play",
   "reminderChannelHint": "Reminders about songs you haven't played for a while",
-  "reminderPermissionDenied": "Notifications are blocked for Nocturne — allow them in the phone's settings.",
+  "reminderPermissionDenied": "Allow notifications for Nocturne in the phone’s settings",
   "reminderFrom": "From your reminder",
   "reminderTimesAWeek": "{count, plural, =1{Once a week} other{{count} times a week}}",
   "reminderSummary": "{when} · {time}",

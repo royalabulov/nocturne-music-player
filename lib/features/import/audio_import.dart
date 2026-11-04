@@ -111,7 +111,7 @@ class AudioImport {
       showToast(uris.length == 1 ? l10n.opening : l10n.addingFiles(uris.length));
       final r = await ingest(uris);
       if (r.tracks.isEmpty) {
-        showToast(l10n.couldNotOpenFile);
+        showToast(l10n.couldNotOpenFile, error: true);
         return;
       }
       await _read(audioHandlerProvider).playTracks(r.tracks);
@@ -125,7 +125,7 @@ class AudioImport {
       }
     } catch (e, st) {
       debugPrint('open with failed: $e\n$st');
-      showToast(l10n.couldNotOpenFile);
+      showToast(l10n.couldNotOpenFile, error: true);
     } finally {
       _busy = false;
       if (_again) {

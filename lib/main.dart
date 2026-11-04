@@ -54,7 +54,7 @@ Future<void> main() async {
       onTrackStarted: (t) => container.read(listenTrackerProvider).trackStarted(t.id),
       onTrackUnavailable: (t) {
         container.read(libraryRepositoryProvider).markMissing(t.id);
-        showToast(l10n.toastTrackMissing(t.title));
+        showToast(l10n.toastTrackMissing(t.title), error: true);
       },
       // Web demo: no real files → synthesized WAV
       sourceBuilder: kIsWeb ? DemoAudio.sourceFor : null,

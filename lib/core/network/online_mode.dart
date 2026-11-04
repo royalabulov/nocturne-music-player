@@ -149,9 +149,9 @@ Future<void> toggleOnlineMode(WidgetRef ref) async {
     case EnableResult.ok:
       showToast(l10n.toastOnlineVia(ctrl.network.label));
     case EnableResult.noNetwork:
-      showToast(l10n.toastNoConnection);
+      showToast(l10n.toastNoConnection, error: true);
     case EnableResult.noInternet:
-      showToast(l10n.toastNoInternet);
+      showToast(l10n.toastNoInternet, error: true);
     case EnableResult.cancelled:
       break;
   }

@@ -306,7 +306,7 @@ class _ReminderCard extends ConsumerWidget {
 
     Future<void> toggle(bool on) async {
       if (on && !await ref.read(forgottenReminderProvider).requestPermission()) {
-        showToast(l10n.reminderPermissionDenied);
+        showToast(l10n.reminderPermissionDenied, error: true);
         return;
       }
       await ctrl.set(s.copyWith(enabled: on));

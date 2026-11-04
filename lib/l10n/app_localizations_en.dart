@@ -97,8 +97,7 @@ class L10nEn extends L10n {
   }
 
   @override
-  String get toastOfflineMode =>
-      'Offline mode — Nocturne won’t use the network';
+  String get toastOfflineMode => 'Offline mode';
 
   @override
   String toastOnlineVia(String network) {
@@ -106,12 +105,10 @@ class L10nEn extends L10n {
   }
 
   @override
-  String get toastNoConnection =>
-      'No connection. Turn on Wi‑Fi or mobile data first.';
+  String get toastNoConnection => 'Turn on Wi‑Fi or mobile data first';
 
   @override
-  String get toastNoInternet =>
-      'Connected, but there’s no internet. Staying offline.';
+  String get toastNoInternet => 'Connected, but no internet';
 
   @override
   String get networkNone => 'No connection';
@@ -156,7 +153,7 @@ class L10nEn extends L10n {
 
   @override
   String toastTrackMissing(String title) {
-    return '\"$title\" is no longer on this device — skipped';
+    return '\"$title\" wasn’t found — skipped';
   }
 
   @override
@@ -387,30 +384,24 @@ class L10nEn extends L10n {
   String get backupSaved => 'Backup saved';
 
   @override
-  String backupFailed(String error) {
-    return 'Backup failed: $error';
-  }
+  String get backupFailed => 'Couldn’t create the backup';
 
   @override
   String get preparingExport => 'Preparing export…';
 
   @override
-  String exportSaved(String songs, String path) {
-    return 'Saved $songs → $path';
+  String exportSaved(String songs) {
+    return '$songs saved to Download';
   }
 
   @override
-  String exportFailed(String error) {
-    return 'Export failed: $error';
-  }
+  String get exportFailed => 'Couldn’t export';
 
   @override
   String get chooseBackupDialog => 'Choose Nocturne backup';
 
   @override
-  String restoreFailed(String error) {
-    return 'Restore failed: $error';
-  }
+  String get restoreFailed => 'Couldn’t restore. Check the backup file.';
 
   @override
   String get backUpData => 'Back up my data';
@@ -1048,9 +1039,7 @@ class L10nEn extends L10n {
   }
 
   @override
-  String couldNotDelete(String error) {
-    return 'Could not delete: $error';
-  }
+  String get couldNotDelete => 'Couldn’t delete';
 
   @override
   String deleteManyQ(int count) {
@@ -1587,7 +1576,7 @@ class L10nEn extends L10n {
 
   @override
   String get reminderPermissionDenied =>
-      'Notifications are blocked for Nocturne — allow them in the phone\'s settings.';
+      'Allow notifications for Nocturne in the phone’s settings';
 
   @override
   String get reminderFrom => 'From your reminder';

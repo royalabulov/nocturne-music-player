@@ -238,7 +238,7 @@ abstract class L10n {
   /// No description provided for @toastOfflineMode.
   ///
   /// In en, this message translates to:
-  /// **'Offline mode — Nocturne won’t use the network'**
+  /// **'Offline mode'**
   String get toastOfflineMode;
 
   /// No description provided for @toastOnlineVia.
@@ -250,13 +250,13 @@ abstract class L10n {
   /// No description provided for @toastNoConnection.
   ///
   /// In en, this message translates to:
-  /// **'No connection. Turn on Wi‑Fi or mobile data first.'**
+  /// **'Turn on Wi‑Fi or mobile data first'**
   String get toastNoConnection;
 
   /// No description provided for @toastNoInternet.
   ///
   /// In en, this message translates to:
-  /// **'Connected, but there’s no internet. Staying offline.'**
+  /// **'Connected, but no internet'**
   String get toastNoInternet;
 
   /// No description provided for @networkNone.
@@ -340,7 +340,7 @@ abstract class L10n {
   /// No description provided for @toastTrackMissing.
   ///
   /// In en, this message translates to:
-  /// **'\"{title}\" is no longer on this device — skipped'**
+  /// **'\"{title}\" wasn’t found — skipped'**
   String toastTrackMissing(String title);
 
   /// No description provided for @notificationChannel.
@@ -730,8 +730,8 @@ abstract class L10n {
   /// No description provided for @backupFailed.
   ///
   /// In en, this message translates to:
-  /// **'Backup failed: {error}'**
-  String backupFailed(String error);
+  /// **'Couldn’t create the backup'**
+  String get backupFailed;
 
   /// No description provided for @preparingExport.
   ///
@@ -742,14 +742,14 @@ abstract class L10n {
   /// No description provided for @exportSaved.
   ///
   /// In en, this message translates to:
-  /// **'Saved {songs} → {path}'**
-  String exportSaved(String songs, String path);
+  /// **'{songs} saved to Download'**
+  String exportSaved(String songs);
 
   /// No description provided for @exportFailed.
   ///
   /// In en, this message translates to:
-  /// **'Export failed: {error}'**
-  String exportFailed(String error);
+  /// **'Couldn’t export'**
+  String get exportFailed;
 
   /// No description provided for @chooseBackupDialog.
   ///
@@ -760,8 +760,8 @@ abstract class L10n {
   /// No description provided for @restoreFailed.
   ///
   /// In en, this message translates to:
-  /// **'Restore failed: {error}'**
-  String restoreFailed(String error);
+  /// **'Couldn’t restore. Check the backup file.'**
+  String get restoreFailed;
 
   /// No description provided for @backUpData.
   ///
@@ -1822,8 +1822,8 @@ abstract class L10n {
   /// No description provided for @couldNotDelete.
   ///
   /// In en, this message translates to:
-  /// **'Could not delete: {error}'**
-  String couldNotDelete(String error);
+  /// **'Couldn’t delete'**
+  String get couldNotDelete;
 
   /// No description provided for @deleteManyQ.
   ///
@@ -2691,7 +2691,7 @@ abstract class L10n {
   /// No description provided for @reminderPermissionDenied.
   ///
   /// In en, this message translates to:
-  /// **'Notifications are blocked for Nocturne — allow them in the phone\'s settings.'**
+  /// **'Allow notifications for Nocturne in the phone’s settings'**
   String get reminderPermissionDenied;
 
   /// No description provided for @reminderFrom.

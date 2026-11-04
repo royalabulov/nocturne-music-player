@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio_platform_interface/just_audio_platform_interface.dart';
 import 'package:sonar/app.dart';
 import 'package:sonar/core/audio/sonar_audio_handler.dart';
+import 'package:sonar/core/constants.dart';
 import 'package:sonar/core/demo/demo_audio.dart';
 import 'package:sonar/core/demo/demo_library.dart';
 import 'package:sonar/core/demo/demo_overrides.dart';

@@ -626,15 +626,6 @@ class _ChoiceRow extends StatelessWidget {
 class _DataGroup extends ConsumerWidget {
   const _DataGroup();
 
-  void _toast(BuildContext context, String text) {
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-      content: Text(text),
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.fromLTRB(
-          AppSpacing.md, 0, AppSpacing.md, AppSpacing.dockOffset + AppSpacing.miniPlayerHeight + AppSpacing.sm),
-    ));
-  }
-
   Future<void> _backup(BuildContext context, WidgetRef ref) async {
     try {
       final json = await ref.read(backupServiceProvider).export();
@@ -646,10 +637,10 @@ class _DataGroup extends ConsumerWidget {
         mimeType: 'application/json',
         dialogTitle: l10n.saveBackupDialog,
       );
-      if (context.mounted && uri != null) _toast(context, l10n.backupSaved);
+      if (uri != null) showToast(l10n.backupSaved);
     } catch (e) {
       debugPrint('backup failed: $e');
-      if (context.mounted) _toast(context, l10n.backupFailed('$e'));
+      showToast(l10n.backupFailed, error: true);
     }
   }
 
@@ -678,10 +669,10 @@ class _DataGroup extends ConsumerWidget {
       final saved = await MediaStoreSource.saveToDownloads(name, bytes, 'text/csv') ??
           await FilePicker.saveFile(fileName: name, bytes: bytes, mimeType: 'text/csv');
       step('saved: $saved');
-      if (saved != null) showToast(l10n.exportSaved(l10n.songCount(tracks.length), '$saved'));
+      if (saved != null) showToast(l10n.exportSaved(l10n.songCount(tracks.length)));
     } catch (e) {
       step('failed: $e');
-      showToast(l10n.exportFailed('$e'));
+      showToast(l10n.exportFailed, error: true);
     }
   }
 
@@ -691,10 +682,10 @@ class _DataGroup extends ConsumerWidget {
       if (file == null) return;
       final report = await ref.read(backupServiceProvider).restore(utf8.decode(await file.readAsBytes()));
       ref.invalidate(audioSettingsProvider); // reload audio settings from the DB
-      if (context.mounted) _toast(context, report.toString());
+      showToast(report.toString());
     } catch (e) {
       debugPrint('restore failed: $e');
-      if (context.mounted) _toast(context, l10n.restoreFailed('$e'));
+      showToast(l10n.restoreFailed, error: true);
     }
   }
 

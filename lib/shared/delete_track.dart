@@ -55,7 +55,7 @@ Future<void> confirmAndDeleteTrack(BuildContext context, Track track) async {
     showToast(l10n.deletedOne(track.title));
   } catch (e, st) {
     debugPrint('delete failed: $e\n$st');
-    showToast(l10n.couldNotDelete('$e'));
+    showToast(l10n.couldNotDelete, error: true);
   }
 }
 
@@ -108,7 +108,7 @@ Future<bool> confirmAndDeleteTracks(BuildContext context, List<Track> tracks) as
     return deleted.isNotEmpty;
   } catch (e, st) {
     debugPrint('delete batch failed: $e\n$st');
-    showToast(l10n.couldNotDelete('$e'));
+    showToast(l10n.couldNotDelete, error: true);
     return false;
   }
 }
