@@ -3,14 +3,14 @@ import 'dart:math';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/core/demo/demo_library.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/repositories/analysis_repository_impl.dart';
-import 'package:sonar/data/services/backup_service.dart';
-import 'package:sonar/domain/repositories/analysis_repository.dart';
-import 'package:sonar/features/smart_groups/vibe_classifier.dart';
-import 'package:sonar/features/smart_groups/vibe_export.dart';
-import 'package:sonar/features/smart_groups/vibe_review.dart';
+import 'package:nocturne/demo/demo_library.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/repositories/analysis_repository_impl.dart';
+import 'package:nocturne/data/services/backup_service.dart';
+import 'package:nocturne/domain/repositories/analysis_repository.dart';
+import 'package:nocturne/features/smart_groups/vibe_classifier.dart';
+import 'package:nocturne/features/smart_groups/vibe_export.dart';
+import 'package:nocturne/features/smart_groups/vibe_review.dart';
 
 VibeLabel label(int id, String mood, String genre, String pMood, String pGenre) => VibeLabel(
       trackId: id,
@@ -59,9 +59,9 @@ void main() {
     final data = [
       for (var i = 0; i < 30; i++) TrackVibeData(trackId: i, scores: scores), // all "calm"
       const TrackVibeData(trackId: 100, scores: scores), // sad
-      const TrackVibeData(trackId: 101, scores: scores), // qrupsuz
+      const TrackVibeData(trackId: 101, scores: scores), // no group
       const TrackVibeData(trackId: 102), // not analyzed
-      const TrackVibeData(trackId: 103, scores: {'Speech': .9, 'Music': .01}), // podkast
+      const TrackVibeData(trackId: 103, scores: {'Speech': .9, 'Music': .01}), // podcast
     ];
     final predicted = {
       for (var i = 0; i < 30; i++) i: const VibeResult(mood: Mood.calm),
@@ -145,7 +145,7 @@ void main() {
           dateModified: 1,
         ));
 
-    test('save / update / delete', () async {
+    test('save / update', () async {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
       final repo = AnalysisRepositoryImpl(db);
@@ -155,8 +155,6 @@ void main() {
       final ls = await repo.watchLabels().first;
       expect(ls.single.mood, 'happy');
       expect(ls.single.moodCorrect, false);
-      await repo.deleteLabel(a);
-      expect(await repo.watchLabels().first, isEmpty);
     });
 
     test('answers survive backup → fresh install → restore', () async {

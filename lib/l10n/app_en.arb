@@ -750,7 +750,7 @@
       }
     }
   },
-  "savedToMusicSonar": "Saved to Music/Nocturne",
+  "savedToMusicFolder": "Saved to Music/Nocturne",
   "skippedCount": "{count} skipped",
   "@skippedCount": {
     "placeholders": {

@@ -28,8 +28,6 @@ NavItem get _menuItem => NavItem(l10n.navMenu, Icons.menu_rounded, Icons.menu_op
 const _barHeight = AppSpacing.bottomNavHeight;
 const _gap = 10.0;
 const _animDuration = Duration(milliseconds: 280);
-const _splash = Color(0x14FFFFFF); // white, 8%
-const _highlight = Color(0x0AFFFFFF); // white, 4%
 
 /// Floating dock: tabs inside a rounded "pill",
 /// a sliding highlight behind the active tab, a separate round search button on the right.
@@ -107,8 +105,8 @@ class BottomNavBar extends StatelessWidget {
                 child: InkWell(
                   onTap: onSearch,
                   customBorder: const CircleBorder(),
-                  splashColor: _splash,
-                  highlightColor: _highlight,
+                  splashColor: AppColors.inkSplash,
+                  highlightColor: AppColors.inkHighlight,
                   child: const Center(child: Icon(Icons.search_rounded, color: AppColors.textPrimary, size: 26)),
                 ),
               ),
@@ -155,8 +153,8 @@ class _NavButton extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       customBorder: const StadiumBorder(),
-      splashColor: _splash,
-      highlightColor: _highlight,
+      splashColor: AppColors.inkSplash,
+      highlightColor: AppColors.inkHighlight,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

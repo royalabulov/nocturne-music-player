@@ -4,9 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
 import '../../domain/repositories/history_repository.dart';
-import 'forgotten_reminder.dart';
-
-const kForgottenRoute = '/home/forgotten';
+import '../../domain/repositories/settings_repository.dart';
 
 /// Menu → Forgotten favorites: which songs count as "forgotten".
 class ForgottenSettings {
@@ -34,11 +32,8 @@ class ForgottenSettings {
   int get hashCode => Object.hash(minPlays, days);
 }
 
-/// Stored in scan_state (forgottenMinPlays / forgottenDays).
+/// Stored in scan_state. ForgottenReminder listens to this: a new rule re-plans the reminders.
 class ForgottenSettingsController extends Notifier<ForgottenSettings> {
-  static const _minPlaysKey = 'forgottenMinPlays';
-  static const _daysKey = 'forgottenDays';
-
   @override
   ForgottenSettings build() {
     unawaited(_load());
@@ -46,19 +41,18 @@ class ForgottenSettingsController extends Notifier<ForgottenSettings> {
   }
 
   Future<void> _load() async {
-    final repo = ref.read(libraryRepositoryProvider);
-    final minPlays = int.tryParse(await repo.getSetting(_minPlaysKey) ?? '');
-    final days = int.tryParse(await repo.getSetting(_daysKey) ?? '');
+    final repo = ref.read(settingsRepositoryProvider);
+    final minPlays = int.tryParse(await repo.getSetting(SettingsKeys.forgottenMinPlays) ?? '');
+    final days = int.tryParse(await repo.getSetting(SettingsKeys.forgottenDays) ?? '');
+    if (!ref.mounted) return; // rebuilt meanwhile (a backup was restored)
     if (minPlays != null || days != null) state = state.copyWith(minPlays: minPlays, days: days);
   }
 
   Future<void> set({int? minPlays, int? days}) async {
     state = state.copyWith(minPlays: minPlays, days: days);
-    final repo = ref.read(libraryRepositoryProvider);
-    await repo.setSetting(_minPlaysKey, '${state.minPlays}');
-    await repo.setSetting(_daysKey, '${state.days}');
-    // The rule changed → the reminders may name other songs
-    await ref.read(forgottenReminderProvider).reschedule();
+    final repo = ref.read(settingsRepositoryProvider);
+    await repo.setSetting(SettingsKeys.forgottenMinPlays, '${state.minPlays}');
+    await repo.setSetting(SettingsKeys.forgottenDays, '${state.days}');
   }
 }
 

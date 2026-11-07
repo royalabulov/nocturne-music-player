@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_typography.dart';
-import '../core/theme/glass.dart';
 
-/// Shared empty state: glowing icon + title + explanation + (optional) button.
+/// Shared empty state: glowing icon + title + explanation.
 /// Used by Favorites / Playlists / Recent / search / playlist detail.
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -13,15 +12,11 @@ class EmptyState extends StatelessWidget {
     required this.icon,
     required this.title,
     this.message,
-    this.action,
-    this.onAction,
   });
 
   final IconData icon;
   final String title;
   final String? message;
-  final String? action;
-  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -48,21 +43,6 @@ class EmptyState extends StatelessWidget {
               message!,
               textAlign: TextAlign.center,
               style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
-            ),
-          ],
-          if (action != null && onAction != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            GestureDetector(
-              onTap: onAction,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.electric,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  boxShadow: Glow.accent,
-                ),
-                child: Text(action!, style: AppTypography.labelMd.copyWith(color: Colors.white)),
-              ),
             ),
           ],
         ],

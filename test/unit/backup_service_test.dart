@@ -3,8 +3,9 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/services/backup_service.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/services/artist_overrides.dart';
+import 'package:nocturne/data/services/backup_service.dart';
 
 /// Backup → new (reinstalled) DB → restore: data comes back by file path
 /// even though the track ids differ.
@@ -123,6 +124,12 @@ void main() {
       'scan folders is not a list': {'scanFolders': 'x'},
       'a scan folder is not an object': {'scanFolders': [1]},
       'a scan folder path is not text': {'scanFolders': [{'path': 1}]},
+      'edited artists is not a list': {'artistOverrides': {'/music/a.mp3': 'X'}},
+      'an edited artist is not an object': {'artistOverrides': ['X']},
+      'an edited artist name is not text': {'artistOverrides': [{'path': song, 'artist': 5}]},
+      'an edited artist name is empty': {'artistOverrides': [{'path': song, 'artist': '  '}]},
+      'an edited artist name is absurdly long': {'artistOverrides': [{'path': song, 'artist': 'x' * 100000}]},
+      'an edited artist has no path': {'artistOverrides': [{'artist': 'X'}]},
     };
     for (final MapEntry(key: what, value: fields) in malformed.entries) {
       test('refused: $what', () async {
@@ -196,6 +203,103 @@ void main() {
       }));
       final saved = {for (final s in await db.select(db.scanState).get()) s.key: s.value};
       expect(saved, {'autoScan': 'false'});
+    });
+
+    test('the user\'s choices come back', () async {
+      const choices = {
+        'language': 'az',
+        'lyricsOnline': 'false',
+        'smartAnalysis': 'false',
+        'librarySort': 'title',
+        'groupSort': 'mostSongs',
+        'favoritesSort': 'artist',
+        'filterMinBytes': '358400',
+        'filterMaxBytes': '',
+        'filterMinMs': '45000',
+        'filterMaxMs': '',
+        'forgottenMinPlays': '3',
+        'forgottenDays': '30',
+      };
+      await svc.restore(backup({'settings': choices}));
+      expect({for (final s in await db.select(db.scanState).get()) s.key: s.value}, choices);
+    });
+
+    test('what belongs to this phone stays out, in both directions', () async {
+      for (final e in const {
+        'onlineMode': 'true',
+        'forgottenRemind': 'true',
+        'resumeTrackId': '1',
+        'lastScanAt': '1',
+        'artistOverrides': '{"/music/a.mp3":"X"}',
+      }.entries) {
+        await db.into(db.scanState).insert(ScanStateCompanion.insert(key: e.key, value: e.value));
+      }
+      final file = jsonDecode(await svc.export()) as Map<String, dynamic>;
+      expect(file['settings'], isEmpty);
+
+      final other = AppDatabase(NativeDatabase.memory());
+      addTearDown(other.close);
+      await BackupService(other).restore(backup({
+        'settings': {'onlineMode': 'true', 'forgottenRemind': 'true', 'resumeTrackId': '1', 'artistOverrides': '{}'},
+      }));
+      expect(await other.select(other.scanState).get(), isEmpty);
+    });
+
+    test('a number setting that is not a number is ignored', () async {
+      await svc.restore(backup({
+        'settings': {'filterMinBytes': 'x; DROP TABLE tracks', 'filterMinMs': '-5', 'forgottenDays': '30'},
+      }));
+      expect({for (final s in await db.select(db.scanState).get()) s.key: s.value}, {'forgottenDays': '30'});
+    });
+
+    group('edited artist names', () {
+      const edited = {'path': song, 'artist': 'Xpert'};
+
+      Future<String> artistOf(String path) async =>
+          (await (db.select(db.tracks)..where((t) => t.path.equals(path))).getSingle()).artist;
+
+      test('are saved in the backup and come back after a reinstall', () async {
+        await db.into(db.scanState).insert(ArtistOverrides.row({song: 'Xpert'}));
+        final json = await svc.export();
+
+        final fresh = AppDatabase(NativeDatabase.memory());
+        addTearDown(fresh.close);
+        await addTrack(fresh, 'a');
+        await BackupService(fresh).restore(json);
+
+        expect(await ArtistOverrides.load(fresh), {song: 'Xpert'});
+        final track = await (fresh.select(fresh.tracks)..where((t) => t.path.equals(song))).getSingle();
+        expect(track.artist, 'Xpert');
+      });
+
+      test('the song on screen changes right away', () async {
+        await svc.restore(backup({'artistOverrides': [edited]}));
+        expect(await artistOf(song), 'Xpert');
+      });
+
+      test('a song not on this phone keeps its name for later and is not "missing"', () async {
+        final r = await svc.restore(backup({
+          'artistOverrides': [{'path': '/music/later.mp3', 'artist': 'Later'}],
+        }));
+        expect(r.missingTracks, 0);
+        expect(await ArtistOverrides.load(db), {'/music/later.mp3': 'Later'});
+      });
+
+      test('merge: other edits stay, the backup wins for the same file', () async {
+        await db.into(db.scanState).insert(ArtistOverrides.row({song: 'Old', '/music/b.mp3': 'Kept'}));
+        await svc.restore(backup({'artistOverrides': [edited]}));
+        expect(await ArtistOverrides.load(db), {song: 'Xpert', '/music/b.mp3': 'Kept'});
+      });
+
+      test('an old backup without them leaves the edits alone', () async {
+        await db.into(db.scanState).insert(ArtistOverrides.row({song: 'Kept'}));
+        await svc.restore(backup({'favorites': [{'path': song, 'addedAt': 1}]}));
+        expect(await ArtistOverrides.load(db), {song: 'Kept'});
+      });
+
+      test('adding them did not raise the version: older apps refuse newer versions', () {
+        expect(BackupService.version, 1);
+      });
     });
 
     test('an old backup without the newer sections still restores', () async {

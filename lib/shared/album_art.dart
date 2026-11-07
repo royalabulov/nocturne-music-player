@@ -9,6 +9,9 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import 'cover_crop.dart';
 
+/// Hero tag for the cover between the mini player and Now Playing.
+const kNowPlayingArtHero = 'now-playing-art';
+
 /// Album art: 16px radius + 1px inset hairline. Without a cover,
 /// a gradient placeholder + note icon. Black video bars are zoomed past (CoverCrop).
 class AlbumArt extends StatefulWidget {

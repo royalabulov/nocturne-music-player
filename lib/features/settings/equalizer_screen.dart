@@ -10,9 +10,10 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
 import '../../shared/codec_chip.dart';
-import '../player/player_providers.dart';
+import '../../core/audio/player_providers.dart';
 import 'settings_controller.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/screen_back_button.dart';
 
 /// System EQ (Android Equalizer). The number of bands depends on the device (usually 5).
 class EqualizerScreen extends ConsumerStatefulWidget {
@@ -25,7 +26,6 @@ class EqualizerScreen extends ConsumerStatefulWidget {
 class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
   List<EqBand> _bands = const [];
   List<double> _gains = const [];
-  int? _dragging;
 
   @override
   void initState() {
@@ -62,11 +62,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
           children: [
             Row(
               children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  color: AppColors.textPrimary,
-                ),
+                const ScreenBackButton(),
                 Expanded(child: Text(l10n.equalizer, style: AppTypography.headlineLg)),
                 Padding(
                   padding: const EdgeInsets.only(right: AppSpacing.md),
@@ -147,14 +143,8 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                                   band: _bands[i],
                                   value: i < _gains.length ? _gains[i] : 0,
                                   enabled: s.eqEnabled,
-                                  onChanged: (v) => setState(() {
-                                    _dragging = i;
-                                    _gains = [..._gains]..[i] = v;
-                                  }),
-                                  onChangeEnd: (v) {
-                                    _dragging = null;
-                                    unawaited(ctrl.setCustomGain(i, v, _bands.length));
-                                  },
+                                  onChanged: (v) => setState(() => _gains = [..._gains]..[i] = v),
+                                  onChangeEnd: (v) => unawaited(ctrl.setCustomGain(i, v, _bands.length)),
                                 )),
                             ],
                           ),
@@ -198,7 +188,6 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                 style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
               ),
             ),
-            if (_dragging != null) const SizedBox.shrink(),
           ],
         ),
       ),

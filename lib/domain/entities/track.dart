@@ -1,5 +1,13 @@
 import 'audio_format.dart';
 
+/// Names the app stores itself when a file has none. Grouping and sorting compare against
+/// them; only what's on screen is translated (displayName).
+const kUnknownArtist = 'Unknown Artist';
+const kUnknownAlbum = 'Unknown Album';
+
+/// Album artist when an album has songs by several artists.
+const kVariousArtists = 'Various Artists';
+
 /// One audio file in the library. Built from a Drift row by [TrackMapper].
 class Track {
   const Track({
@@ -38,7 +46,7 @@ class Track {
   final int? year;
   final int fileSize;
 
-  /// REPLAYGAIN_TRACK_GAIN (dB), tag-da varsa.
+  /// REPLAYGAIN_TRACK_GAIN (dB), if the tag has it.
   final double? replayGainDb;
 
   /// The file wasn't found on disk during the last scan.

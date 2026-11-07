@@ -89,8 +89,6 @@ class AudioAnalyzer(private val context: Context) {
         return mapOf(
             "scores" to scores,
             "rmsDb" to 20 * log10(max(rms, 1e-6)),
-            "windows" to frames,
-            "sampleRate" to SAMPLE_RATE,
             "segments" to segments,
         )
     }

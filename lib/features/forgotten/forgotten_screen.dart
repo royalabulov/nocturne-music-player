@@ -13,14 +13,15 @@ import '../../domain/entities/track.dart';
 import '../../domain/repositories/history_repository.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/album_art.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/glow_play_button.dart';
-import '../../shared/track_sliver_list.dart';
-import '../library_browse/browse_detail_screen.dart' show ActionPill;
-import '../player/player_providers.dart';
+import '../tracks/track_sliver_list.dart';
+import '../../shared/action_pill.dart';
+import '../../core/audio/player_providers.dart';
 import 'forgotten.dart';
 import 'forgotten_reminder.dart';
+import '../../shared/screen_back_button.dart';
 
 /// Menu → Forgotten favorites: songs played a lot (or favorites) that haven't been
 /// played for a while. The rule (plays, days) is set at the top of the screen.
@@ -64,11 +65,7 @@ class _ForgottenScreenState extends ConsumerState<ForgottenScreen> {
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Icons.arrow_back_rounded),
-                      color: AppColors.textPrimary,
-                    ),
+                    const ScreenBackButton(),
                   ],
                 ),
                 Padding(

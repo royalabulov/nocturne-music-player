@@ -18,10 +18,9 @@ class EqBand {
 /// EQ preset: a 10-point curve (31 Hz … 16 kHz). Devices have a different number
 /// of bands (usually 5) → log-interpolated by centre frequency.
 class EqPreset {
-  const EqPreset(this.name, this.curve, {this.icon});
+  const EqPreset(this.name, this.curve);
   final String name;
   final List<double> curve; // dB, 10 values
-  final String? icon;
 
   /// [name] is the id saved in the settings; this is what the screen shows.
   String get label => switch (name) {
@@ -72,8 +71,8 @@ class EqPreset {
 /// The same effects for both players — during the A/B crossfade both must go
 /// through the same EQ. Android system Equalizer (bound to the ExoPlayer audio session).
 /// On iOS the pipeline is empty (phase 5+).
-class SonarEffects {
-  SonarEffects()
+class NocturneEffects {
+  NocturneEffects()
       : _eqA = !kIsWeb && Platform.isAndroid ? AndroidEqualizer() : null,
         _eqB = !kIsWeb && Platform.isAndroid ? AndroidEqualizer() : null;
 
@@ -98,7 +97,7 @@ class SonarEffects {
           EqBand(index: b.index, centerHz: b.centerFrequency, minDb: p.minDecibels, maxDb: p.maxDecibels),
       ];
     } catch (e) {
-      debugPrint('SonarEffects: EQ parameters unavailable: $e');
+      debugPrint('NocturneEffects: EQ parameters unavailable: $e');
       return const [];
     }
   }
@@ -120,7 +119,7 @@ class SonarEffects {
           await p.bands[i].setGain(db[i].clamp(p.minDecibels, p.maxDecibels));
         }
       } catch (e) {
-        debugPrint('SonarEffects: setGains failed: $e');
+        debugPrint('NocturneEffects: setGains failed: $e');
       }
     }
     if (known.isEmpty) _bands = null; // try again next time

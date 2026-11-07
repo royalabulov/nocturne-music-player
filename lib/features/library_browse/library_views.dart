@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/router/routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
@@ -9,7 +10,7 @@ import '../../shared/album_art.dart';
 import '../../shared/empty_state.dart';
 import 'library_groups.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
 
 enum LibraryView { songs, albums, artists }
 

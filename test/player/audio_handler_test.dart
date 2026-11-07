@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio_platform_interface/just_audio_platform_interface.dart';
-import 'package:sonar/core/audio/sonar_audio_handler.dart';
-import 'package:sonar/domain/entities/audio_format.dart';
-import 'package:sonar/domain/entities/track.dart';
+import 'package:nocturne/core/audio/nocturne_audio_handler.dart';
+import 'package:nocturne/domain/entities/audio_format.dart';
+import 'package:nocturne/domain/entities/track.dart';
 
 import 'fake_just_audio.dart';
 
@@ -15,7 +15,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late FakeJustAudio fake;
-  late SonarAudioHandler h;
+  late NocturneAudioHandler h;
   late List<Track> started;
   late List<Track> unavailable;
   late List<PlaybackState> states;
@@ -41,7 +41,7 @@ void main() {
     JustAudioPlatform.instance = fake;
     started = [];
     unavailable = [];
-    h = SonarAudioHandler(
+    h = NocturneAudioHandler(
       onTrackStarted: started.add,
       onTrackUnavailable: unavailable.add,
       manageAudioSession: false,

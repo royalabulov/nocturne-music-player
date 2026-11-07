@@ -1,12 +1,12 @@
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/datasources/cover_cache.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/mappers/track_mapper.dart';
-import 'package:sonar/data/repositories/history_repository_impl.dart';
-import 'package:sonar/data/repositories/library_repository_impl.dart';
-import 'package:sonar/domain/repositories/library_repository.dart';
+import 'package:nocturne/data/datasources/cover_cache.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/mappers/track_mapper.dart';
+import 'package:nocturne/data/repositories/history_repository_impl.dart';
+import 'package:nocturne/data/repositories/library_repository_impl.dart';
+import 'package:nocturne/domain/repositories/library_repository.dart';
 
 /// Large library: 5000 tracks + 20 000 plays. Every query must return its first
 /// result in under 1 second (measured on the host; ~2-3x slower on the phone).

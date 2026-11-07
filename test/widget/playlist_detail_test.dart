@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio_platform_interface/just_audio_platform_interface.dart';
-import 'package:sonar/core/demo/demo_overrides.dart';
-import 'package:sonar/core/di/providers.dart';
-import 'package:sonar/core/demo/demo_library.dart';
-import 'package:sonar/core/audio/sonar_audio_handler.dart';
-import 'package:sonar/features/player/player_providers.dart';
-import 'package:sonar/features/playlists/playlist_detail_screen.dart';
+import 'package:nocturne/demo/demo_overrides.dart';
+import 'package:nocturne/core/di/providers.dart';
+import 'package:nocturne/demo/demo_library.dart';
+import 'package:nocturne/core/audio/nocturne_audio_handler.dart';
+import 'package:nocturne/core/audio/player_providers.dart';
+import 'package:nocturne/features/playlists/playlist_detail_screen.dart';
 
 import '../player/fake_just_audio.dart';
 
@@ -18,7 +18,7 @@ void main() {
   testWidgets('playlist detail opens and stays open', (tester) async {
     // The handler does real async work → outside the test's fake time zone
     JustAudioPlatform.instance = FakeJustAudio();
-    final handler = (await tester.runAsync(() async => SonarAudioHandler(manageAudioSession: false)))!;
+    final handler = (await tester.runAsync(() async => NocturneAudioHandler(manageAudioSession: false)))!;
 
     await tester.pumpWidget(
       ProviderScope(
@@ -57,7 +57,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(420, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     JustAudioPlatform.instance = FakeJustAudio();
-    final handler = (await tester.runAsync(() async => SonarAudioHandler(manageAudioSession: false)))!;
+    final handler = (await tester.runAsync(() async => NocturneAudioHandler(manageAudioSession: false)))!;
 
     await tester.pumpWidget(
       ProviderScope(

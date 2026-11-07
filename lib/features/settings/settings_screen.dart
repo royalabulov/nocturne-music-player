@@ -3,25 +3,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'dart:async';
-import 'dart:convert';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/audio/output_detector.dart';
+import '../../core/audio/player_providers.dart';
 import '../../core/audio/pocket_knock.dart';
 import '../../core/constants.dart';
 import '../../core/diagnostics/crash_log.dart';
 import '../../core/network/network_monitor.dart';
 import '../../core/network/online_mode.dart';
 import '../../core/di/providers.dart';
+import '../../core/router/routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
 import '../../core/ui/toast.dart';
-import '../../data/datasources/media_store_source.dart';
+import 'data_transfer.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../../shared/page_title.dart';
 import '../../shared/codec_chip.dart';
 import '../import/audio_import.dart';
@@ -29,10 +30,8 @@ import '../../domain/repositories/analysis_repository.dart';
 import '../library_scan/scan_controller.dart';
 import '../smart_groups/smart_groups.dart';
 import '../smart_groups/vibe_classifier.dart';
-import '../smart_groups/vibe_export.dart';
 import '../smart_groups/vibe_review.dart';
 import '../../shared/sort_sheet.dart';
-import '../player/lyrics_controller.dart';
 import 'library_filter_section.dart';
 import 'settings_controller.dart';
 import '../../l10n/l10n.dart';
@@ -108,7 +107,7 @@ class _StorageGroup extends ConsumerWidget {
     final stats = ref.watch(libraryStatsProvider).value ?? LibraryStats.empty;
     final scan = ref.watch(scanControllerProvider);
     final ctrl = ref.read(scanControllerProvider.notifier);
-    final autoScan = ref.watch(boolSettingProvider('autoScan')).value ?? true;
+    final autoScan = ref.watch(boolSettingProvider(SettingsKeys.autoScan)).value ?? true;
     final repo = ref.read(libraryRepositoryProvider);
 
     final p = scan.progress;
@@ -189,7 +188,7 @@ class _StorageGroup extends ConsumerWidget {
         title: l10n.autoScan,
         subtitle: l10n.autoScanHint,
         value: autoScan,
-        onChanged: (v) => repo.setSetting('autoScan', '$v'),
+        onChanged: (v) => ref.read(settingsRepositoryProvider).setSetting(SettingsKeys.autoScan, '$v'),
       ),
       const LibraryFilterGroup(),
     ]);
@@ -202,7 +201,7 @@ class _SmartGroup extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final enabled = ref.watch(boolSettingProvider(kSmartAnalysisKey)).value ?? true;
+    final enabled = ref.watch(boolSettingProvider(SettingsKeys.smartAnalysis)).value ?? true;
     final running = ref.watch(smartAnalysisProvider);
     final p = ref.watch(analysisProgressProvider).value ?? AnalysisProgress.empty;
     final subtitle = !enabled
@@ -281,8 +280,8 @@ class _NetworkGroup extends ConsumerWidget {
       _ToggleRow(
         title: l10n.lyricsOnline,
         subtitle: l10n.lyricsOnlineHint,
-        value: ref.watch(boolSettingProvider(kLyricsOnlineKey)).value ?? true,
-        onChanged: (v) => ref.read(libraryRepositoryProvider).setSetting(kLyricsOnlineKey, '$v'),
+        value: ref.watch(boolSettingProvider(SettingsKeys.lyricsOnline)).value ?? true,
+        onChanged: (v) => ref.read(settingsRepositoryProvider).setSetting(SettingsKeys.lyricsOnline, '$v'),
       ),
     ]);
   }
@@ -303,14 +302,14 @@ class _LanguageGroup extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final current = ref.watch(stringSettingProvider(kLanguageKey)).value ?? 'system';
+    final current = ref.watch(stringSettingProvider(SettingsKeys.language)).value ?? 'system';
     return _Group(children: [
       InkWell(
         onTap: () async {
           final picked = await showSortSheet(context,
               title: l10n.language, values: kLanguages, current: current, label: _label);
           if (picked != null && picked != current) {
-            await ref.read(libraryRepositoryProvider).setSetting(kLanguageKey, picked);
+            await ref.read(settingsRepositoryProvider).setSetting(SettingsKeys.language, picked);
           }
         },
         child: _InfoRow(
@@ -530,7 +529,7 @@ class _AudioGroup extends ConsumerWidget {
       ),
       // Opens a screen → the whole row is the button, with a chevron
       InkWell(
-        onTap: () => context.push('/settings/eq'),
+        onTap: () => context.push(Routes.equalizer),
         child: _InfoRow(
           title: l10n.eqAndBass,
           subtitle: s.eqEnabled
@@ -601,10 +600,7 @@ class _AudioGroup extends ConsumerWidget {
 
   Future<void> _exportKnockLog() async {
     try {
-      final d = DateTime.now();
-      String two(int v) => v.toString().padLeft(2, '0');
-      final name = 'nocturne-knock-log-${d.year}-${two(d.month)}-${two(d.day)}_${two(d.hour)}${two(d.minute)}.txt';
-      final saved = await PocketKnock.exportLog(name);
+      final saved = await PocketKnock.exportLog(stampedFileName('nocturne-knock-log', 'txt', DateTime.now()));
       showToast(saved == null ? l10n.knockLogEmpty : l10n.knockLogSaved(saved));
     } catch (e) {
       debugPrint('knock log export failed: $e');
@@ -655,16 +651,7 @@ class _DataGroup extends ConsumerWidget {
 
   Future<void> _backup(BuildContext context, WidgetRef ref) async {
     try {
-      final json = await ref.read(backupServiceProvider).export();
-      final d = DateTime.now();
-      final name = 'nocturne-backup-${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}.json';
-      final uri = await FilePicker.saveFile(
-        fileName: name,
-        bytes: utf8.encode(json),
-        mimeType: 'application/json',
-        dialogTitle: l10n.saveBackupDialog,
-      );
-      if (uri != null) showToast(l10n.backupSaved);
+      if (await ref.read(dataTransferProvider).saveBackup()) showToast(l10n.backupSaved);
     } catch (e) {
       debugPrint('backup failed: $e');
       showToast(l10n.backupFailed, error: true);
@@ -672,46 +659,20 @@ class _DataGroup extends ConsumerWidget {
   }
 
   Future<void> _exportVibes(BuildContext context, WidgetRef ref) async {
-    // Every step is logged — so if it hangs, we can see where.
-    // Timeout: if the stream stays empty, the button shouldn't silently "do nothing".
-    const limit = Duration(seconds: 20);
-    void step(String s) => debugPrint('vibe export: $s');
     showToast(l10n.preparingExport);
     try {
-      step('start');
-      final tracks = await ref.read(libraryRepositoryProvider).watchTracks().first.timeout(limit);
-      step('${tracks.length} tracks');
-      final repo = ref.read(analysisRepositoryProvider);
-      final data = await repo.watchVibeData().first.timeout(limit);
-      final labels = await repo.watchLabels().first.timeout(limit);
-      step('${data.length} rows, ${labels.length} answers');
-      final csv = buildVibeCsv(tracks: tracks, data: data, predicted: classifyLibrary(data), labels: labels);
-      // BOM: so Excel shows Azerbaijani letters correctly
-      final bytes = utf8.encode('﻿$csv');
-      final d = DateTime.now();
-      String two(int v) => v.toString().padLeft(2, '0');
-      final name = 'nocturne-vibes-${d.year}-${two(d.month)}-${two(d.day)}_${two(d.hour)}${two(d.minute)}.csv';
-      step('csv ${bytes.length} bytes → $name');
-      // Android: straight to Download without a dialog; a file picker on other platforms
-      final saved = await MediaStoreSource.saveToDownloads(name, bytes, 'text/csv') ??
-          await FilePicker.saveFile(fileName: name, bytes: bytes, mimeType: 'text/csv');
-      step('saved: $saved');
-      if (saved != null) showToast(l10n.exportSaved(l10n.songCount(tracks.length)));
+      final songs = await ref.read(dataTransferProvider).exportVibes();
+      if (songs != null) showToast(l10n.exportSaved(l10n.songCount(songs)));
     } catch (e) {
-      step('failed: $e');
+      debugPrint('vibe export failed: $e');
       showToast(l10n.exportFailed, error: true);
     }
   }
 
   Future<void> _restore(BuildContext context, WidgetRef ref) async {
     try {
-      final file = await FilePicker.pickFile(dialogTitle: l10n.chooseBackupDialog);
-      if (file == null) return;
-      final backups = ref.read(backupServiceProvider);
-      if (await file.length() > backups.maxBytes) throw const FormatException('Backup file too large');
-      final report = await backups.restore(utf8.decode(await file.readAsBytes()));
-      ref.invalidate(audioSettingsProvider); // reload audio settings from the DB
-      showToast(report.toString());
+      final report = await ref.read(dataTransferProvider).pickAndRestore();
+      if (report != null) showToast(restoreMessage(report));
     } catch (e) {
       debugPrint('restore failed: $e');
       showToast(l10n.restoreFailed, error: true);

@@ -1153,7 +1153,7 @@ class L10nEn extends L10n {
   }
 
   @override
-  String get savedToMusicSonar => 'Saved to Music/Nocturne';
+  String get savedToMusicFolder => 'Saved to Music/Nocturne';
 
   @override
   String skippedCount(int count) {

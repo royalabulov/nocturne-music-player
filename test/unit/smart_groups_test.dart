@@ -1,12 +1,12 @@
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/core/demo/demo_library.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/repositories/analysis_repository_impl.dart';
-import 'package:sonar/domain/repositories/analysis_repository.dart';
-import 'package:sonar/features/smart_groups/smart_groups.dart';
-import 'package:sonar/features/smart_groups/vibe_classifier.dart';
+import 'package:nocturne/demo/demo_library.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/repositories/analysis_repository_impl.dart';
+import 'package:nocturne/domain/repositories/analysis_repository.dart';
+import 'package:nocturne/features/smart_groups/smart_groups.dart';
+import 'package:nocturne/features/smart_groups/vibe_classifier.dart';
 
 void main() {
   moodV2Tests();
@@ -165,7 +165,7 @@ void moodV2Tests() {
           '_centroid': 1500,
         });
     final rows = [
-      for (var i = 0; i < 10; i++) row(i, rms: -14, beat: .2, bpm: 110, mode: 0), // neytral fon
+      for (var i = 0; i < 10; i++) row(i, rms: -14, beat: .2, bpm: 110, mode: 0), // neutral background
       row(100, rms: -7, beat: .6, bpm: 150, mode: -.05), // high energy, minor
       row(101, rms: -7, beat: .6, bpm: 140, mode: .4), // high energy, clear major
       row(102, rms: -20, beat: .05, bpm: 80, mode: -.3), // sakit, minor

@@ -1,27 +1,27 @@
+import 'package:nocturne/core/utils/shared_storage.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/datasources/cover_cache.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/mappers/track_mapper.dart';
-import 'package:sonar/data/repositories/library_repository_impl.dart';
-import 'package:sonar/features/import/audio_import.dart';
+import 'package:nocturne/data/datasources/cover_cache.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/mappers/track_mapper.dart';
+import 'package:nocturne/data/repositories/library_repository_impl.dart';
 
 void main() {
   group('which files are used in place instead of being copied', () {
     test('a song on shared storage', () {
-      expect(AudioImport.isPublicPath('/storage/emulated/0/Music/song.mp3'), isTrue);
-      expect(AudioImport.isPublicPath('/storage/1234-ABCD/Music/song.mp3'), isTrue);
+      expect(isSharedStoragePath('/storage/emulated/0/Music/song.mp3'), isTrue);
+      expect(isSharedStoragePath('/storage/1234-ABCD/Music/song.mp3'), isTrue);
     });
 
     test('not app-private folders', () {
-      expect(AudioImport.isPublicPath('/data/user/0/com.nocturne/cache/song.mp3'), isFalse);
-      expect(AudioImport.isPublicPath('/storage/emulated/0/Android/data/com.other/cache/song.mp3'), isFalse);
+      expect(isSharedStoragePath('/data/user/0/com.nocturne/cache/song.mp3'), isFalse);
+      expect(isSharedStoragePath('/storage/emulated/0/Android/data/com.other/cache/song.mp3'), isFalse);
     });
 
     test('not a path that only looks public', () {
-      expect(AudioImport.isPublicPath('/storage/emulated/0/../../../data/user/0/com.nocturne/databases/x'), isFalse);
-      expect(AudioImport.isPublicPath('/storage/emulated/0/Music/../secret.mp3'), isFalse);
+      expect(isSharedStoragePath('/storage/emulated/0/../../../data/user/0/com.nocturne/databases/x'), isFalse);
+      expect(isSharedStoragePath('/storage/emulated/0/Music/../secret.mp3'), isFalse);
     });
   });
 

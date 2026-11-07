@@ -1147,7 +1147,7 @@ class L10nAz extends L10n {
   }
 
   @override
-  String get savedToMusicSonar => 'Music/Nocturne qovluğuna saxlanıldı';
+  String get savedToMusicFolder => 'Music/Nocturne qovluğuna saxlanıldı';
 
   @override
   String skippedCount(int count) {

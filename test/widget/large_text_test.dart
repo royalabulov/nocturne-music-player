@@ -5,15 +5,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio_platform_interface/just_audio_platform_interface.dart';
-import 'package:sonar/app.dart';
-import 'package:sonar/core/audio/sonar_audio_handler.dart';
-import 'package:sonar/core/constants.dart';
-import 'package:sonar/core/demo/demo_audio.dart';
-import 'package:sonar/core/demo/demo_library.dart';
-import 'package:sonar/core/demo/demo_overrides.dart';
-import 'package:sonar/core/router/app_router.dart';
-import 'package:sonar/features/player/player_providers.dart';
-import 'package:sonar/l10n/l10n.dart';
+import 'package:nocturne/app.dart';
+import 'package:nocturne/core/audio/nocturne_audio_handler.dart';
+import 'package:nocturne/core/constants.dart';
+import 'package:nocturne/demo/demo_audio.dart';
+import 'package:nocturne/demo/demo_library.dart';
+import 'package:nocturne/demo/demo_overrides.dart';
+import 'package:nocturne/app_router.dart';
+import 'package:nocturne/core/audio/player_providers.dart';
+import 'package:nocturne/core/router/routes.dart';
+import 'package:nocturne/l10n/l10n.dart';
 
 import '../player/fake_just_audio.dart';
 
@@ -44,7 +45,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
       JustAudioPlatform.instance = FakeJustAudio();
-      final handler = (await tester.runAsync(() async => SonarAudioHandler(manageAudioSession: false, sourceBuilder: DemoAudio.sourceFor)))!;
+      final handler = (await tester.runAsync(() async => NocturneAudioHandler(manageAudioSession: false, sourceBuilder: DemoAudio.sourceFor)))!;
       await tester.pumpWidget(ProviderScope(
         overrides: [
           audioHandlerProvider.overrideWithValue(handler),
@@ -52,7 +53,7 @@ void main() {
           positionProvider.overrideWith((_) => Stream.value(const Duration(seconds: 42))),
           ...demoOverrides(),
         ],
-        child: const SonarApp(),
+        child: const NocturneApp(),
       ));
       Future<void> settle() async {
         for (var i = 0; i < 8; i++) {

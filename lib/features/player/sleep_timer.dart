@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../shared/sonar_sheet.dart';
-import 'player_providers.dart';
+import '../../shared/nocturne_sheet.dart';
+import '../../core/audio/player_providers.dart';
 import '../../l10n/l10n.dart';
 
 /// Sleep timer: after a set time, fades the volume down and stops,
@@ -171,7 +171,7 @@ class _SleepTimerButtonState extends ConsumerState<SleepTimerButton> {
 
 Future<void> showSleepTimerSheet(BuildContext context) {
   const presets = [15, 30, 45, 60, 90];
-  return showSonarSheet(
+  return showNocturneSheet(
     context,
     scrollControlled: true,
     scrollable: true,

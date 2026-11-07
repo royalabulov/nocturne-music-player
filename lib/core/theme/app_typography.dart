@@ -110,15 +110,6 @@ abstract final class AppTypography {
 
   // Technical values — JetBrains Mono: time (2:34), bitrate (320KBPS MP3).
   // Digits have equal width, so timecodes don't "jitter".
-  static const TextStyle monoMd = TextStyle(
-    fontFamily: mono,
-    fontSize: 13,
-    fontWeight: FontWeight.w500,
-    height: 16 / 13,
-    letterSpacing: 0.26,
-    color: AppColors.textSecondary,
-  );
-
   static const TextStyle monoSm = TextStyle(
     fontFamily: mono,
     fontSize: 11,

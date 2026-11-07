@@ -4,27 +4,12 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
 import '../db/app_database.dart';
-import '../../l10n/l10n.dart';
+import '../../domain/entities/restore_report.dart';
+import 'artist_overrides.dart';
 import 'backup_file.dart';
 
 /// Restore result — shown in a Settings snackbar.
-class RestoreReport {
-  const RestoreReport({
-    required this.favorites,
-    required this.playlists,
-    required this.playlistTracks,
-    required this.plays,
-    required this.missingTracks,
-  });
-  final int favorites, playlists, playlistTracks, plays, missingTracks;
-
-  @override
-  String toString() =>
-      l10n.restoreReport(favorites, playlists, playlistTracks, plays) +
-      (missingTracks > 0 ? l10n.restoreMissing(missingTracks) : '');
-}
-
-/// User data (favorites, playlists, history, audio settings, scan folders)
+/// User data (favorites, playlists, history, settings, scan folders, edited artist names)
 /// as JSON. Tracks are stored by **file path**, not id — ids change after a
 /// reinstall / new scan, paths don't.
 ///
@@ -52,6 +37,7 @@ class BackupService {
     final settings = await (db.select(db.scanState)..where((s) => s.key.isIn(BackupFile.settingKeys))).get();
     final folders = await db.select(db.scanFolders).get();
     final labels = await db.select(db.vibeLabels).get();
+    final artists = await ArtistOverrides.load(db);
 
     final data = {
       'format': format,
@@ -93,6 +79,10 @@ class BackupService {
               'predictedGenre': l.predictedGenre,
               'labeledAt': l.labeledAt,
             },
+      ],
+      // By path, like everything here; a song not on the phone yet gets its name when it's scanned
+      'artistOverrides': [
+        for (final MapEntry(key: path, value: artist) in artists.entries) {'path': path, 'artist': artist},
       ],
     };
     return const JsonEncoder.withIndent(' ').convert(data);
@@ -191,6 +181,18 @@ class BackupService {
               predictedGenre: l.predictedGenre,
               labeledAt: l.labeledAt,
             ));
+      }
+      // Edited artist names — the backup's name replaces an existing one for the same file.
+      // Songs not on this phone aren't "missing" here: the next scan applies the name.
+      if (backup.artists.isNotEmpty) {
+        final merged = await ArtistOverrides.load(db);
+        for (final a in backup.artists) {
+          merged[a.path] = a.artist;
+          if (ids[a.path] case final id?) {
+            await (db.update(db.tracks)..where((t) => t.id.equals(id))).write(TracksCompanion(artist: Value(a.artist)));
+          }
+        }
+        await db.into(db.scanState).insertOnConflictUpdate(ArtistOverrides.row(merged));
       }
       for (final f in backup.scanFolders) {
         await db.into(db.scanFolders).insert(

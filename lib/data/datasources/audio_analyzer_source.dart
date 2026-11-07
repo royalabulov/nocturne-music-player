@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// Kotlin `AudioAnalyzer` (MainActivity "analyzeAudio") — YAMNet, tam offline.
+/// Kotlin `AudioAnalyzer` (MainActivity "analyzeAudio") — YAMNet, fully offline.
 class AudioAnalyzerSource {
-  static const _ch = MethodChannel('com.nocturne/media_store');
+  static const _ch = MethodChannel('com.nocturne/audio_analysis');
 
   /// Analysis is only possible on Android (not in the web demo / tests).
   bool get supported => !kIsWeb && Platform.isAndroid;
@@ -16,9 +16,14 @@ class AudioAnalyzerSource {
     String path,
     int durationMs,
   ) async {
-    final r = await _ch.invokeMethod<Object?>('analyzeAudio', {'path': path, 'durationMs': durationMs});
-    if (r is! Map) throw AudioAnalysisException('$r');
-    final raw = r['scores'] as Map;
+    final Map<Object?, Object?>? r;
+    try {
+      r = await _ch.invokeMapMethod<Object?, Object?>('analyzeAudio', {'path': path, 'durationMs': durationMs});
+    } on PlatformException catch (e) {
+      throw AudioAnalysisException(e.message ?? e.code);
+    }
+    if (r == null) throw AudioAnalysisException('no result');
+    final raw = r['scores']! as Map;
     return (
       scores: {for (final e in raw.entries) e.key as String: (e.value as num).toDouble()},
       rmsDb: (r['rmsDb'] as num).toDouble(),

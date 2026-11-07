@@ -50,6 +50,7 @@ lib/
   core/       app-wide services: audio handler, router, DI providers, theme, diagnostics
   data/       drift database, data sources (MediaStore, tag reader), repository implementations
   domain/     entities and repository interfaces
+  demo/       in-memory library for the web preview (main_demo.dart); not part of the app
   features/   one folder per screen/feature (home, player, playlists, smart_groups, settings…)
   shared/     reusable widgets
 android/      Kotlin platform code (MediaStore observer, importer, audio analyzer)
@@ -86,7 +87,7 @@ nothing signed with the public debug key ships by accident.
 A web build runs with an in-memory demo library (no real files) for previewing the UI:
 
 ```bash
-flutter build web
+flutter build web -t lib/main_demo.dart
 ```
 
 ## Privacy

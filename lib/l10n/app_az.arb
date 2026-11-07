@@ -313,7 +313,7 @@
   "couldNotOpenFile": "Bu faylı açmaq alınmadı",
   "importingFiles": "{count} fayl əlavə olunur…",
   "addedTracks": "{count, plural, other{{count} mahnı əlavə olundu}}",
-  "savedToMusicSonar": "Music/Nocturne qovluğuna saxlanıldı",
+  "savedToMusicFolder": "Music/Nocturne qovluğuna saxlanıldı",
   "skippedCount": "{count} buraxıldı",
   "nothingImported": "Heç nə əlavə olunmadı",
   "modeInOrder": "Ardıcıl",

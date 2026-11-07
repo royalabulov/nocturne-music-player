@@ -2,12 +2,12 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart' show RangeValues;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/datasources/cover_cache.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/mappers/track_mapper.dart';
-import 'package:sonar/data/repositories/library_repository_impl.dart';
-import 'package:sonar/domain/repositories/library_repository.dart';
-import 'package:sonar/features/settings/library_filter_section.dart';
+import 'package:nocturne/data/datasources/cover_cache.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/mappers/track_mapper.dart';
+import 'package:nocturne/data/repositories/library_repository_impl.dart';
+import 'package:nocturne/domain/repositories/library_repository.dart';
+import 'package:nocturne/features/settings/library_filter_section.dart';
 
 /// Settings → Library filter (size/length range) and Home sort.
 void main() {

@@ -2,21 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/router/routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/theme/glass.dart';
 import '../../core/utils/duration_format.dart';
 import '../../domain/entities/track.dart';
+import '../../domain/entities/track_keys.dart';
+import '../../shared/action_pill.dart';
 import '../../shared/album_art.dart';
 import '../../shared/empty_state.dart';
-import '../../shared/track_sliver_list.dart';
-import '../player/player_providers.dart';
+import '../tracks/track_sliver_list.dart';
+import '../../core/audio/player_providers.dart';
 import '../smart_groups/smart_groups.dart';
-import '../smart_groups/smart_groups_section.dart';
+import '../smart_groups/vibes_screen.dart';
 import 'library_groups.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
+import '../../shared/screen_back_button.dart';
 
 class AlbumDetailScreen extends ConsumerWidget {
   const AlbumDetailScreen({super.key, required this.albumKey});
@@ -134,11 +137,7 @@ class _DetailScaffold extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Icons.arrow_back_rounded),
-                      color: AppColors.textPrimary,
-                    ),
+                    const ScreenBackButton(),
                   ],
                 ),
                 Padding(
@@ -241,38 +240,6 @@ class _DetailScaffold extends ConsumerWidget {
             ),
             TrackSliverList(tracks: tracks, subtitle: subtitleOf),
             const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Rounded "Play all" / "Shuffle" button (also used by Forgotten favorites).
-class ActionPill extends StatelessWidget {
-  const ActionPill({super.key, required this.icon, required this.label, required this.onTap, this.primary = false});
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool primary;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = primary ? Colors.white : AppColors.textPrimary;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        decoration: BoxDecoration(
-          color: primary ? AppColors.electric : AppColors.surfaceHigh,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          boxShadow: primary ? Glow.accent : null,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: fg, size: 18),
-            const SizedBox(width: 8),
-            Text(label, style: AppTypography.labelMd.copyWith(color: fg)),
           ],
         ),
       ),

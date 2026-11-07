@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import '../../core/utils/bounded_isolate.dart';
 import '../../domain/entities/audio_format.dart';
+import '../../domain/entities/track.dart';
 
 /// Result of reading tags — the raw form before it becomes a Track.
 class TagInfo {
@@ -41,8 +42,8 @@ class TagInfo {
 /// audio_metadata_reader wrapper. Parsing is synchronous — so [readMany]
 /// runs it in a separate isolate to keep the UI smooth.
 abstract final class TagReader {
-  static const unknownArtist = 'Unknown Artist';
-  static const unknownAlbum = 'Unknown Album';
+  static const unknownArtist = kUnknownArtist;
+  static const unknownAlbum = kUnknownAlbum;
 
   /// Tags are written by whoever made the file. Nothing real comes close to these.
   static const maxTextChars = 500;
@@ -121,7 +122,7 @@ abstract final class TagReader {
     return TagInfo(
       title: guessed.title,
       artist: guessed.artist ?? unknownArtist,
-      // Video saytının avto-kanalı: albom "Michael Tai - Topic" → "Michael Tai"
+      // A video site auto-channel: album "Michael Tai - Topic" → "Michael Tai"
       album: stripTopic(album) ?? unknownAlbum,
       albumArtist: albumArtist,
       genre: _clean(m?.genres.firstOrNull),
@@ -191,7 +192,7 @@ abstract final class TagReader {
     for (; i < units.length; i++) {
       final c = units[i];
       final sw = ((c & 0xFF) << 8) | (c >> 8);
-      if (sw == 0xFEFF) continue; // qalan BOM-lar
+      if (sw == 0xFEFF) continue; // leftover BOMs
       out.add(sw);
     }
     return String.fromCharCodes(out);
@@ -379,7 +380,7 @@ abstract final class TagReader {
     }
   }
 
-  /// ID3 text frame: ilk bayt encoding (0 Latin-1, 1 UTF-16+BOM, 2 UTF-16BE, 3 UTF-8).
+  /// ID3 text frame: first byte is the encoding (0 Latin-1, 1 UTF-16+BOM, 2 UTF-16BE, 3 UTF-8).
   static String _decodeText(Uint8List d) {
     if (d.isEmpty) return '';
     final enc = d[0];
@@ -416,7 +417,7 @@ abstract final class TagReader {
     return (nul >= 0 ? s.substring(0, nul) : s).trim();
   }
 
-  /// FLAC STREAMINFO → (sampleRate, bitsPerSample). Paket bit depth vermir.
+  /// FLAC STREAMINFO → (sampleRate, bitsPerSample). The package does not give the bit depth.
   static (int, int)? _flacStreamInfo(File f) {
     RandomAccessFile? raf;
     try {

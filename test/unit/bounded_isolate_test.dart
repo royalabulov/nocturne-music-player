@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/core/utils/bounded_isolate.dart';
+import 'package:nocturne/core/utils/bounded_isolate.dart';
 
 int _forever() {
   var i = 0;

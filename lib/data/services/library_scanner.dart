@@ -5,60 +5,18 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../core/constants.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../datasources/cover_cache.dart';
 import '../datasources/folder_source.dart';
 import '../datasources/media_store_source.dart';
 import '../datasources/raw_audio.dart';
 import '../datasources/tag_reader.dart';
 import '../db/app_database.dart';
-
-enum ScanPhase { idle, enumerating, reading, finalizing, done, error }
+import '../../domain/entities/scan_progress.dart';
+import 'artist_overrides.dart';
 
 /// Path → tags for a batch of files; null = unreadable.
 typedef TagBatchReader = Future<Map<String, TagInfo?>> Function(List<String> paths);
-
-/// scan_state key: {path: artist} typed by the user (Edit artist). Wins over the tag.
-const kArtistOverridesKey = 'artistOverrides';
-
-class ScanProgress {
-  const ScanProgress({
-    required this.phase,
-    this.done = 0,
-    this.total = 0,
-    this.added = 0,
-    this.updated = 0,
-    this.missing = 0,
-    this.currentFile,
-    this.error,
-  });
-
-  static const idle = ScanProgress(phase: ScanPhase.idle);
-
-  final ScanPhase phase;
-  final int done, total, added, updated, missing;
-  final String? currentFile;
-  final String? error;
-
-  bool get isRunning =>
-      phase == ScanPhase.enumerating || phase == ScanPhase.reading || phase == ScanPhase.finalizing;
-
-  double? get fraction => total == 0 ? null : done / total;
-
-  ScanProgress copyWith({
-    ScanPhase? phase, int? done, int? total, int? added, int? updated, int? missing,
-    String? currentFile, String? error,
-  }) =>
-      ScanProgress(
-        phase: phase ?? this.phase,
-        done: done ?? this.done,
-        total: total ?? this.total,
-        added: added ?? this.added,
-        updated: updated ?? this.updated,
-        missing: missing ?? this.missing,
-        currentFile: currentFile ?? this.currentFile,
-        error: error ?? this.error,
-      );
-}
 
 /// Pipeline: enumerate → diff → tag → upsert → prune.
 ///
@@ -126,7 +84,7 @@ class LibraryScanner {
       };
       // If TagReader changed (kTagReaderVersion), re-read everything
       final storedVersion = (await (db.select(db.scanState)
-                ..where((s) => s.key.equals('tagReaderVersion')))
+                ..where((s) => s.key.equals(SettingsKeys.tagReaderVersion)))
               .getSingleOrNull())
           ?.value;
       final forceReread = storedVersion != '$kTagReaderVersion';
@@ -155,11 +113,11 @@ class LibraryScanner {
           if (!raw.containsKey(e.path) && !e.isMissing) e.id,
       ];
 
-      p = p.copyWith(phase: ScanPhase.reading, total: toRead.length, missing: missingIds.length);
+      p = p.copyWith(phase: ScanPhase.reading, total: toRead.length);
       _emit(p);
 
-      // 3. Tag oxu (isolate, batch) + upsert
-      var added = 0, updated = 0;
+      // 3. Read tags (isolate, batch) + upsert
+      var added = 0;
       final now = DateTime.now().millisecondsSinceEpoch;
       for (var i = 0; i < toRead.length; i += _batch) {
         final chunk = toRead.sublist(i, (i + _batch).clamp(0, toRead.length));
@@ -205,7 +163,6 @@ class LibraryScanner {
             added++;
           } else {
             updates.add((prev.id, companion));
-            updated++;
           }
         }
         if (inserts.isNotEmpty || updates.isNotEmpty) {
@@ -216,10 +173,7 @@ class LibraryScanner {
             }
           });
         }
-        p = p.copyWith(
-          done: i + chunk.length, added: added, updated: updated,
-          missing: missingIds.length, currentFile: chunk.last.path,
-        );
+        p = p.copyWith(done: i + chunk.length, added: added, currentFile: chunk.last.path);
         _emit(p);
       }
 
@@ -238,13 +192,11 @@ class LibraryScanner {
       await _fixArtists();
 
       // 5. scan_state
-      final count = await db.tracks.count(where: (t) => t.isMissing.not()).getSingle();
       await db.batch((b) => b.insertAllOnConflictUpdate(db.scanState, [
-            ScanStateCompanion(key: const Value('lastScanAt'), value: Value('$now')),
-            ScanStateCompanion(key: const Value('lastScanTrackCount'), value: Value('$count')),
-            const ScanStateCompanion(key: Value('tagReaderVersion'), value: Value('$kTagReaderVersion')),
+            ScanStateCompanion(key: const Value(SettingsKeys.lastScanAt), value: Value('$now')),
+            const ScanStateCompanion(key: Value(SettingsKeys.tagReaderVersion), value: Value('$kTagReaderVersion')),
             // Keep only rejected files that still exist in this scan
-            ScanStateCompanion(key: const Value(_skippedKey), value: Value(jsonEncode(skipped))),
+            ScanStateCompanion(key: const Value(SettingsKeys.skippedFiles), value: Value(jsonEncode(skipped))),
           ]));
       if (skipped.isNotEmpty) debugPrint('LibraryScanner: ${skipped.length} unreadable files ignored');
 
@@ -277,11 +229,9 @@ class LibraryScanner {
     }
   }
 
-  /// v2: only unreadable files now (the old list also had short files)
-  static const _skippedKey = 'skippedFiles2';
-
+  /// Files rejected by earlier scans: only unreadable ones (an older list also had short files).
   Future<Map<String, String>> _loadSkipped() async {
-    final row = await (db.select(db.scanState)..where((s) => s.key.equals(_skippedKey))).getSingleOrNull();
+    final row = await (db.select(db.scanState)..where((s) => s.key.equals(SettingsKeys.skippedFiles))).getSingleOrNull();
     if (row == null) return const {};
     try {
       return (jsonDecode(row.value) as Map<String, dynamic>).cast<String, String>();
@@ -303,9 +253,9 @@ class LibraryScanner {
         (id: r.read(db.tracks.id)!, path: r.read(db.tracks.path)!,
             artist: r.read(db.tracks.artist)!, title: r.read(db.tracks.title)!),
     ];
-    final known = ((await _loadJson(_uploadersKey)) as List?)?.cast<String>() ?? const [];
+    final known = ((await _loadJson(SettingsKeys.uploaderArtists)) as List?)?.cast<String>() ?? const [];
     final uploaders = {...known, ...TagReader.findUploaders([for (final t in tracks) (artist: t.artist, title: t.title)])};
-    final overrides = ((await _loadJson(kArtistOverridesKey)) as Map?)?.cast<String, String>() ?? const {};
+    final overrides = await ArtistOverrides.load(db);
 
     final changes = <(int, TracksCompanion)>[];
     for (final t in tracks) {
@@ -324,13 +274,11 @@ class LibraryScanner {
         b.update(db.tracks, c, where: (t) => t.id.equals(id));
       }
       b.insertAllOnConflictUpdate(db.scanState, [
-        ScanStateCompanion(key: const Value(_uploadersKey), value: Value(jsonEncode(uploaders.toList()..sort()))),
+        ScanStateCompanion(key: const Value(SettingsKeys.uploaderArtists), value: Value(jsonEncode(uploaders.toList()..sort()))),
       ]);
     });
     if (changes.isNotEmpty) debugPrint('LibraryScanner: ${changes.length} artists fixed');
   }
-
-  static const _uploadersKey = 'uploaderArtists';
 
   Future<Object?> _loadJson(String key) async {
     final row = await (db.select(db.scanState)..where((s) => s.key.equals(key))).getSingleOrNull();

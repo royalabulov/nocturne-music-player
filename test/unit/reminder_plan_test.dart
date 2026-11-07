@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/features/forgotten/reminder_plan.dart';
+import 'package:nocturne/features/forgotten/reminder_plan.dart';
 
 /// Forgotten favorites reminder: when it goes off and which song it names.
 void main() {

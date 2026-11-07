@@ -7,28 +7,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/audio/output_detector.dart';
-import '../../core/router/app_router.dart';
+import '../../core/router/routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/duration_format.dart';
 import '../../domain/entities/track.dart';
+import '../../domain/entities/track_keys.dart';
 import '../../shared/album_art.dart';
 import '../../shared/cover_color.dart';
 import '../../shared/favorite_button.dart';
 import '../../shared/glow_play_button.dart';
-import '../../shared/track_actions_sheet.dart';
-import '../home/locate_track.dart';
-import '../library_browse/library_groups.dart';
-import '../settings/settings_controller.dart';
-import '../shell/mini_player.dart';
+import '../tracks/track_actions_sheet.dart';
+import '../../shared/locate_track.dart';
 import 'lyrics_controller.dart';
 import 'lyrics_view.dart';
-import 'player_providers.dart';
+import '../../core/audio/player_providers.dart';
 import 'queue_sheet.dart';
 import 'sleep_timer.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
 
 /// Full-screen player. Not in the original design — drawn to match the design system.
 class NowPlayingScreen extends ConsumerWidget {
@@ -372,15 +370,7 @@ class _BottomBar extends ConsumerWidget {
     final (icon, label) = _output(
       ref.watch(outputKindProvider).value ?? OutputKind.speaker,
     );
-    // Refresh "Up next" when the queue, current song or shuffle/repeat changes
-    ref.watch(queueProvider);
-    ref.watch(currentTrackProvider);
-    ref.watch(
-      playbackStateProvider.select(
-        (a) => (a.value?.shuffleMode, a.value?.repeatMode),
-      ),
-    );
-    final next = ref.read(audioHandlerProvider).upNextValue;
+    final next = ref.watch(upNextProvider);
 
     return Row(
       children: [

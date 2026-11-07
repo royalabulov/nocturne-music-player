@@ -1975,11 +1975,11 @@ abstract class L10n {
   /// **'{count, plural, =1{Added 1 track} other{Added {count} tracks}}'**
   String addedTracks(int count);
 
-  /// No description provided for @savedToMusicSonar.
+  /// No description provided for @savedToMusicFolder.
   ///
   /// In en, this message translates to:
   /// **'Saved to Music/Nocturne'**
-  String get savedToMusicSonar;
+  String get savedToMusicFolder;
 
   /// No description provided for @skippedCount.
   ///

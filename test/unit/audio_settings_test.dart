@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/core/audio/audio_effects.dart';
-import 'package:sonar/core/audio/output_detector.dart';
-import 'package:sonar/features/settings/audio_settings.dart';
+import 'package:nocturne/core/audio/audio_effects.dart';
+import 'package:nocturne/core/audio/output_detector.dart';
+import 'package:nocturne/features/settings/audio_settings.dart';
 
 void main() {
   test('EqPreset interpolates on log-frequency scale', () {

@@ -8,16 +8,13 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../../core/di/providers.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
+import '../../domain/repositories/settings_repository.dart';
 import 'forgotten.dart';
 import 'reminder_plan.dart';
 
 /// Reminder settings, stored in scan_state. Changing them re-plans the notifications.
 class ReminderSettingsController extends Notifier<ReminderSettings> {
-  static const _enabledKey = 'forgottenRemind';
-  static const _daysKey = 'forgottenRemindDays';
-  static const _timeKey = 'forgottenRemindTime';
-
   @override
   ReminderSettings build() {
     unawaited(_load());
@@ -25,10 +22,10 @@ class ReminderSettingsController extends Notifier<ReminderSettings> {
   }
 
   Future<void> _load() async {
-    final repo = ref.read(libraryRepositoryProvider);
-    final enabled = await repo.getSetting(_enabledKey);
-    final days = await repo.getSetting(_daysKey);
-    final time = (await repo.getSetting(_timeKey))?.split(':');
+    final repo = ref.read(settingsRepositoryProvider);
+    final enabled = await repo.getSetting(SettingsKeys.forgottenRemind);
+    final days = await repo.getSetting(SettingsKeys.forgottenRemindDays);
+    final time = (await repo.getSetting(SettingsKeys.forgottenRemindTime))?.split(':');
     state = state.copyWith(
       enabled: enabled == 'true',
       weekdays: days == null ? null : ReminderSettings.parseWeekdays(days),
@@ -39,10 +36,10 @@ class ReminderSettingsController extends Notifier<ReminderSettings> {
 
   Future<void> set(ReminderSettings s) async {
     state = s;
-    final repo = ref.read(libraryRepositoryProvider);
-    await repo.setSetting(_enabledKey, '${s.enabled}');
-    await repo.setSetting(_daysKey, s.weekdaysText);
-    await repo.setSetting(_timeKey, '${s.hour}:${s.minute}');
+    final repo = ref.read(settingsRepositoryProvider);
+    await repo.setSetting(SettingsKeys.forgottenRemind, '${s.enabled}');
+    await repo.setSetting(SettingsKeys.forgottenRemindDays, s.weekdaysText);
+    await repo.setSetting(SettingsKeys.forgottenRemindTime, '${s.hour}:${s.minute}');
     await ref.read(forgottenReminderProvider).reschedule();
   }
 }
@@ -56,7 +53,12 @@ final forgottenReminderProvider = Provider<ForgottenReminder>(ForgottenReminder.
 /// background: every open / close (and every settings change) cancels the old plan
 /// and schedules the next few reminders, each naming a different forgotten song.
 class ForgottenReminder {
-  ForgottenReminder(this.ref);
+  ForgottenReminder(this.ref) {
+    // The rule changed → the reminders may name other songs
+    ref.listen(forgottenSettingsProvider, (previous, next) {
+      if (previous != next) unawaited(reschedule());
+    });
+  }
   final Ref ref;
 
   final _plugin = FlutterLocalNotificationsPlugin();
@@ -66,9 +68,6 @@ class ForgottenReminder {
   static const _baseId = 4100;
   static const _maxPlanned = 14;
   static const _channelId = 'com.nocturne.forgotten';
-
-  /// scan_state: {trackId: when its reminder goes / went off}.
-  static const _plannedKey = 'forgottenRemindPlanned';
 
   AndroidFlutterLocalNotificationsPlugin? get _android =>
       _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -114,14 +113,15 @@ class ForgottenReminder {
     for (var i = 0; i < _maxPlanned; i++) {
       await _plugin.cancel(id: _baseId + i);
     }
-    final repo = ref.read(libraryRepositoryProvider);
+    final repo = ref.read(settingsRepositoryProvider);
     final now = DateTime.now();
 
     // Reminders whose time has passed went off → don't name those songs again for
     // 4 weeks. Future ones were just cancelled and get planned again below.
     final shown = <int, DateTime>{};
     try {
-      final raw = jsonDecode(await repo.getSetting(_plannedKey) ?? '{}') as Map<String, dynamic>;
+      // {trackId: when its reminder goes / went off}
+      final raw = jsonDecode(await repo.getSetting(SettingsKeys.forgottenRemindPlanned) ?? '{}') as Map<String, dynamic>;
       for (final MapEntry(:key, :value) in raw.entries) {
         final at = DateTime.fromMillisecondsSinceEpoch(value as int);
         if (!at.isAfter(now) && now.difference(at).inDays < 60) shown[int.parse(key)] = at;
@@ -174,7 +174,7 @@ class ForgottenReminder {
       debugPrint('ForgottenReminder: $count of ${times.length} reminders planned, first ${times.firstOrNull}');
     }
     await repo.setSetting(
-      _plannedKey,
+      SettingsKeys.forgottenRemindPlanned,
       jsonEncode({for (final MapEntry(:key, :value) in planned.entries) '$key': value.millisecondsSinceEpoch}),
     );
   }

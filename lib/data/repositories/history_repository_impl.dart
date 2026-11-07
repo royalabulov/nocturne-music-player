@@ -1,9 +1,11 @@
+import 'track_filter_sql.dart';
 import 'dart:math';
 
 import 'package:drift/drift.dart';
 
 import '../../domain/repositories/library_repository.dart';
 import '../../domain/repositories/history_repository.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../db/app_database.dart';
 import '../mappers/track_mapper.dart';
 
@@ -15,15 +17,13 @@ class HistoryRepositoryImpl implements HistoryRepository {
 
   /// Tracks visible in lists (Settings → Library filter).
   final TrackFilter filter;
-  String get _visibleSql => filter.sql;
+  String get _visibleSql => filter.sqlOn('t');
 
-  /// From this moment play_history.position_ms holds the real listened time.
-  /// Older rows never had it → stats keep counting their full song length.
-  static const _listenSinceKey = 'listenTrackingSince';
-
-  /// played_at from which rows carry a real listened time (none yet → never).
+  /// played_at from which rows carry a real listened time (none yet → never). From that
+  /// moment play_history.position_ms holds the time heard; older rows never had it →
+  /// stats keep counting their full song length.
   static const _trackedSinceSql = "COALESCE((SELECT CAST(value AS INTEGER) FROM scan_state "
-      "WHERE \"key\" = '$_listenSinceKey'), 9223372036854775807)";
+      "WHERE \"key\" = '${SettingsKeys.listenTrackingSince}'), 9223372036854775807)";
 
   /// A play counts (play counts, Recent lists, Recommended) once heard for 30 s,
   /// or half of a song shorter than a minute — a skip after 1 s used to count
@@ -37,7 +37,7 @@ class HistoryRepositoryImpl implements HistoryRepository {
     final now = DateTime.now().millisecondsSinceEpoch;
     await db.customStatement(
       'INSERT OR IGNORE INTO scan_state ("key", value) VALUES (?, ?)',
-      [_listenSinceKey, '$now'],
+      [SettingsKeys.listenTrackingSince, '$now'],
     );
     return db.into(db.playHistory).insert(PlayHistoryCompanion.insert(trackId: trackId, playedAt: now));
   }
@@ -182,23 +182,24 @@ class HistoryRepositoryImpl implements HistoryRepository {
   @override
   Future<void> saveResumePoint(int trackId, Duration position) => db.batch((b) {
         b.insertAllOnConflictUpdate(db.scanState, [
-          ScanStateCompanion(key: const Value('resumeTrackId'), value: Value('$trackId')),
-          ScanStateCompanion(key: const Value('resumePositionMs'), value: Value('${position.inMilliseconds}')),
+          ScanStateCompanion(key: const Value(SettingsKeys.resumeTrackId), value: Value('$trackId')),
+          ScanStateCompanion(key: const Value(SettingsKeys.resumePositionMs), value: Value('${position.inMilliseconds}')),
         ]);
       });
 
   @override
   Stream<ResumePoint?> watchResumePoint() {
-    final q = db.select(db.scanState)..where((s) => s.key.isIn(['resumeTrackId', 'resumePositionMs']));
+    final q = db.select(db.scanState)
+      ..where((s) => s.key.isIn([SettingsKeys.resumeTrackId, SettingsKeys.resumePositionMs]));
     return q.watch().asyncMap((rows) async {
       final kv = {for (final r in rows) r.key: r.value};
-      final id = int.tryParse(kv['resumeTrackId'] ?? '');
+      final id = int.tryParse(kv[SettingsKeys.resumeTrackId] ?? '');
       if (id == null) return null;
       final row = await (db.select(db.tracks)..where((t) => t.id.equals(id) & t.isMissing.not())).getSingleOrNull();
       if (row == null) return null;
       return ResumePoint(
         track: mapper.toDomain(row),
-        position: Duration(milliseconds: int.tryParse(kv['resumePositionMs'] ?? '') ?? 0),
+        position: Duration(milliseconds: int.tryParse(kv[SettingsKeys.resumePositionMs] ?? '') ?? 0),
       );
     });
   }

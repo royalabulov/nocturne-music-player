@@ -1,24 +1,26 @@
+import '../library_browse/library_groups.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
-import '../player/player_providers.dart';
+import '../../core/audio/player_providers.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
 import '../../domain/entities/track.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../../shared/page_title.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/album_art.dart';
 import '../../shared/glow_play_button.dart';
 import '../../shared/sort_sheet.dart';
-import '../../shared/track_sliver_list.dart';
+import '../tracks/track_sliver_list.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
 
 class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
@@ -33,35 +35,23 @@ class FavoritesScreen extends ConsumerStatefulWidget {
 class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   int _tab = 0;
 
-  /// Order of the Songs tab — persisted ("favoritesSort").
-  _FavSort _sort = _FavSort.recentlyLoved;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(ref.read(libraryRepositoryProvider).getSetting('favoritesSort').then((v) {
-      final s = _FavSort.values.where((x) => x.name == v).firstOrNull;
-      if (s != null && mounted) setState(() => _sort = s);
-    }));
-  }
-
   Future<void> _pickSort() async {
     final picked = await showSortSheet(
       context,
       title: l10n.sortFavoritesBy,
       values: _FavSort.values,
-      current: _sort,
+      current: ref.read(_favSortProvider),
       label: (s) => s.label,
     );
-    if (picked == null || picked == _sort || !mounted) return;
-    setState(() => _sort = picked);
-    unawaited(ref.read(libraryRepositoryProvider).setSetting('favoritesSort', picked.name));
+    if (picked == null || !mounted) return;
+    unawaited(ref.read(_favSortProvider.notifier).set(picked));
   }
 
   @override
   Widget build(BuildContext context) {
     final loved = ref.watch(favoritesProvider).value ?? const <Track>[];
-    final tracks = _sorted(loved, _sort);
+    final sort = ref.watch(_favSortProvider);
+    final tracks = _sorted(loved, sort);
     return SafeArea(
       bottom: false,
       child: CustomScrollView(
@@ -111,7 +101,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                       const SizedBox(width: AppSpacing.sm),
                       _Pill(
                         icon: Icons.swap_vert_rounded,
-                        label: '${_sort.label}  ▾',
+                        label: '${sort.label}  ▾',
                         onTap: _pickSort,
                       ),
                     ],
@@ -160,6 +150,11 @@ enum _FavSort {
     shortest => l10n.sortShortest,
   };
 }
+
+/// Order of the Songs tab — persisted.
+final _favSortProvider = NotifierProvider<EnumSetting<_FavSort>, _FavSort>(
+  () => EnumSetting(SettingsKeys.favoritesSort, _FavSort.values, _FavSort.recentlyLoved),
+);
 
 /// Same orders as the library (TrackSort); "Recently loved" is the query's own
 /// order. Dart's sort isn't stable → every order ends with a tie-breaker.
@@ -240,7 +235,7 @@ class _Pill extends StatelessWidget {
   }
 }
 
-/// Songs | Albums | Artists — tam-en segmented pill.
+/// Songs | Albums | Artists — full-width segmented pill.
 class _SegmentedTabs extends StatelessWidget {
   const _SegmentedTabs({
     required this.items,
@@ -301,20 +296,19 @@ class _GroupedSliver extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final groups = <String, List<Track>>{};
-    for (final t in tracks) {
-      groups.putIfAbsent(byArtist ? t.artist : t.album, () => []).add(t);
-    }
-    final keys = groups.keys.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    if (keys.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    // The same groups as the library: "Paster" and "PASTER" are one artist
+    final groups = byArtist
+        ? [for (final a in groupArtists(tracks)) (name: a.name, tracks: a.tracks)]
+        : [for (final a in groupAlbums(tracks)) (name: a.title, tracks: a.tracks)];
+    if (groups.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
     final handler = ref.read(audioHandlerProvider);
 
     return SliverList.separated(
-      itemCount: keys.length,
+      itemCount: groups.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, i) {
-        final k = keys[i];
-        final g = groups[k]!;
+        final k = groups[i].name;
+        final g = groups[i].tracks;
         final first = g.first;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),

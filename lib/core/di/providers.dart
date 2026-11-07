@@ -1,12 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/audio_analyzer_source.dart';
 import '../../data/datasources/cover_cache.dart';
 import '../../data/datasources/folder_source.dart';
 import '../../data/datasources/media_store_source.dart';
-import '../../data/db/app_database.dart';
 import '../../data/mappers/track_mapper.dart';
 import '../../data/repositories/analysis_repository_impl.dart';
 import '../../data/repositories/history_repository_impl.dart';
@@ -18,18 +15,19 @@ import '../../data/services/library_scanner.dart';
 import '../../domain/entities/playlist.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/analysis_repository.dart';
+import '../../domain/repositories/device_files.dart';
 import '../../domain/repositories/history_repository.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../domain/repositories/lyrics_repository.dart';
 import '../../domain/repositories/playlist_repository.dart';
+import 'settings_providers.dart';
+
+export 'settings_providers.dart';
 
 // ── infrastructure singletons ─────────────────────────────
 
-final databaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase();
-  ref.onDispose(db.close);
-  return db;
-});
+/// The phone's files as the features see them ("Open with", import, saving to Download).
+final deviceFilesProvider = Provider<DeviceFiles>((_) => MediaStoreSource());
 
 /// Warmed up in main() so cover paths can be resolved synchronously.
 final coverCacheProvider = Provider<CoverCache>((_) => CoverCache());
@@ -61,10 +59,6 @@ final libraryStatsProvider = StreamProvider<LibraryStats>(
   (ref) => ref.watch(libraryRepositoryProvider).watchStats(),
 );
 
-final recentlyAddedProvider = StreamProvider<List<Track>>(
-  (ref) => ref.watch(libraryRepositoryProvider).watchRecentlyAdded(limit: 10),
-);
-
 /// (sort, query) → track list. Home's Library section + search.
 final tracksProvider = StreamProvider.autoDispose.family<List<Track>, ({TrackSort sort, String query})>(
   (ref, args) => ref.watch(libraryRepositoryProvider).watchTracks(sort: args.sort, query: args.query),
@@ -84,11 +78,11 @@ final scanFoldersProvider = StreamProvider<List<ScanFolder>>(
 
 /// Bool setting in scan_state ("autoScan" ...). Default true.
 final boolSettingProvider = StreamProvider.family<bool, String>(
-  (ref, key) => ref.watch(libraryRepositoryProvider).watchSetting(key).map((v) => v != 'false'),
+  (ref, key) => ref.watch(settingsRepositoryProvider).watchSetting(key).map((v) => v != 'false'),
 );
 
 final stringSettingProvider = StreamProvider.family<String?, String>(
-  (ref, key) => ref.watch(libraryRepositoryProvider).watchSetting(key),
+  (ref, key) => ref.watch(settingsRepositoryProvider).watchSetting(key),
 );
 
 // ── history / playlists ───────────────────────────────────
@@ -164,43 +158,3 @@ final playlistIdsContainingProvider = StreamProvider.autoDispose.family<Set<int>
 
 final backupServiceProvider = Provider<BackupService>((ref) => BackupService(ref.watch(databaseProvider)));
 
-// ── library filter (Settings → Library filter) ────────────
-
-/// Size/length range of visible songs. When it changes, the repositories are
-/// rebuilt → every list (Home, Recent, Vibes...) updates immediately.
-final trackFilterProvider = NotifierProvider<TrackFilterController, TrackFilter>(TrackFilterController.new);
-
-class TrackFilterController extends Notifier<TrackFilter> {
-  static const _keys = (minBytes: 'filterMinBytes', maxBytes: 'filterMaxBytes', minMs: 'filterMinMs', maxMs: 'filterMaxMs');
-
-  @override
-  TrackFilter build() {
-    unawaited(_load());
-    return TrackFilter.defaults;
-  }
-
-  Future<void> _load() async {
-    final db = ref.read(databaseProvider);
-    final rows = [for (final r in await db.select(db.scanState).get()) if (r.key.startsWith('filter')) r];
-    if (rows.isEmpty) return;
-    final v = {for (final r in rows) r.key: int.tryParse(r.value)};
-    state = TrackFilter(
-      minBytes: v[_keys.minBytes] ?? TrackFilter.defaults.minBytes,
-      maxBytes: v[_keys.maxBytes],
-      minMs: v[_keys.minMs] ?? TrackFilter.defaults.minMs,
-      maxMs: v[_keys.maxMs],
-    );
-  }
-
-  /// New range; null max = no limit (stored as an empty string).
-  Future<void> set(TrackFilter f) async {
-    state = f;
-    final repo = ref.read(libraryRepositoryProvider);
-    await repo.setSetting(_keys.minBytes, '${f.minBytes}');
-    await repo.setSetting(_keys.maxBytes, f.maxBytes == null ? '' : '${f.maxBytes}');
-    await repo.setSetting(_keys.minMs, '${f.minMs}');
-    await repo.setSetting(_keys.maxMs, f.maxMs == null ? '' : '${f.maxMs}');
-  }
-
-  Future<void> reset() => set(TrackFilter.defaults);
-}

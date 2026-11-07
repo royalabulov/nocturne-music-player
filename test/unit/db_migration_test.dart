@@ -4,7 +4,7 @@ import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:sonar/data/db/app_database.dart';
+import 'package:nocturne/data/db/app_database.dart';
 
 // The schema each released version really had. These strings are frozen on purpose:
 // never edit one, it describes databases that already exist on phones.

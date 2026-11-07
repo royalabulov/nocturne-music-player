@@ -1,4 +1,7 @@
+import '../../core/utils/shared_storage.dart';
 import 'dart:convert';
+
+import '../../domain/repositories/settings_repository.dart';
 
 typedef BackupFavorite = ({String path, int addedAt});
 typedef BackupPlaylist = ({String name, String description, int createdAt, int updatedAt, List<String> tracks});
@@ -12,6 +15,7 @@ typedef BackupLabel = ({
   String predictedGenre,
   int labeledAt,
 });
+typedef BackupArtist = ({String path, String artist});
 
 /// The content of a backup file, typed and checked.
 ///
@@ -27,13 +31,26 @@ class BackupFile {
     this.settings = const {},
     this.scanFolders = const [],
     this.vibeLabels = const [],
+    this.artists = const [],
   });
 
   static const format = 'sonar-backup';
+
+  /// Still 1: sections and settings only get added, and an older app skips what it doesn't know.
   static const version = 1;
 
   /// scan_state keys carried over from Settings (not the scan's internal keys).
-  static const settingKeys = {'audioSettings', 'autoScan'};
+  static const settingKeys = SettingsKeys.backedUp;
+
+  /// Read as numbers by the app; an empty text means "no limit" for the filter.
+  static const _numberSettings = {
+    SettingsKeys.filterMinBytes,
+    SettingsKeys.filterMaxBytes,
+    SettingsKeys.filterMinMs,
+    SettingsKeys.filterMaxMs,
+    SettingsKeys.forgottenMinPlays,
+    SettingsKeys.forgottenDays,
+  };
 
   static const _maxPath = 4096;
   static const _maxName = 1000;
@@ -47,6 +64,9 @@ class BackupFile {
   final Map<String, String> settings;
   final List<BackupFolder> scanFolders;
   final List<BackupLabel> vibeLabels;
+
+  /// The artist names the user typed (Edit artist).
+  final List<BackupArtist> artists;
 
   static BackupFile parse(String json) {
     final Object? root = jsonDecode(json);
@@ -64,9 +84,10 @@ class BackupFile {
       settings: _settings(root['settings']),
       scanFolders: [
         for (final e in _list(root, 'scanFolders'))
-          if (_folder(_object(e)) case final folder when _isSharedFolder(folder.path)) folder,
+          if (_folder(_object(e)) case final folder when isSharedStoragePath(folder.path)) folder,
       ],
       vibeLabels: [for (final e in _list(root, 'vibeLabels')) _label(_object(e))],
+      artists: [for (final e in _list(root, 'artistOverrides')) _artist(_object(e))],
     );
   }
 
@@ -103,6 +124,12 @@ class BackupFile {
         labeledAt: _count(m, 'labeledAt'),
       );
 
+  static BackupArtist _artist(Map<String, Object?> m) {
+    final artist = _text(m, 'artist', _maxName);
+    if (artist.trim().isEmpty) throw const FormatException('Bad value for artist');
+    return (path: _text(m, 'path', _maxPath), artist: artist);
+  }
+
   /// Only [settingKeys], and only text. Anything else in there is ignored.
   static Map<String, String> _settings(Object? value) {
     if (value == null) return const {};
@@ -110,17 +137,13 @@ class BackupFile {
     for (final MapEntry(:key, value: v) in _object(value).entries) {
       if (!settingKeys.contains(key) || v is! String) continue;
       if (v.length > _maxSetting) throw const FormatException('Setting too long');
+      if (_numberSettings.contains(key) && !_isNumberOrEmpty(v)) continue;
       out[key] = v;
     }
     return out;
   }
 
-  /// A folder the scanner may walk: shared storage only. Others are dropped, not an error.
-  static bool _isSharedFolder(String path) =>
-      path.startsWith('/storage/') &&
-      !path.split('/').contains('..') &&
-      !path.contains('/Android/data/') &&
-      !path.contains('/Android/obb/');
+  static bool _isNumberOrEmpty(String s) => s.isEmpty || (int.tryParse(s) ?? -1) >= 0;
 
   static Map<String, Object?> _object(Object? value) =>
       value is Map<String, Object?> ? value : throw const FormatException('Expected an object');

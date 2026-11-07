@@ -5,7 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
-import '../../data/services/library_scanner.dart';
+import '../../domain/entities/scan_progress.dart';
 import 'permission_gate.dart';
 import 'scan_controller.dart';
 import '../../l10n/l10n.dart';

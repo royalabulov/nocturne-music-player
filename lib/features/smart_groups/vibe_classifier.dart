@@ -232,7 +232,7 @@ Map<int, VibeResult> classifyLibrary(List<TrackVibeData> inputs, {double minZ = 
 /// Mood v2 weights — energy (arousal) × positivity (valence), Russell's model.
 /// All are z-scores relative to the library. Tuned against the user's answers.
 abstract final class MoodV2 {
-  // enerji
+  // energy
   static const wRms = .8, wBeat = .6, wBpm = .3, wExciting = .5, wTender = -.4, wBright = .3;
   // positivity
   static const wMode = 1.0, wHappy = .3, wSad = -.3;

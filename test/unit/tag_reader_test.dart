@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/datasources/tag_reader.dart';
+import 'package:nocturne/data/datasources/tag_reader.dart';
 
 /// ID3v2.4 tag: the given frames + header.
 Uint8List _id3(Map<String, List<int>> frames) {
@@ -32,7 +32,7 @@ List<int> _doubleBom(String s) => [
 
 void main() {
   test('double-BOM title keeps Ü (was "?ç Kalp")', () {
-    // Faylda olan baytlar: 01 FE FF FE FF 00 DC 00 E7 00 20 ...
+    // The bytes in the file: 01 FE FF FE FF 00 DC 00 E7 00 20 ...
     final tag = _id3({'TIT2': _doubleBom('Üç Kalp'), 'TPE1': _doubleBom('Hepsi'), 'TALB': _doubleBom('Hepsi Bir')});
     expect(TagReader.parseId3TextFrames(tag), {'TIT2': 'Üç Kalp', 'TPE1': 'Hepsi', 'TALB': 'Hepsi Bir'});
   });
@@ -68,7 +68,7 @@ void main() {
 
   test('read() repairs the title end-to-end from a real file', () {
     // audio_metadata_reader returns "\uFFFE\uFFFE\uFFFDç Kalp" here
-    final dir = Directory.systemTemp.createTempSync('sonar_tag');
+    final dir = Directory.systemTemp.createTempSync('nocturne_tag');
     addTearDown(() => dir.deleteSync(recursive: true));
     final file = File('${dir.path}/kalp.mp3')
       ..writeAsBytesSync([..._id3({'TIT2': _doubleBom('Üç Kalp'), 'TPE1': _doubleBom('Hepsi')}), ...List.filled(2048, 0)]);
@@ -79,7 +79,7 @@ void main() {
 
   group('tags are other people\'s data', () {
     TagInfo readFile(Map<String, List<int>> frames) {
-      final dir = Directory.systemTemp.createTempSync('sonar_tag');
+      final dir = Directory.systemTemp.createTempSync('nocturne_tag');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/song.mp3')..writeAsBytesSync([..._id3(frames), ...List.filled(2048, 0)]);
       return TagReader.read(file.path)!;
@@ -114,7 +114,7 @@ void main() {
     });
 
     test('readMany brings tags and cover back from its isolate; a missing file is null', () async {
-      final dir = Directory.systemTemp.createTempSync('sonar_tag');
+      final dir = Directory.systemTemp.createTempSync('nocturne_tag');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/song.mp3')
         ..writeAsBytesSync([..._id3({'TIT2': text('Song'), 'APIC': cover(100)}), ...List.filled(2048, 0)]);

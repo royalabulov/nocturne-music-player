@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/repositories/history_repository.dart';
-import '../../features/player/player_providers.dart';
+import 'player_providers.dart';
 import '../di/providers.dart';
 
 /// Measures how long each play is really heard: a stopwatch that runs only

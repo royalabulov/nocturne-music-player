@@ -5,15 +5,16 @@ import '../../core/di/providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/theme/glass.dart';
 import '../../core/utils/duration_format.dart';
 import '../../domain/entities/track.dart';
 import '../../shared/album_art.dart';
-import '../../shared/track_sliver_list.dart';
-import '../player/player_providers.dart';
+import '../tracks/track_sliver_list.dart';
+import '../../core/audio/player_providers.dart';
 import 'playlist_reorder_list.dart';
 import 'playlists_screen.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/action_pill.dart';
+import '../../shared/screen_back_button.dart';
 
 class PlaylistDetailScreen extends ConsumerStatefulWidget {
   const PlaylistDetailScreen({super.key, required this.id});
@@ -60,11 +61,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Icons.arrow_back_rounded),
-                      color: AppColors.textPrimary,
-                    ),
+                    const ScreenBackButton(),
                     const Spacer(),
                     if (tracks.length > 1)
                       _reordering
@@ -121,14 +118,14 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
                   child: Row(
                     children: [
-                      _Pill(
+                      ActionPill(
                         icon: Icons.play_arrow_rounded,
                         label: l10n.playAll,
                         primary: true,
                         onTap: tracks.isEmpty ? null : () => handler.playTracks(tracks),
                       ),
                       const SizedBox(width: AppSpacing.sm),
-                      _Pill(
+                      ActionPill(
                         icon: Icons.shuffle_rounded,
                         label: l10n.shuffle,
                         onTap: tracks.isEmpty ? null : () => handler.playTracks(tracks, shuffle: true),
@@ -151,40 +148,6 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
               ),
             const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight)),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill({required this.icon, required this.label, required this.onTap, this.primary = false});
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-  final bool primary;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = primary ? Colors.white : AppColors.textPrimary;
-    return Opacity(
-      opacity: onTap == null ? .5 : 1,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          decoration: BoxDecoration(
-            color: primary ? AppColors.electric : AppColors.surfaceHigh,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            boxShadow: primary ? Glow.accent : null,
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: fg, size: 18),
-              const SizedBox(width: 8),
-              Text(label, style: AppTypography.labelMd.copyWith(color: fg)),
-            ],
-          ),
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import '../../l10n/domain_labels.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,10 +13,10 @@ import '../../domain/repositories/history_repository.dart';
 import '../../shared/page_title.dart';
 import '../../shared/filter_chip_row.dart';
 import '../../shared/glow_play_button.dart';
-import '../../shared/track_sliver_list.dart';
-import '../player/player_providers.dart';
+import '../tracks/track_sliver_list.dart';
+import '../../core/audio/player_providers.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
 
 /// Only listening history here — "Recently added" and "A–Z" were Home's sort
 /// orders repeated (design review, 2026-11-02).

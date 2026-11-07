@@ -10,10 +10,10 @@ import '../../l10n/l10n.dart';
 ///
 /// * Dart: FlutterError, uncaught async errors, every debugPrint
 ///   (player transition errors are written with debugPrint too).
-/// * Native: `SonarApplication.kt` writes Java/Kotlin crashes to the same folder
+/// * Native: `NocturneApplication.kt` writes Java/Kotlin crashes to the same folder
 ///   as `native_crash.log` (even if the process dies).
 ///
-/// File: `<filesDir>/logs/sonar.log`, rotated to `.1` when it grows past 256 KB.
+/// File: `<filesDir>/logs/sonar.log` (the app's old name, kept), rotated to `.1` when it grows past 256 KB.
 abstract final class CrashLog {
   static const _maxBytes = 256 * 1024;
   static File? _file;

@@ -3,17 +3,11 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/audio/audio_effects.dart';
-import '../../core/audio/output_detector.dart';
 import '../../core/audio/pocket_knock.dart';
 import '../../core/di/providers.dart';
-import '../player/player_providers.dart';
+import '../../core/audio/player_providers.dart';
+import '../../domain/repositories/settings_repository.dart';
 import 'audio_settings.dart';
-
-final outputDetectorProvider = Provider<OutputDetector>((ref) {
-  final d = OutputDetector();
-  ref.onDispose(d.dispose);
-  return d;
-});
 
 final pocketKnockProvider = Provider<PocketKnock>((ref) {
   final k = PocketKnock(ref.watch(audioHandlerProvider));
@@ -21,13 +15,8 @@ final pocketKnockProvider = Provider<PocketKnock>((ref) {
   return k;
 });
 
-final outputKindProvider = StreamProvider<OutputKind>(
-  (ref) => ref.watch(outputDetectorProvider).stream,
-);
-
 /// Single source of audio settings. A change → write to the DB + apply to the handler/EQ.
 class AudioSettingsController extends Notifier<AudioSettings> {
-  static const _key = 'audioSettings';
   StreamSubscription<Object?>? _outSub, _trackSub;
 
   @override
@@ -45,13 +34,13 @@ class AudioSettingsController extends Notifier<AudioSettings> {
   }
 
   Future<void> _load() async {
-    final raw = await ref.read(libraryRepositoryProvider).getSetting(_key);
+    final raw = await ref.read(settingsRepositoryProvider).getSetting(SettingsKeys.audioSettings);
     if (!ref.mounted) return; // disposed while reading (app closing)
     state = AudioSettings.decode(raw);
     await _applyAll();
   }
 
-  Future<void> _save() => ref.read(libraryRepositoryProvider).setSetting(_key, state.encode());
+  Future<void> _save() => ref.read(settingsRepositoryProvider).setSetting(SettingsKeys.audioSettings, state.encode());
 
   Future<void> _applyAll() async {
     final h = ref.read(audioHandlerProvider);

@@ -27,7 +27,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:networkSecurityConfig="@xml/network_security_config"
         android:label="Nocturne"
-        android:name=".SonarApplication"
+        android:name=".NocturneApplication"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_colors.dart';
-import '../features/player/player_providers.dart';
+import '../core/audio/player_providers.dart';
 
 /// "Live" EQ bars over the playing song's cover. They bounce while playing,
 /// low static bars remain while paused.

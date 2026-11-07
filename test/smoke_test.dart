@@ -2,11 +2,11 @@ import 'package:flutter/widgets.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/app.dart';
-import 'package:sonar/core/di/providers.dart';
-import 'package:sonar/core/audio/sonar_audio_handler.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/features/player/player_providers.dart';
+import 'package:nocturne/app.dart';
+import 'package:nocturne/core/di/providers.dart';
+import 'package:nocturne/core/audio/nocturne_audio_handler.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/core/audio/player_providers.dart';
 
 void main() {
   testWidgets('app boots and shows Home', (tester) async {
@@ -16,9 +16,9 @@ void main() {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
-        audioHandlerProvider.overrideWithValue(SonarAudioHandler()),
+        audioHandlerProvider.overrideWithValue(NocturneAudioHandler()),
       ],
-      child: const SonarApp(),
+      child: const NocturneApp(),
     ));
     await tester.pumpAndSettle();
 

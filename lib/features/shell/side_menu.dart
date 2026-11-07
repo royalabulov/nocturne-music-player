@@ -4,26 +4,17 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants.dart';
 import '../../core/di/providers.dart';
-import '../../core/router/app_router.dart';
+import '../../core/router/routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/duration_format.dart';
 import '../../domain/repositories/library_repository.dart';
-import '../../shared/sonar_header.dart';
-import '../forgotten/forgotten.dart';
+import '../../shared/nocturne_mark.dart';
 import '../import/audio_import.dart';
 import '../library_scan/scan_controller.dart';
-import '../smart_groups/smart_groups.dart';
 import '../../l10n/l10n.dart';
 
-/// Key of the shell Scaffold — the logo in the header opens the side menu with it.
-final sideMenuKey = GlobalKey<ScaffoldState>();
-
-void openSideMenu() => sideMenuKey.currentState?.openDrawer();
-
-const _splash = Color(0x14FFFFFF);
-const _highlight = Color(0x0AFFFFFF);
 
 /// Menu that slides in from the left: extra screens and actions that don't fit the bottom menu.
 /// New features (notifications, weather mix) are added here first.
@@ -62,7 +53,7 @@ class SideMenu extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
               child: Row(
                 children: [
-                  const SonarMark(),
+                  const NocturneMark(),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(
@@ -189,8 +180,8 @@ class _Item extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        splashColor: _splash,
-        highlightColor: _highlight,
+        splashColor: AppColors.inkSplash,
+        highlightColor: AppColors.inkHighlight,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
           child: Row(

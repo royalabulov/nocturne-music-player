@@ -22,6 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
 
   static QueryExecutor _open() => driftDatabase(
+        // The app's old name, on every installed phone: renaming the file loses the library
         name: 'sonar',
         native: const DriftNativeOptions(shareAcrossIsolates: true),
       );

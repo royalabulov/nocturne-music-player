@@ -8,18 +8,16 @@ import 'package:rxdart/rxdart.dart';
 import '../../core/constants.dart';
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/crash_log.dart';
-import '../../data/analysis/music_features.dart';
+import '../../domain/analysis/music_features.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/analysis_repository.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../library_scan/scan_controller.dart';
 import 'vibe_classifier.dart';
 import 'vibe_review.dart';
 
 // ───────────────────────── background analysis ─────────────────────────
-
-/// Settings → "Smart groups analysis" (on by default).
-const kSmartAnalysisKey = 'smartAnalysis';
 
 /// Runs unanalyzed songs through the Kotlin AudioAnalyzer one by one.
 /// The heavy work is on a native background thread; only the queue is managed here.
@@ -41,7 +39,8 @@ class SmartAnalysisController extends Notifier<bool> {
     if (state) return;
     final source = ref.read(audioAnalyzerProvider);
     if (!source.supported) return;
-    final enabled = await ref.read(libraryRepositoryProvider).getSetting(kSmartAnalysisKey);
+    // Settings → "Smart groups analysis" (on by default)
+    final enabled = await ref.read(settingsRepositoryProvider).getSetting(SettingsKeys.smartAnalysis);
     if (enabled == 'false') return;
 
     final repo = ref.read(analysisRepositoryProvider);
@@ -76,7 +75,7 @@ class SmartAnalysisController extends Notifier<bool> {
   void stop() => _stop = true;
 
   Future<void> setEnabled(bool on) async {
-    await ref.read(libraryRepositoryProvider).setSetting(kSmartAnalysisKey, '$on');
+    await ref.read(settingsRepositoryProvider).setSetting(SettingsKeys.smartAnalysis, '$on');
     on ? unawaited(start()) : stop();
   }
 }
@@ -173,8 +172,3 @@ SmartGroups buildSmartGroups(List<Track> tracks, Map<int, VibeResult> vibes) {
     ]..sort((a, b) => b.tracks.length.compareTo(a.tracks.length)),
   );
 }
-
-const kVibeReviewRoute = '/home/vibe-review';
-const kVibesRoute = '/home/vibes';
-
-String smartGroupRoute(String key) => '/home/vibe?k=${Uri.encodeQueryComponent(key)}';

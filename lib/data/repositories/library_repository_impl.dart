@@ -1,14 +1,15 @@
-import 'dart:convert';
-
+import 'track_filter_sql.dart';
+import '../../domain/entities/audio_format.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../datasources/media_store_source.dart';
 import '../db/app_database.dart';
 import '../mappers/track_mapper.dart';
-import '../services/library_scanner.dart' show kArtistOverridesKey;
+import '../services/artist_overrides.dart';
 
 class LibraryRepositoryImpl implements LibraryRepository {
   LibraryRepositoryImpl(this.db, this.mapper, {MediaStoreSource? mediaStore, this.filter = TrackFilter.defaults})
@@ -22,14 +23,7 @@ class LibraryRepositoryImpl implements LibraryRepository {
   final TrackFilter filter;
 
   /// isMissing = false AND the size/length range of [filter].
-  Expression<bool> _visible($TracksTable t) {
-    var e = t.isMissing.not() &
-        t.durationMs.isBiggerOrEqualValue(filter.minMs) &
-        t.fileSize.isBiggerOrEqualValue(filter.minBytes);
-    if (filter.maxMs != null) e = e & t.durationMs.isSmallerOrEqualValue(filter.maxMs!);
-    if (filter.maxBytes != null) e = e & t.fileSize.isSmallerOrEqualValue(filter.maxBytes!);
-    return e;
-  }
+  Expression<bool> _visible($TracksTable t) => CustomExpression<bool>(filter.sqlOn(t.actualTableName));
 
   @override
   Stream<List<Track>> watchTracks({TrackSort sort = TrackSort.recentlyAdded, String query = ''}) {
@@ -61,15 +55,6 @@ class LibraryRepositoryImpl implements LibraryRepository {
   }
 
   @override
-  Stream<List<Track>> watchRecentlyAdded({int limit = 10}) {
-    final q = db.select(db.tracks)
-      ..where(_visible)
-      ..orderBy([(t) => OrderingTerm.desc(t.dateAdded), (t) => OrderingTerm.desc(t.id)])
-      ..limit(limit);
-    return q.watch().map(mapper.toDomainList);
-  }
-
-  @override
   Stream<LibraryStats> watchStats() {
     // Recompute stats when tracks or scan_state change.
     final updates = db.tableUpdates(TableUpdateQuery.onAllTables([db.tracks, db.scanState]));
@@ -82,25 +67,23 @@ class LibraryRepositoryImpl implements LibraryRepository {
     final t = db.tracks;
     final count = t.id.count();
     final dur = t.durationMs.sum();
-    final sr = t.sampleRateHz.max();
-    final bd = t.bitDepth.max();
 
     final row = await (db.selectOnly(t)
-          ..addColumns([count, dur, sr, bd])
+          ..addColumns([count, dur])
           ..where(_visible(t)))
         .getSingle();
     final lrow = await (db.selectOnly(t)
           ..addColumns([count])
-          ..where(_visible(t) & t.format.isIn(['flac', 'alac', 'wav'])))
+          ..where(_visible(t) & t.format.isIn([for (final f in AudioFormat.values) if (f.isLossless) f.name])))
         .getSingle();
-    final last = await getSetting('lastScanAt');
+    final last = (await (db.select(db.scanState)..where((s) => s.key.equals(SettingsKeys.lastScanAt)))
+            .getSingleOrNull())
+        ?.value;
 
     return LibraryStats(
       trackCount: row.read(count) ?? 0,
       totalDuration: Duration(milliseconds: row.read(dur) ?? 0),
       losslessCount: lrow.read(count) ?? 0,
-      maxSampleRateHz: row.read(sr) ?? 0,
-      maxBitDepth: row.read(bd) ?? 0,
       lastScanAt: last == null ? null : DateTime.fromMillisecondsSinceEpoch(int.parse(last)),
     );
   }
@@ -125,19 +108,11 @@ class LibraryRepositoryImpl implements LibraryRepository {
   Future<void> setArtist(int trackId, String artist) async {
     final row = await (db.select(db.tracks)..where((t) => t.id.equals(trackId))).getSingleOrNull();
     if (row == null) return;
-    final saved = await (db.select(db.scanState)..where((s) => s.key.equals(kArtistOverridesKey))).getSingleOrNull();
-    Map<String, dynamic> overrides;
-    try {
-      overrides = saved == null ? {} : jsonDecode(saved.value) as Map<String, dynamic>;
-    } catch (_) {
-      overrides = {};
-    }
+    final overrides = await ArtistOverrides.load(db);
     overrides[row.path] = artist;
     await db.batch((b) {
       b.update(db.tracks, TracksCompanion(artist: Value(artist)), where: (t) => t.id.equals(trackId));
-      b.insertAllOnConflictUpdate(db.scanState, [
-        ScanStateCompanion(key: const Value(kArtistOverridesKey), value: Value(jsonEncode(overrides))),
-      ]);
+      b.insertAllOnConflictUpdate(db.scanState, [ArtistOverrides.row(overrides)]);
     });
   }
 
@@ -250,23 +225,6 @@ class LibraryRepositoryImpl implements LibraryRepository {
   Future<void> setScanFolderEnabled(int id, bool enabled) =>
       (db.update(db.scanFolders)..where((f) => f.id.equals(id)))
           .write(ScanFoldersCompanion(enabled: Value(enabled)));
-
-  // ── settings (scan_state key/value) ────────────────────────
-
-  @override
-  Future<String?> getSetting(String key) async =>
-      (await (db.select(db.scanState)..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
-
-  @override
-  Future<void> setSetting(String key, String value) => db
-      .into(db.scanState)
-      .insertOnConflictUpdate(ScanStateCompanion(key: Value(key), value: Value(value)));
-
-  @override
-  Stream<String?> watchSetting(String key) => (db.select(db.scanState)..where((s) => s.key.equals(key)))
-      .watchSingleOrNull()
-      .map((r) => r?.value)
-      .distinct(); // every write to scan_state (resume position every 5 s) wakes all keys
 
   static Stream<T> _startWith<T>(Stream<T> rest, Future<T> Function() first) async* {
     yield await first();

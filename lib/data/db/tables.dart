@@ -77,7 +77,7 @@ class PlayHistory extends Table {
   IntColumn get positionMs => integer().withDefault(const Constant(0))();
 }
 
-/// Key/value: lastScanAt, lastScanTrackCount, autoScan ...
+/// Key/value: lastScanAt, autoScan ... (names in SettingsKeys)
 @DataClassName('ScanStateRow')
 class ScanState extends Table {
   TextColumn get key => text()();

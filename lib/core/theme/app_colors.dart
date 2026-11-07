@@ -10,11 +10,9 @@ abstract final class AppColors {
   static const Color surfaceHigh = Color(0xFF262A31);
   static const Color surfaceHighest = Color(0xFF31353C);
 
-  // Midnight glass (semi-transparent variants below)
-  static const Color midnight = Color(0xFF10254A);
+  // Midnight glass
   static const Color glassLevel1 = Color(0x7310254A); // .45 alpha
   static const Color glassLevel2 = Color(0xBF10254A); // .75 alpha
-  static const Color glassDock = Color(0xD90A0E14); // .85 alpha
 
   // "Glass" without blur: for the always-visible mini-player and dock. Blur
   // re-processes the background every frame (GPU load and jank on scroll) — instead
@@ -47,6 +45,10 @@ abstract final class AppColors {
   static const Color borderChip = Color(0x4D60A5FA); // rgba(96,165,250,.30)
   static const Color borderArt = Color(0x14FFFFFF); // rgba(255,255,255,.08)
   static const Color chipFill = Color(0x402E5C9A); // rgba(46,92,154,.25)
+
+  // Touch feedback on dark surfaces
+  static const Color inkSplash = Color(0x14FFFFFF); // white, 8%
+  static const Color inkHighlight = Color(0x0AFFFFFF); // white, 4%
 
   static const LinearGradient playGradient = LinearGradient(
     begin: Alignment.topLeft,

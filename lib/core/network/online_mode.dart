@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../di/providers.dart';
 import '../ui/toast.dart';
 import 'network_monitor.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../../l10n/l10n.dart';
 
 final networkMonitorProvider = Provider<NetworkMonitor>((_) => NetworkMonitor());
@@ -39,7 +40,6 @@ class OnlineState {
 /// data is present AND the internet is actually reachable. If the connection drops
 /// while online, the mode stays, status becomes "noInternet" and recovers on its own.
 class OnlineModeController extends Notifier<OnlineState> {
-  static const _key = 'onlineMode';
   static const retryEvery = Duration(seconds: 30);
 
   StreamSubscription<NetworkKind>? _sub;
@@ -60,7 +60,7 @@ class OnlineModeController extends Notifier<OnlineState> {
 
   Future<void> _load() async {
     final gen = _gen;
-    final saved = await ref.read(libraryRepositoryProvider).getSetting(_key);
+    final saved = await ref.read(settingsRepositoryProvider).getSetting(SettingsKeys.onlineMode);
     // If the user already tapped the button while loading, their choice wins
     if (saved != 'true' || gen != _gen) return;
     state = state.copyWith(enabled: true, status: OnlineStatus.checking);
@@ -68,7 +68,7 @@ class OnlineModeController extends Notifier<OnlineState> {
     await recheck();
   }
 
-  Future<void> _save(bool on) => ref.read(libraryRepositoryProvider).setSetting(_key, '$on');
+  Future<void> _save(bool on) => ref.read(settingsRepositoryProvider).setSetting(SettingsKeys.onlineMode, '$on');
 
   /// Offline → Online. On failure the mode stays offline and the reason is returned.
   Future<EnableResult> enable() async {
@@ -119,8 +119,6 @@ class OnlineModeController extends Notifier<OnlineState> {
     // a network change, so re-check periodically
     if (!ok) _retry = Timer(retryEvery, recheck);
   }
-
-  NetworkKind get network => state.network;
 
   void _watch() => _sub ??= _net.changes.listen(recheck);
 

@@ -1,18 +1,23 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/datasources/cover_cache.dart';
-import 'package:sonar/data/datasources/folder_source.dart';
-import 'package:sonar/data/datasources/media_store_source.dart';
-import 'package:sonar/data/datasources/raw_audio.dart';
-import 'package:sonar/data/datasources/tag_reader.dart';
-import 'package:sonar/core/utils/bounded_isolate.dart';
-import 'package:sonar/domain/entities/audio_format.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/services/library_scanner.dart';
-import 'package:sonar/data/mappers/track_mapper.dart';
-import 'package:sonar/data/repositories/library_repository_impl.dart';
-import 'package:sonar/core/constants.dart';
+import 'package:nocturne/domain/entities/scan_progress.dart';
+import 'package:nocturne/data/datasources/cover_cache.dart';
+import 'package:nocturne/data/datasources/folder_source.dart';
+import 'package:nocturne/data/datasources/media_store_source.dart';
+import 'package:nocturne/data/datasources/raw_audio.dart';
+import 'package:nocturne/data/datasources/tag_reader.dart';
+import 'package:nocturne/core/utils/bounded_isolate.dart';
+import 'package:nocturne/domain/entities/audio_format.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/services/backup_service.dart';
+import 'package:nocturne/data/services/library_scanner.dart';
+import 'package:nocturne/data/mappers/track_mapper.dart';
+import 'package:nocturne/data/repositories/library_repository_impl.dart';
+import 'package:nocturne/core/constants.dart';
+import 'package:nocturne/domain/repositories/settings_repository.dart';
 
 class _FakeStore extends MediaStoreSource {
   List<RawAudio> files = [];
@@ -204,6 +209,26 @@ void main() {
       await (db.update(db.tracks)).write(const TracksCompanion(artist: Value('101 Moon Ave.')));
       await scanner.scan();
       expect(await rows(), [('Moon Lofi', 'Lofi Night Drive')]);
+    });
+
+    test('a name restored from a backup reaches a song scanned later', () async {
+      await BackupService(db).restore(jsonEncode({
+        'format': BackupService.format,
+        'artistOverrides': [{'path': '/m/0.mp3', 'artist': 'Moon Lofi'}],
+      }));
+      await seed([('101 Moon Ave.', 'Lofi Night Drive', '')]);
+      await scanner.scan();
+      expect(await rows(), [('Moon Lofi', 'Lofi Night Drive')]);
+    });
+
+    test('broken saved names do not stop the scan', () async {
+      await seed([('Ezhel', 'Felaket', '')]);
+      await db.into(db.scanState).insert(
+            ScanStateCompanion.insert(key: SettingsKeys.artistOverrides, value: '{"/m/0.mp3":5}'),
+          );
+      final result = await scanner.scan();
+      expect(result.phase, ScanPhase.done);
+      expect(await rows(), [('Ezhel', 'Felaket')]);
     });
   });
 

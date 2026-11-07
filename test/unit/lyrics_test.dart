@@ -4,14 +4,14 @@ import 'dart:io';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/datasources/lrc_parser.dart';
-import 'package:sonar/data/datasources/lrclib_source.dart';
-import 'package:sonar/data/datasources/lyrics_file_source.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/repositories/lyrics_repository_impl.dart';
-import 'package:sonar/domain/entities/audio_format.dart';
-import 'package:sonar/domain/entities/lyrics.dart';
-import 'package:sonar/domain/entities/track.dart';
+import 'package:nocturne/data/datasources/lrc_parser.dart';
+import 'package:nocturne/data/datasources/lrclib_source.dart';
+import 'package:nocturne/data/datasources/lyrics_file_source.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/repositories/lyrics_repository_impl.dart';
+import 'package:nocturne/domain/entities/audio_format.dart';
+import 'package:nocturne/domain/entities/lyrics.dart';
+import 'package:nocturne/domain/entities/track.dart';
 
 class _File extends LyricsFileSource {
   const _File([this.lyrics]);
@@ -62,7 +62,7 @@ void main() {
     });
 
     test('a huge .lrc next to a song is not read', () {
-      final dir = Directory.systemTemp.createTempSync('sonar_lrc');
+      final dir = Directory.systemTemp.createTempSync('nocturne_lrc');
       addTearDown(() => dir.deleteSync(recursive: true));
       final song = '${dir.path}/song.mp3';
 

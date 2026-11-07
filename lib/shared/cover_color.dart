@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_colors.dart';
-import '../features/player/player_providers.dart';
+import '../core/audio/player_providers.dart';
 
 /// Accent colour taken from a cover — tints the Now Playing background and the
 /// mini-player (design review, 2026-11-02).
