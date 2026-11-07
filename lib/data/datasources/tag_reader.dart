@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:path/path.dart' as p;
 
+import '../../core/utils/bounded_isolate.dart';
 import '../../domain/entities/audio_format.dart';
 
 /// Result of reading tags — the raw form before it becomes a Track.
@@ -44,8 +44,15 @@ abstract final class TagReader {
   static const unknownArtist = 'Unknown Artist';
   static const unknownAlbum = 'Unknown Album';
 
+  /// Tags are written by whoever made the file. Nothing real comes close to these.
+  static const maxTextChars = 500;
+  static const maxCoverBytes = 10 * 1024 * 1024;
+
+  /// A batch takes well under a second; a file that makes the parser hang must not stop the scan.
+  static const batchTimeout = Duration(seconds: 60);
+
   static Future<Map<String, TagInfo?>> readMany(List<String> paths) =>
-      Isolate.run(() => {for (final path in paths) path: read(path)});
+      runBounded(() => {for (final path in paths) path: read(path)}, timeout: batchTimeout);
 
   static TagInfo? read(String path) {
     final file = File(path);
@@ -89,7 +96,8 @@ abstract final class TagReader {
     final pics = m?.pictures;
     if (pics != null && pics.isNotEmpty) {
       final front = pics.where((x) => x.pictureType == PictureType.coverFront).firstOrNull;
-      cover = (front ?? pics.first).bytes;
+      final bytes = (front ?? pics.first).bytes;
+      if (bytes.length <= maxCoverBytes) cover = bytes;
     }
 
     var title = _clean(m?.title);
@@ -101,10 +109,10 @@ abstract final class TagReader {
     // Check the raw value: _fixUtf16 swaps bytes and turns "�" (FFFD) into FDFF.
     if ([m?.title, m?.artist, m?.album, m?.albumArtist].any((s) => s != null && s.contains('�'))) {
       final raw = _readId3Text(file);
-      title = raw['TIT2'] ?? title;
-      artist = raw['TPE1'] ?? artist;
-      album = raw['TALB'] ?? album;
-      albumArtist = raw['TPE2'] ?? albumArtist;
+      title = _clean(raw['TIT2']) ?? title;
+      artist = _clean(raw['TPE1']) ?? artist;
+      album = _clean(raw['TALB']) ?? album;
+      albumArtist = _clean(raw['TPE2']) ?? albumArtist;
     }
 
     // If the tag has no artist, take it from an "Artist - Title" name (video-site downloads)
@@ -116,7 +124,7 @@ abstract final class TagReader {
       // Video saytının avto-kanalı: albom "Michael Tai - Topic" → "Michael Tai"
       album: stripTopic(album) ?? unknownAlbum,
       albumArtist: albumArtist,
-      genre: m?.genres.firstOrNull,
+      genre: _clean(m?.genres.firstOrNull),
       trackNo: m?.trackNumber,
       discNo: m?.discNumber,
       year: m?.year?.year,
@@ -157,9 +165,12 @@ abstract final class TagReader {
 
   static String? _clean(String? s) {
     if (s == null) return null;
-    final t = _fixUtf16(s).replaceAll(String.fromCharCode(0), '').trim();
-    return t.isEmpty ? null : t;
+    final t = _fixUtf16(s).replaceAll(String.fromCharCode(0), '').replaceAll(_control, ' ').trim();
+    if (t.isEmpty) return null;
+    return t.length > maxTextChars ? t.substring(0, maxTextChars) : t;
   }
+
+  static final _control = RegExp(r'[\x01-\x1F\x7F]');
 
   /// ID3v2 UTF-16 fix. Some downloaders (ffmpeg / Lavf) write frames as "01 FE FF FE FF ..."
   /// (a doubled big-endian BOM); audio_metadata_reader ignores the BOM and reads

@@ -77,6 +77,64 @@ void main() {
     expect(tag.artist, 'Hepsi');
   });
 
+  group('tags are other people\'s data', () {
+    TagInfo readFile(Map<String, List<int>> frames) {
+      final dir = Directory.systemTemp.createTempSync('sonar_tag');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final file = File('${dir.path}/song.mp3')..writeAsBytesSync([..._id3(frames), ...List.filled(2048, 0)]);
+      return TagReader.read(file.path)!;
+    }
+
+    List<int> text(String s) => [3, ...utf8.encode(s)];
+
+    /// APIC: encoding, MIME type, picture type (3 = front cover), empty description, image.
+    List<int> cover(int size) => [0, ...'image/jpeg'.codeUnits, 0, 3, 0, ...List.filled(size, 7)];
+
+    test('control characters can\'t reach the UI or the notification', () {
+      final tag = readFile({'TIT2': text('Bad\u0007Title'), 'TPE1': text('Ar\ntist'), 'TALB': text('Al\u001Bbum')});
+      expect(tag.title, 'Bad Title');
+      expect(tag.artist, 'Ar tist');
+      expect(tag.album, 'Al bum');
+    });
+
+    test('an absurdly long tag is cut', () {
+      final long = 'x' * 100000;
+      final tag = readFile({'TIT2': text(long), 'TPE1': text(long), 'TALB': text(long), 'TCON': text(long)});
+      expect(tag.title.length, TagReader.maxTextChars);
+      expect(tag.artist.length, TagReader.maxTextChars);
+      expect(tag.album.length, TagReader.maxTextChars);
+      expect(tag.genre!.length, TagReader.maxTextChars);
+    });
+
+    test('normal tags are untouched', () {
+      final tag = readFile({'TIT2': text('Üç Kalp - Canlı'), 'TPE1': text('Müslüm & Şəki'), 'TCON': text('Rock')});
+      expect(tag.title, 'Üç Kalp - Canlı');
+      expect(tag.artist, 'Müslüm & Şəki');
+      expect(tag.genre, 'Rock');
+    });
+
+    test('readMany brings tags and cover back from its isolate; a missing file is null', () async {
+      final dir = Directory.systemTemp.createTempSync('sonar_tag');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final file = File('${dir.path}/song.mp3')
+        ..writeAsBytesSync([..._id3({'TIT2': text('Song'), 'APIC': cover(100)}), ...List.filled(2048, 0)]);
+      final missing = '${dir.path}/missing.mp3';
+
+      final tags = await TagReader.readMany([file.path, missing]);
+
+      expect(tags[file.path]!.title, 'Song');
+      expect(tags[file.path]!.cover, hasLength(100));
+      expect(tags[missing], isNull);
+    });
+
+    test('a normal cover is kept, an absurdly big one is dropped', () {
+      expect(readFile({'TIT2': text('a'), 'APIC': cover(1000)}).cover, hasLength(1000));
+      final tooBig = readFile({'TIT2': text('a'), 'APIC': cover(TagReader.maxCoverBytes + 1)});
+      expect(tooBig.title, 'a');
+      expect(tooBig.cover, isNull);
+    });
+  });
+
   group('guessArtist', () {
     ({String title, String? artist}) g(String t, [String? a]) => TagReader.guessArtist(t, a);
 

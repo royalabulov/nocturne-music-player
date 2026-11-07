@@ -438,7 +438,7 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
       try {
         await _active.setAudioSource(_sourceFor(track));
       } catch (e) {
-        debugPrint('SonarAudioHandler: load failed ${track.path}: $e');
+        debugPrint('SonarAudioHandler: load failed "${track.path.split('/').last}": $e');
         _switching = false;
         onTrackUnavailable?.call(track);
         // Corrupt / deleted file — skip to the next (stop if none open,
@@ -503,7 +503,7 @@ class SonarAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler 
     } catch (e) {
       // "Loading interrupted" = a newer load arrived; it sets _standbyPos
       // itself, we leave it alone here.
-      debugPrint('SonarAudioHandler: preload failed ${track.path}: $e');
+      debugPrint('SonarAudioHandler: preload failed "${track.path.split('/').last}": $e');
       if (_standbyPos == next) _standbyPos = null;
     }
   }

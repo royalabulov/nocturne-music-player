@@ -19,10 +19,13 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- allowBackup=false: no Google Drive auto-backup of the library/play history
-         (offline app; Settings → Back up my data covers moving to a new phone) -->
+    <!-- allowBackup=false + dataExtractionRules: no Google Drive auto-backup and no phone-to-phone
+         transfer of the library/play history (offline app; Settings → Back up my data covers
+         moving to a new phone) -->
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:label="Nocturne"
         android:name=".SonarApplication"
         android:icon="@mipmap/ic_launcher">

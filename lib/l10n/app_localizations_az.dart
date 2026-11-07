@@ -371,6 +371,21 @@ class L10nAz extends L10n {
   String get knockHigh => 'Yüksək';
 
   @override
+  String get knockLogExport => 'Vurma qeydlərini saxla';
+
+  @override
+  String get knockLogExportHint =>
+      'Vurmanın tanınması ilə bağlı qeydlər Download qovluğuna saxlanılır. Bundan başqa telefondan çıxmır';
+
+  @override
+  String get knockLogEmpty => 'Hələ qeyd yoxdur';
+
+  @override
+  String knockLogSaved(String path) {
+    return 'Saxlanıldı → $path';
+  }
+
+  @override
   String get saveBackupDialog => 'Nocturne ehtiyat nüsxəsini saxla';
 
   @override
@@ -919,9 +934,6 @@ class L10nAz extends L10n {
     );
     return '$_temp0';
   }
-
-  @override
-  String get stopsWhenTrackEnds => 'Bu mahnı bitəndə dayanır';
 
   @override
   String stopsIn(String time) {
@@ -1520,4 +1532,7 @@ class L10nAz extends L10n {
 
   @override
   String get reminderEveryDay => 'Hər gün';
+
+  @override
+  String get stopsWhenTrackEnds => 'Bu mahnı bitəndə dayanır';
 }

@@ -75,8 +75,8 @@ class MediaStoreSource {
   /// Copy the file to Music/Nocturne → new path. Returns the existing one if name+size match.
   Future<String> importAudio(String source) async {
     final r = await _ch.invokeMethod<Object?>('importAudio', {'source': source});
-    debugPrint('import "$source" → $r');
     if (r is String && r.startsWith('/')) return r;
+    debugPrint('import failed: $r');
     throw ImportFailed(r is String && r.startsWith('error: ') ? r.substring(7) : '$r');
   }
 
@@ -96,7 +96,7 @@ class MediaStoreSource {
       return true;
     }
     final status = await _ch.invokeMethod<Object?>('deleteAudio', {'path': path});
-    debugPrint('delete "$path" → $status');
+    debugPrint('delete → $status');
     return switch (status) {
       'deleted' => true,
       'cancelled' => false,

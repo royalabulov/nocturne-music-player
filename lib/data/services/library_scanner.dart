@@ -14,6 +14,9 @@ import '../db/app_database.dart';
 
 enum ScanPhase { idle, enumerating, reading, finalizing, done, error }
 
+/// Path → tags for a batch of files; null = unreadable.
+typedef TagBatchReader = Future<Map<String, TagInfo?>> Function(List<String> paths);
+
 /// scan_state key: {path: artist} typed by the user (Edit artist). Wins over the tag.
 const kArtistOverridesKey = 'artistOverrides';
 
@@ -66,12 +69,14 @@ class LibraryScanner {
     required this.mediaStore,
     required this.folders,
     required this.covers,
-  });
+    TagBatchReader? readTags,
+  }) : _readTags = readTags ?? TagReader.readMany;
 
   final AppDatabase db;
   final MediaStoreSource mediaStore;
   final FolderSource folders;
   final CoverCache covers;
+  final TagBatchReader _readTags;
 
   final _progress = StreamController<ScanProgress>.broadcast();
   Stream<ScanProgress> get progress => _progress.stream;
@@ -158,7 +163,7 @@ class LibraryScanner {
       final now = DateTime.now().millisecondsSinceEpoch;
       for (var i = 0; i < toRead.length; i += _batch) {
         final chunk = toRead.sublist(i, (i + _batch).clamp(0, toRead.length));
-        final tags = await TagReader.readMany([for (final r in chunk) r.path]);
+        final tags = await _readChunk([for (final r in chunk) r.path]);
 
         // A chunk is written in one batch: with separate inserts, every file
         // re-queried all track streams (Home, Albums, Recent...) and rebuilt
@@ -251,6 +256,24 @@ class LibraryScanner {
       _emit(p);
       debugPrint('LibraryScanner failed: $e\n$st');
       return p;
+    }
+  }
+
+  /// One bad file must not cost the whole library: when a batch fails (the parser ran out of
+  /// memory or hung), its files are read one by one, and the file that fails alone counts as
+  /// unreadable. It is then skipped until it changes, so it can't stop every scan.
+  Future<Map<String, TagInfo?>> _readChunk(List<String> paths) async {
+    try {
+      return await _readTags(paths);
+    } catch (e) {
+      if (paths.length == 1) {
+        debugPrint('LibraryScanner: cannot read "${paths.single.split('/').last}": $e');
+        return {paths.single: null};
+      }
+      debugPrint('LibraryScanner: batch of ${paths.length} failed, reading one by one: $e');
+      return {
+        for (final path in paths) ...await _readChunk([path]),
+      };
     }
   }
 

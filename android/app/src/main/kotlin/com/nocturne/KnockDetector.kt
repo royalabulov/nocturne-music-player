@@ -17,6 +17,8 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlin.math.acos
 import kotlin.math.exp
 import kotlin.math.max
@@ -32,20 +34,25 @@ import kotlin.math.sqrt
 ///    the peak) lasts ≤ 45 ms — a step or a bump is a weaker, wide hump,
 ///  * before the first knock the phone was still for 600 ms (no low-frequency motion, and the
 ///    spike is ≥ 6× louder than the background vibration),
-///  * knocks are 160–450 ms apart and evenly spaced,
+///  * every knock pushes straight through the phone's flat face ([KnockAxis]) — steps don't,
+///  * knocks are 160–500 ms apart and evenly spaced,
 ///  * after the last knock nothing shakes for a while (the next step of a walk would),
 ///  * the phone didn't turn during the sequence (gravity direction),
-///  * exactly 2 or 3 knocks — 4+ is dropped.
+///  * exactly 2 or 3 knocks — 4+ is dropped,
+///  * nothing suggests the count is wrong: a strong jolt just before the first knock, or a weak
+///    one after the last, may be a knock that wasn't counted. 3 knocks read as 2 skipped the
+///    wrong way, so such a sequence does nothing — better no skip than the wrong direction.
 /// Pocket test (2026-11-03, Samsung): knocks peak 10–22 m/s², 250–275 ms apart, and the
 /// phone bounces back in the cloth ~100–120 ms after each knock (peak ~4) — so motion right
 /// after a knock is ignored. Walking peaked at 2.5–8.4 m/s², 100–535 ms wide.
 ///
 /// Walking mode: while walking the phone is never still, so "still before" can't hold. Then a
 /// knock counts only if it is a STRONG spike — above [strongThresholds] and ≥ 2× the strongest
-/// jolt of the last 600 ms (the steps). Steps between the knocks are ignored as long as they
-/// stay well below the knocks; a jolt near knock strength drops the sequence.
+/// jolt of the 600 ms before the sequence (the steps). Steps between the knocks are ignored as
+/// long as they stay well below the knocks; a jolt near knock strength drops the sequence.
 /// Pocket test 2 (walking): knocks peaked 14–60 m/s², 210–306 ms apart.
-/// Every decision is logged (tag "NocturneKnock") for tuning: adb logcat -s NocturneKnock
+/// Every decision is logged for tuning: permanently in [KnockLog] (with the raw samples of
+/// sequences and strong spikes), and to logcat: adb logcat -s NocturneKnock
 object KnockDetector : SensorEventListener {
     private const val TAG = "NocturneKnock"
     private const val MS = 1_000_000L // ns
@@ -63,8 +70,10 @@ object KnockDetector : SensorEventListener {
     private const val MAX_SPIKE_NS = 250 * MS // whole spike incl. the bounce-back merged into it
     private const val MAX_TOP_NS = 45 * MS   // time spent above half of the peak
     private const val MIN_GAP_NS = 160 * MS  // closer than this = the bounce-back of the same knock
-    private const val MAX_GAP_NS = 450 * MS
+    private const val MIN_QUICK_KNOCK_NS = 80 * MS // closer than MIN_GAP but strong = maybe a knock
+    private const val MAX_GAP_NS = 500 * MS
     private const val PRE_QUIET_NS = 600 * MS
+    private const val RAW_BEFORE_SPIKE_NS = 300 * MS // raw samples logged before a lone strong spike
     private const val SETTLE_NS = 250 * MS   // the phone bounces/moves right after a knock
     private const val POST_QUIET_NS = 650 * MS // sequence ends this long after the last knock
     private const val COOLDOWN_NS = 1200 * MS
@@ -90,6 +99,7 @@ object KnockDetector : SensorEventListener {
 
     fun init(context: Context) {
         if (!::app.isInitialized) app = context.applicationContext
+        KnockLog.init(app)
     }
 
     /// From Dart: on = setting enabled && music playing.
@@ -107,6 +117,7 @@ object KnockDetector : SensorEventListener {
             stopListening()
         }
         Log.i(TAG, "active=$on threshold=$threshold")
+        KnockLog.write(JSONObject().put("event", "active").put("on", on).put("sensitivity", sensitivity))
     }
 
     // ── screen on/off ─────────────────────────────────────────
@@ -167,6 +178,7 @@ object KnockDetector : SensorEventListener {
         // 5000 µs = 200 Hz: a knock lasts ~10–30 ms; higher rates need an extra permission
         listening = sm.registerListener(this, a, 5000, sensorHandler)
         Log.i(TAG, "listening=$listening")
+        KnockLog.write(JSONObject().put("event", "listening").put("on", listening))
     }
 
     private fun stopListening() {
@@ -174,6 +186,7 @@ object KnockDetector : SensorEventListener {
         sensors?.unregisterListener(this)
         listening = false
         Log.i(TAG, "listening=false")
+        KnockLog.write(JSONObject().put("event", "listening").put("on", false))
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
@@ -188,11 +201,12 @@ object KnockDetector : SensorEventListener {
     private val smooth = DoubleArray(3)
     private val gravity = DoubleArray(3)
 
-    // Last ~1 s of hp / motion for the "was it still before?" check
+    // Last ~2.5 s: hp / motion for the "was it still before?" check, raw values for KnockLog
     private const val RING = 512
     private val ringT = LongArray(RING)
     private val ringHp = DoubleArray(RING)
     private val ringMotion = DoubleArray(RING)
+    private val ringRaw = FloatArray(RING * 3)
     private var ringPos = 0
     private var ringCount = 0
 
@@ -200,6 +214,7 @@ object KnockDetector : SensorEventListener {
     private var inSpike = false
     private var spikeStart = 0L
     private var spikePeak = 0.0
+    private var spikeAxis = 0.0 // KnockAxis.share at the peak
     private const val SPIKE_MAX_SAMPLES = 128
     private val spikeT = LongArray(SPIKE_MAX_SAMPLES)
     private val spikeHp = DoubleArray(SPIKE_MAX_SAMPLES)
@@ -208,8 +223,12 @@ object KnockDetector : SensorEventListener {
     // Current sequence
     private var knocks = 0
     private val knockTimes = LongArray(4)
+    private val knockPeaks = DoubleArray(4)
     private var walking = false   // sequence started while the phone wasn't still
     private var weakest = 0.0     // weakest knock peak of the sequence
+    private var background = 0.0  // strongest jolt of the 600 ms before the sequence
+    private var doubt: String? = null // why the knock count may be wrong (→ no skip)
+    private var lastStrongRejected = 0L // when a strong spike last failed to become a knock
     private val startDir = DoubleArray(3)
     private var cooldownUntil = 0L
 
@@ -219,6 +238,13 @@ object KnockDetector : SensorEventListener {
         ringCount = 0
         inSpike = false
         knocks = 0
+        noisy = 0
+        doubt = null
+        lastStrongRejected = 0L
+    }
+
+    private class Spike(val start: Long, val peak: Double, val width: Long, val top: Long, val axis: Double) {
+        val desc get() = "peak=${f(peak)} width=${width / MS} top=${top / MS} ms axis=${f(axis)}"
     }
 
     override fun onSensorChanged(e: SensorEvent) {
@@ -259,41 +285,45 @@ object KnockDetector : SensorEventListener {
         ringT[ringPos] = t
         ringHp[ringPos] = hp
         ringMotion[ringPos] = motion
+        for (i in 0..2) ringRaw[ringPos * 3 + i] = e.values[i]
         ringPos = (ringPos + 1) % RING
         if (ringCount < RING) ringCount++
 
-        trackSpike(t, hp)
+        trackSpike(t, hp, KnockAxis.share(x - fast[0], y - fast[1], z - fast[2]))
         if (knocks > 0) watchSequence(t, hp)
     }
 
-    private fun trackSpike(t: Long, hp: Double) {
+    private fun trackSpike(t: Long, hp: Double, axis: Double) {
         if (!inSpike) {
             if (hp >= threshold) {
                 inSpike = true
                 spikeStart = t
                 spikePeak = hp
+                spikeAxis = axis
                 spikeN = 0
                 addSpikeSample(t, hp)
             }
             return
         }
-        spikePeak = max(spikePeak, hp)
+        if (hp > spikePeak) {
+            spikePeak = hp
+            spikeAxis = axis
+        }
         addSpikeSample(t, hp)
         // Ends at 25 % of its own peak too: while walking hp never drops near the threshold,
         // and a quick 2nd knock (~190 ms) merged into the 1st one (test 4: "single knock", 143 ms)
         if (hp < max(threshold * 0.35, spikePeak * 0.25)) {
             inSpike = false
-            val width = t - spikeStart
-            val top = topDuration()
-            val sharp = width <= MAX_SPIKE_NS && top <= MAX_TOP_NS
-            val desc = "peak=${f(spikePeak)} width=${width / MS} top=${top / MS} ms"
+            val spike = Spike(spikeStart, spikePeak, t - spikeStart, topDuration(), spikeAxis)
+            val sharp = spike.width <= MAX_SPIKE_NS && spike.top <= MAX_TOP_NS
             when {
-                sharp -> onSpike(spikeStart, spikePeak, desc)
+                sharp -> onSpike(spike, t)
                 // A wide hump inside a sequence = the body moved → drop it (walking: only one
-                // near knock strength — ordinary steps are expected)
-                knocks > 0 && spikeStart - knockTimes[knocks - 1] >= MIN_GAP_NS &&
-                    (!walking || spikePeak >= weakest * WALK_NOISE) -> abort("wide spike $desc")
-                knocks == 0 -> Log.d(TAG, "ignored: wide spike $desc")
+                // through the flat face and near knock strength — ordinary steps are expected)
+                knocks > 0 && spike.start - knockTimes[knocks - 1] >= MIN_GAP_NS &&
+                    (!walking || (spike.peak >= weakest * WALK_NOISE && KnockAxis.isOnAxis(spike.axis, true))) ->
+                    abort("wide_spike", spike, t)
+                knocks == 0 -> rejected(spike, "wide_spike", t)
             }
         }
     }
@@ -321,49 +351,96 @@ object KnockDetector : SensorEventListener {
         return if (first < 0) 0 else spikeT[last] - spikeT[first]
     }
 
-    private fun onSpike(start: Long, peak: Double, desc: String) {
-        if (start < cooldownUntil) return
+    private fun onSpike(spike: Spike, t: Long) {
+        val start = spike.start
+        val peak = spike.peak
+        if (start < cooldownUntil) {
+            logSpike("ignored", "cooldown", spike)
+            return
+        }
         if (knocks == 0) {
-            if (start - startT < PRE_QUIET_NS) return
+            if (start - startT < PRE_QUIET_NS) {
+                rejected(spike, "sensor_just_started", t)
+                return
+            }
             val s = statsBetween(start - PRE_QUIET_NS, start - 30 * MS)
-            val pre = "rms=${f(s.rms)} motion=${f(s.maxMotion)} maxBefore=${f(s.maxHp)}"
             val still = peak >= s.rms * SNR && s.maxMotion <= MOTION_MAX
             val strongKnock = peak >= strong && peak >= s.maxHp * WALK_RATIO
             if (!still && !strongKnock) {
-                Log.d(TAG, "ignored: not still before, not strong enough ($desc $pre)")
+                rejected(spike, "not_still_not_strong", t, s)
+                return
+            }
+            if (!KnockAxis.isOnAxis(spike.axis, walking = !still)) {
+                rejected(spike, "off_axis", t, s)
                 return
             }
             walking = !still
             weakest = peak
-            Log.d(TAG, "knock 1${if (walking) " (walking)" else ""} $desc $pre")
+            background = s.maxHp
+            noisy = 0
+            // A strong jolt right before: maybe a knock that wasn't counted (3 read as 2)
+            doubt = if (lastStrongRejected != 0L && start - lastStrongRejected <= POST_QUIET_NS)
+                "strong_spike_before" else null
             knocks = 1
             knockTimes[0] = start
+            knockPeaks[0] = peak
             // Direction before the knock (the smoothed value just before it)
             for (i in 0..2) startDir[i] = smooth[i]
+            logSpike("knock", "knock_1", spike, s)
             return
         }
         val gap = start - knockTimes[knocks - 1]
-        if (gap < MIN_GAP_NS) return // bounce-back of the same knock
-        if (walking && peak < strong) {
+        val onAxis = KnockAxis.isOnAxis(spike.axis, walking)
+        if (gap < MIN_GAP_NS) {
+            // The bounce-back of the same knock — unless it is as strong as the knock itself
+            if (onAxis && gap >= MIN_QUICK_KNOCK_NS && peak >= knockPeaks[knocks - 1] * WALK_NOISE) doubt = "quick_knock"
+            logSpike("ignored", "bounce_back", spike)
+            return
+        }
+        if (!onAxis) {
+            // Walking: a step, however strong, says nothing about the knocks.
+            // Still phone: something moved it → the sequence can't be trusted.
+            if (walking) logSpike("ignored", "off_axis", spike) else abort("off_axis", spike, t)
+            return
+        }
+        if (walking && (peak < strong || peak < background * WALK_RATIO)) {
             // A step between/after the knocks: fine while clearly weaker than the knocks
-            if (peak >= weakest * WALK_NOISE) abort("jolt near knock strength $desc")
-            else Log.d(TAG, "walking: too weak for knock ${knocks + 1} $desc gap=${gap / MS} ms")
+            if (peak >= weakest * WALK_NOISE) {
+                abort("jolt_near_knock_strength", spike, t)
+                return
+            }
+            // Stands out from the steps, though: maybe a weak knock that wasn't counted
+            if (gap <= MAX_GAP_NS && peak >= background * WALK_RATIO) doubt = "weak_knock"
+            logSpike("ignored", "too_weak_while_walking", spike)
             return
         }
         if (gap > MAX_GAP_NS) {
             // Too late for this sequence — but it may be the first knock of a new one
-            abort("knock too late (${gap / MS} ms)")
-            onSpike(start, peak, desc)
+            val previous = knockTimes[knocks - 1]
+            abort("knock_too_late", spike, t)
+            lastStrongRejected = previous
+            onSpike(spike, t)
+            return
+        }
+        if (knocks == 3) {
+            abort("more_than_3_knocks", spike, t)
             return
         }
         weakest = minOf(weakest, peak)
+        noisy = 0
+        knockTimes[knocks] = start
+        knockPeaks[knocks] = peak
         knocks++
-        if (knocks > 3) {
-            abort("more than 3 knocks")
-            return
-        }
-        knockTimes[knocks - 1] = start
-        Log.d(TAG, "knock $knocks $desc gap=${gap / MS} ms")
+        logSpike("knock", "knock_$knocks", spike)
+    }
+
+    /// A spike that could not start a sequence.
+    private fun rejected(spike: Spike, reason: String, t: Long, s: Stats? = null) {
+        val isStrong = spike.peak >= strong
+        // Only a jolt through the flat face can be an uncounted knock, not a strong step
+        if (isStrong && KnockAxis.isOnAxis(spike.axis, walking = true)) lastStrongRejected = spike.start
+        // Raw samples only for strong ones: the steps of a walk would fill the file
+        logSpike("ignored", reason, spike, s, if (isStrong) spike.start - RAW_BEFORE_SPIKE_NS else null, t)
     }
 
     /// While a sequence is open. Right after a knock the phone bounces and moves in the
@@ -377,7 +454,7 @@ object KnockDetector : SensorEventListener {
         // Walking: steps shake the phone all the time — only shaking near knock strength counts
         val noiseLevel = if (walking) weakest * WALK_NOISE else threshold * 0.4
         if (sinceLast > SETTLE_NS && hp > noiseLevel && ++noisy > 4) {
-            abort("shaking after knock ${knocks} (hp=${f(hp)})")
+            abort("shaking_after_knock", null, t)
             return
         }
         if (sinceLast < POST_QUIET_NS) return
@@ -388,31 +465,94 @@ object KnockDetector : SensorEventListener {
         val count = knocks
         val turn = angleDeg(startDir, smooth)
         val gaps = (1 until count).map { knockTimes[it] - knockTimes[it - 1] }
+        val reason = when {
+            count < 2 -> "single_knock"
+            // Walking turns the leg (and the phone) all the time → no turn check there
+            !walking && turn > MAX_TURN_DEG -> "phone_turned"
+            gaps.size == 2 && max(gaps[0], gaps[1]) > 2 * minOf(gaps[0], gaps[1]) -> "uneven_rhythm"
+            doubt != null -> doubt
+            // Still phone: a jolt too weak to be a knock may be a soft 3rd knock
+            !walking && noisy >= 2 -> "weak_jolt_after_last_knock"
+            else -> null
+        }
+        val decision = if (reason != null) "ignored" else if (count == 2) "next" else "previous"
+        logDecision(decision, reason, count, turn, t)
         knocks = 0
         noisy = 0
-        when {
-            // Strongest jolt where a 2nd knock would be — shows how weak a missed 2nd knock was
-            count < 2 -> Log.d(TAG, "ignored: single knock (max after=" +
-                "${f(statsBetween(knockTimes[0] + MIN_GAP_NS, knockTimes[0] + MAX_GAP_NS).maxHp)})")
-            // Walking turns the leg (and the phone) all the time → no turn check there
-            !walking && turn > MAX_TURN_DEG -> Log.d(TAG, "ignored: phone turned ${f(turn)}°")
-            gaps.size == 2 && max(gaps[0], gaps[1]) > 2 * minOf(gaps[0], gaps[1]) ->
-                Log.d(TAG, "ignored: uneven rhythm ${gaps.map { it / MS }}")
-            else -> {
-                Log.i(TAG, "GESTURE $count knocks${if (walking) " (walking)" else ""} " +
-                    "gaps=${gaps.map { it / MS }} weakest=${f(weakest)} turn=${f(turn)}°")
-                cooldownUntil = t + COOLDOWN_NS
-                vibrate(count)
-                main.post { onKnock?.invoke(count) }
-            }
-        }
+        doubt = null
+        if (reason != null) return
+        cooldownUntil = t + COOLDOWN_NS
+        vibrate(count)
+        main.post { onKnock?.invoke(count) }
     }
 
-    private fun abort(why: String) {
-        Log.d(TAG, "dropped after $knocks knock(s): $why")
+    private fun abort(reason: String, spike: Spike?, t: Long) {
+        logDecision("ignored", reason, knocks, angleDeg(startDir, smooth), t, spike)
         knocks = 0
         noisy = 0
+        doubt = null
     }
+
+    // ── log ───────────────────────────────────────────────────
+
+    private fun logSpike(
+        event: String, reason: String, spike: Spike, s: Stats? = null, rawFrom: Long? = null, t: Long = 0L,
+    ) {
+        Log.d(TAG, "$event $reason ${spike.desc}" +
+            (if (s != null) " rms=${f(s.rms)} motion=${f(s.maxMotion)} maxBefore=${f(s.maxHp)}" else ""))
+        val o = JSONObject().put("event", event).put("reason", reason)
+            .put("threshold", threshold).put("strong", strong)
+        putSpike(o, spike)
+        if (s != null && s.rms != Double.MAX_VALUE) {
+            o.put("rms", round(s.rms)).put("motion", round(s.maxMotion)).put("maxBefore", round(s.maxHp))
+        }
+        if (rawFrom != null) o.put("raw", rawSamples(rawFrom, t))
+        KnockLog.write(o)
+    }
+
+    /// The outcome of a sequence, with the raw samples from just before its first knock.
+    private fun logDecision(decision: String, reason: String?, count: Int, turn: Double, t: Long, spike: Spike? = null) {
+        val gaps = (1 until count.coerceAtMost(3)).map { (knockTimes[it] - knockTimes[it - 1]) / MS }
+        val peaks = (0 until count.coerceAtMost(3)).map { round(knockPeaks[it]) }
+        Log.i(TAG, "DECISION $decision ${reason ?: ""} knocks=$count${if (walking) " (walking)" else ""} " +
+            "gaps=$gaps peaks=$peaks turn=${f(turn)}° ${spike?.desc ?: ""}")
+        val o = JSONObject().put("event", "decision").put("decision", decision)
+            .put("reason", reason ?: JSONObject.NULL).put("knocks", count).put("walking", walking)
+            .put("gapsMs", JSONArray(gaps)).put("peaks", JSONArray(peaks)).put("turn", round(turn))
+            .put("background", round(background)).put("noisy", noisy)
+            .put("threshold", threshold).put("strong", strong)
+        if (spike != null) putSpike(o, spike)
+        o.put("raw", rawSamples(knockTimes[0] - PRE_QUIET_NS, t))
+        KnockLog.write(o)
+    }
+
+    private fun putSpike(o: JSONObject, spike: Spike) {
+        o.put("peak", round(spike.peak)).put("widthMs", spike.width / MS).put("topMs", spike.top / MS)
+            .put("axis", round(spike.axis))
+    }
+
+    /// Ring buffer samples in [from, to], oldest first: [ms since the first, x, y, z, filtered].
+    private fun rawSamples(from: Long, to: Long): JSONArray {
+        val out = JSONArray()
+        var first = 0L
+        for (k in ringCount - 1 downTo 0) {
+            val i = (ringPos - 1 - k + RING) % RING
+            val t = ringT[i]
+            if (t < from || t > to) continue
+            if (first == 0L) first = t
+            out.put(
+                JSONArray()
+                    .put((t - first) / MS)
+                    .put(round(ringRaw[i * 3].toDouble()))
+                    .put(round(ringRaw[i * 3 + 1].toDouble()))
+                    .put(round(ringRaw[i * 3 + 2].toDouble()))
+                    .put(round(ringHp[i]))
+            )
+        }
+        return out
+    }
+
+    private fun round(d: Double) = Math.round(d * 100) / 100.0
 
     private class Stats(val rms: Double, val maxMotion: Double, val maxHp: Double)
 

@@ -153,6 +153,7 @@ Play-in tərifləri vaxtaşırı dəyişir — göndərməzdən əvvəl Play Con
 - Is all user data encrypted in transit? **Yes** (HTTPS).
 - Do you provide a way for users to request that their data is deleted? **No** — developer heç bir data saxlamır; telefondakı data tətbiq silinəndə silinir.
 - Online rejimdəki boş internet yoxlaması istifadəçi məlumatı daşımır.
+- "Vuraraq mahnı dəyiş"in sensor göstəriciləri telefonda qalır, ona görə "collected" sayılmır. İstifadəçi qeydləri Download-a ixrac edəndə də fayl telefonda qalır.
 
 ### Government apps / Financial features / Health / News
 - Hamısı: **No / Not applicable**.

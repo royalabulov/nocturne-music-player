@@ -39,7 +39,9 @@ class AudioImport {
   bool _busy = false;
   bool _again = false;
 
-  static bool _isPublic(String path) => path.startsWith('/storage/') && !path.contains('/Android/data/');
+  @visibleForTesting
+  static bool isPublicPath(String path) =>
+      path.startsWith('/storage/') && !path.contains('/Android/data/') && !path.split('/').contains('..');
 
   Future<ImportResult> ingest(List<String> sources) async {
     final repo = _read(libraryRepositoryProvider);
@@ -59,14 +61,14 @@ class AudioImport {
           slots[i] = t;
           continue;
         }
-        if (path == null || !_isPublic(path)) {
+        if (path == null || !isPublicPath(path)) {
           path = await _store.importAudio(src);
           copied++;
         }
         slots[i] = path;
         toScan.add(path);
       } catch (e) {
-        debugPrint('import: $src failed: $e');
+        debugPrint('import failed: $e');
         failed++;
       }
     }

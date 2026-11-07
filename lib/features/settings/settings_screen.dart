@@ -9,6 +9,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/audio/output_detector.dart';
+import '../../core/audio/pocket_knock.dart';
 import '../../core/constants.dart';
 import '../../core/diagnostics/crash_log.dart';
 import '../../core/network/network_monitor.dart';
@@ -575,15 +576,40 @@ class _AudioGroup extends ConsumerWidget {
       AnimatedSize(
         duration: const Duration(milliseconds: 200),
         child: s.pocketKnock
-            ? _ChoiceRow(
-                title: l10n.knockSensitivity,
-                options: [l10n.knockLow, l10n.knockMedium, l10n.knockHigh],
-                selected: s.knockSensitivity,
-                onSelected: ctrl.setKnockSensitivity,
+            ? Column(
+                children: [
+                  _ChoiceRow(
+                    title: l10n.knockSensitivity,
+                    options: [l10n.knockLow, l10n.knockMedium, l10n.knockHigh],
+                    selected: s.knockSensitivity,
+                    onSelected: ctrl.setKnockSensitivity,
+                  ),
+                  InkWell(
+                    onTap: _exportKnockLog,
+                    child: _InfoRow(
+                      title: l10n.knockLogExport,
+                      subtitle: l10n.knockLogExportHint,
+                      trailing: const Icon(Icons.download_rounded, color: AppColors.textSecondary),
+                    ),
+                  ),
+                ],
               )
             : const SizedBox.shrink(),
       ),
     ]);
+  }
+
+  Future<void> _exportKnockLog() async {
+    try {
+      final d = DateTime.now();
+      String two(int v) => v.toString().padLeft(2, '0');
+      final name = 'nocturne-knock-log-${d.year}-${two(d.month)}-${two(d.day)}_${two(d.hour)}${two(d.minute)}.txt';
+      final saved = await PocketKnock.exportLog(name);
+      showToast(saved == null ? l10n.knockLogEmpty : l10n.knockLogSaved(saved));
+    } catch (e) {
+      debugPrint('knock log export failed: $e');
+      showToast(l10n.exportFailed, error: true);
+    }
   }
 }
 
@@ -681,7 +707,9 @@ class _DataGroup extends ConsumerWidget {
     try {
       final file = await FilePicker.pickFile(dialogTitle: l10n.chooseBackupDialog);
       if (file == null) return;
-      final report = await ref.read(backupServiceProvider).restore(utf8.decode(await file.readAsBytes()));
+      final backups = ref.read(backupServiceProvider);
+      if (await file.length() > backups.maxBytes) throw const FormatException('Backup file too large');
+      final report = await backups.restore(utf8.decode(await file.readAsBytes()));
       ref.invalidate(audioSettingsProvider); // reload audio settings from the DB
       showToast(report.toString());
     } catch (e) {

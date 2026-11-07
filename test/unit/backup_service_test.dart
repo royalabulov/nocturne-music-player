@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -65,5 +67,175 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory());
     expect(() => BackupService(db).restore('{"hello":1}'), throwsFormatException);
     await db.close();
+  });
+
+  // A backup is a file from outside the app: it may be corrupt, edited or made by someone else.
+  group('restore does not trust the file', () {
+    late AppDatabase db;
+    late BackupService svc;
+
+    const song = '/music/a.mp3';
+    const validPlaylist = {'name': 'Mix', 'createdAt': 1, 'updatedAt': 1, 'tracks': [song]};
+    const validPlay = {'path': song, 'playedAt': 100};
+    const validLabel = {
+      'path': song,
+      'mood': 'happy',
+      'genre': 'pop',
+      'predictedMood': 'sad',
+      'predictedGenre': 'rock',
+      'labeledAt': 1,
+    };
+
+    String backup([Map<String, Object?> fields = const {}]) =>
+        jsonEncode({'format': BackupService.format, 'version': BackupService.version, ...fields});
+
+    setUp(() async {
+      db = AppDatabase(NativeDatabase.memory());
+      await addTrack(db, 'a');
+      svc = BackupService(db);
+    });
+    tearDown(() => db.close());
+
+    final malformed = <String, Map<String, Object?>>{
+      'favorites is not a list': {'favorites': 'x'},
+      'a favorite is not an object': {'favorites': [1]},
+      'a favorite path is not text': {'favorites': [{'path': 1, 'addedAt': 1}]},
+      'a favorite without a date': {'favorites': [{'path': song}]},
+      'a favorite date is text': {'favorites': [{'path': song, 'addedAt': '1'}]},
+      'a favorite date is negative': {'favorites': [{'path': song, 'addedAt': -1}]},
+      'a playlist is not an object': {'playlists': ['x']},
+      'a playlist name is not text': {'playlists': [{...validPlaylist, 'name': 1}]},
+      'a playlist name is absurdly long': {'playlists': [{...validPlaylist, 'name': 'x' * 100000}]},
+      'a playlist description is not text': {'playlists': [{...validPlaylist, 'description': 1}]},
+      'a playlist date is negative': {'playlists': [{...validPlaylist, 'createdAt': -5}]},
+      'playlist tracks is not a list': {'playlists': [{...validPlaylist, 'tracks': 'x'}]},
+      'a playlist track is not text': {'playlists': [{...validPlaylist, 'tracks': [1]}]},
+      'a play is not an object': {'history': [1]},
+      'a play date is text': {'history': [{...validPlay, 'playedAt': 'x'}]},
+      'a play date is negative': {'history': [{...validPlay, 'playedAt': -1}]},
+      'a play position is negative': {'history': [{...validPlay, 'positionMs': -1}]},
+      'a play flag is text': {'history': [{...validPlay, 'completed': 'yes'}]},
+      'a label is not an object': {'vibeLabels': [1]},
+      'a label value is not text': {'vibeLabels': [{...validLabel, 'mood': 1}]},
+      'a label value is absurdly long': {'vibeLabels': [{...validLabel, 'genre': 'x' * 1000}]},
+      'a label date is missing': {'vibeLabels': [{...validLabel}..remove('labeledAt')]},
+      'settings is not an object': {'settings': []},
+      'scan folders is not a list': {'scanFolders': 'x'},
+      'a scan folder is not an object': {'scanFolders': [1]},
+      'a scan folder path is not text': {'scanFolders': [{'path': 1}]},
+    };
+    for (final MapEntry(key: what, value: fields) in malformed.entries) {
+      test('refused: $what', () async {
+        await expectLater(svc.restore(backup(fields)), throwsFormatException);
+      });
+    }
+
+    test('one bad value refuses the whole file: nothing is half-written', () async {
+      final json = backup({
+        'favorites': [{'path': song, 'addedAt': 1}],
+        'playlists': [validPlaylist],
+        'history': [{...validPlay, 'playedAt': 'broken'}],
+      });
+      await expectLater(svc.restore(json), throwsFormatException);
+      expect(await db.select(db.favorites).get(), isEmpty);
+      expect(await db.select(db.playlists).get(), isEmpty);
+    });
+
+    test('a file from a newer app version is refused, not misread', () async {
+      final json = jsonEncode({
+        'format': BackupService.format,
+        'version': BackupService.version + 1,
+        'favorites': [{'path': song, 'addedAt': 1}],
+      });
+      await expectLater(svc.restore(json), throwsFormatException);
+      expect(await db.select(db.favorites).get(), isEmpty);
+    });
+
+    test('a version that is not a number is refused', () async {
+      final json = jsonEncode({'format': BackupService.format, 'version': 'two'});
+      await expectLater(svc.restore(json), throwsFormatException);
+    });
+
+    test('a file over the size limit is refused before parsing', () async {
+      final small = BackupService(db, maxBytes: 100);
+      await expectLater(small.restore(backup({'padding': 'x' * 200})), throwsFormatException);
+    });
+
+    test('not JSON at all, or JSON of the wrong shape, is refused', () async {
+      await expectLater(svc.restore('not json'), throwsFormatException);
+      await expectLater(svc.restore('[]'), throwsFormatException);
+      await expectLater(svc.restore('null'), throwsFormatException);
+    });
+
+    test('only folders on shared storage become scan folders', () async {
+      await svc.restore(backup({
+        'scanFolders': [
+          {'path': '/storage/emulated/0/My Music'},
+          {'path': '/storage/1234-ABCD/Audio', 'enabled': false},
+          {'path': '/data/user/0/com.nocturne/databases'},
+          {'path': '/'},
+          {'path': 'relative/folder'},
+          {'path': '/storage/emulated/0/../../../data/user/0/com.nocturne'},
+          {'path': '/storage/emulated/0/Android/data/com.nocturne/files'},
+        ],
+      }));
+      final folders = {for (final f in await db.select(db.scanFolders).get()) f.path: f.enabled};
+      expect(folders['/storage/emulated/0/My Music'], isTrue);
+      expect(folders['/storage/1234-ABCD/Audio'], isFalse);
+      expect(folders.keys.where((p) => !kDefaultScanFolders.contains(p)), hasLength(2));
+    });
+
+    test('only settings meant for backups are restored', () async {
+      await svc.restore(backup({
+        'settings': {
+          'autoScan': 'false',
+          'onlineMode': 'true',
+          'tagReaderVersion': '0',
+          'audioSettings': 5,
+        },
+      }));
+      final saved = {for (final s in await db.select(db.scanState).get()) s.key: s.value};
+      expect(saved, {'autoScan': 'false'});
+    });
+
+    test('an old backup without the newer sections still restores', () async {
+      final r = await svc.restore(jsonEncode({
+        'format': BackupService.format,
+        'version': 1,
+        'favorites': [{'path': song, 'addedAt': 5}],
+        'playlists': [{'name': 'Old', 'createdAt': 1, 'updatedAt': 2, 'tracks': [song]}],
+        'history': [{'path': song, 'playedAt': 9}],
+      }));
+      expect(r.favorites, 1);
+      expect(r.playlists, 1);
+      expect(r.playlistTracks, 1);
+      expect(r.plays, 1);
+      final play = (await db.select(db.playHistory).get()).single;
+      expect(play.completed, isFalse);
+      expect(play.positionMs, 0);
+    });
+
+    test('songs that are not on this phone are counted, not an error', () async {
+      final r = await svc.restore(backup({
+        'favorites': [{'path': '/music/gone.mp3', 'addedAt': 1}],
+      }));
+      expect(r.favorites, 0);
+      expect(r.missingTracks, 1);
+    });
+
+    test('labels and all optional fields come back typed', () async {
+      await svc.restore(backup({
+        'playlists': [{...validPlaylist, 'description': 'desc'}],
+        'history': [{...validPlay, 'completed': true, 'positionMs': 7}],
+        'vibeLabels': [validLabel],
+      }));
+      expect((await db.select(db.playlists).get()).single.description, 'desc');
+      final play = (await db.select(db.playHistory).get()).single;
+      expect(play.completed, isTrue);
+      expect(play.positionMs, 7);
+      final label = (await db.select(db.vibeLabels).get()).single;
+      expect(label.mood, 'happy');
+      expect(label.predictedGenre, 'rock');
+    });
   });
 }

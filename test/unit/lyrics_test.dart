@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,6 +44,60 @@ void main() {
       expect(activeLyricLine(l, const Duration(seconds: 10)), 1);
       expect(activeLyricLine(l, const Duration(seconds: 15)), 1);
       expect(activeLyricLine(l, const Duration(minutes: 3)), 2);
+    });
+  });
+
+  group('hostile lyrics', () {
+    test('a line of endless time stamps takes linear time', () {
+      final sw = Stopwatch()..start();
+      final lines = parseLrc('${'[00:01]' * 200000}x');
+      expect(lines, hasLength(200000));
+      expect(sw.elapsed, lessThan(const Duration(seconds: 3)));
+    });
+
+    test('spaces between stamps still work', () {
+      final lines = parseLrc('[00:01] [00:02]  word');
+      expect(lines.map((l) => l.text), ['word', 'word']);
+      expect(lines.map((l) => l.time.inSeconds), [1, 2]);
+    });
+
+    test('a huge .lrc next to a song is not read', () {
+      final dir = Directory.systemTemp.createTempSync('sonar_lrc');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final song = '${dir.path}/song.mp3';
+
+      File('${dir.path}/song.lrc').writeAsStringSync('[00:01]small');
+      expect(LyricsFileSource.readSync(song)?.lines.single.text, 'small');
+
+      File('${dir.path}/song.lrc').writeAsStringSync('[00:01]big\n' * 200000);
+      expect(LyricsFileSource.readSync(song), isNull);
+    });
+
+    group('a response over the limit', () {
+      Stream<List<int>> chunks(int count, {void Function()? onCancel}) {
+        final c = StreamController<List<int>>(onCancel: onCancel);
+        c.onListen = () async {
+          for (var i = 0; i < count && !c.isClosed; i++) {
+            c.add(List.filled(1024, 65));
+            await Future<void>.delayed(Duration.zero);
+          }
+          await c.close();
+        };
+        return c.stream;
+      }
+
+      test('within the limit it arrives whole', () async {
+        expect(await LrclibSource.readBounded(chunks(3), maxBytes: 4096), hasLength(3072));
+      });
+
+      test('is refused, and the download stops', () async {
+        var stopped = false;
+        await expectLater(
+          LrclibSource.readBounded(chunks(1000000, onCancel: () => stopped = true), maxBytes: 4096),
+          throwsFormatException,
+        );
+        expect(stopped, isTrue);
+      });
     });
   });
 

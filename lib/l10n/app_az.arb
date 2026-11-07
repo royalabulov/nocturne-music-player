@@ -101,6 +101,10 @@
   "knockLow": "Aşağı",
   "knockMedium": "Orta",
   "knockHigh": "Yüksək",
+  "knockLogExport": "Vurma qeydlərini saxla",
+  "knockLogExportHint": "Vurmanın tanınması ilə bağlı qeydlər Download qovluğuna saxlanılır. Bundan başqa telefondan çıxmır",
+  "knockLogEmpty": "Hələ qeyd yoxdur",
+  "knockLogSaved": "Saxlanıldı → {path}",
   "saveBackupDialog": "Nocturne ehtiyat nüsxəsini saxla",
   "backupSaved": "Ehtiyat nüsxə saxlanıldı",
   "backupFailed": "Ehtiyat nüsxə yaradılmadı",
@@ -256,7 +260,6 @@
   "sleepTimerOffSpoken": "Yuxu taymeri: söndürülüb",
   "sleepTimerEndSpoken": "Yuxu taymeri: mahnının sonunda",
   "sleepTimerLeftSpoken": "{count, plural, other{Yuxu taymeri: {count} dəqiqə qalıb}}",
-  "stopsWhenTrackEnds": "Bu mahnı bitəndə dayanır",
   "stopsIn": "{time} sonra dayanır",
   "fadesOutAndPauses": "Musiqi yavaş-yavaş sönür və dayanır",
   "minutesLong": "{count, plural, other{{count} dəqiqə}}",
@@ -419,5 +422,6 @@
   "reminderFrom": "Xatırlatmadan",
   "reminderTimesAWeek": "{count, plural, =1{Həftədə bir dəfə} other{Həftədə {count} dəfə}}",
   "reminderEveryDay": "Hər gün",
-  "reminderSummary": "{when} · saat {time}"
+  "reminderSummary": "{when} · saat {time}",
+  "stopsWhenTrackEnds": "Bu mahnı bitəndə dayanır"
 }

@@ -22,9 +22,10 @@ class SonarApplication : Application() {
                 val sw = StringWriter()
                 error.printStackTrace(PrintWriter(sw))
                 val time = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
-                File(dir, "native_crash.log").appendText(
-                    "$time  CRASH in thread '${thread.name}'\n$sw\n"
-                )
+                val log = File(dir, "native_crash.log")
+                // A crash loop must not fill the phone
+                if (log.length() > 256 * 1024) log.delete()
+                log.appendText("$time  CRASH in thread '${thread.name}'\n$sw\n")
             }
             previous?.uncaughtException(thread, error)
         }

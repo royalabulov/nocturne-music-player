@@ -87,8 +87,10 @@ class AudioImporterMediaStoreTest {
         Robolectric.setupContentProvider(FakeMediaProvider::class.java, MediaStore.AUTHORITY)
         FakeAudioProvider.columns = mapOf(OpenableColumns.DISPLAY_NAME to "song.mp3", OpenableColumns.SIZE to 4L)
         FakeAudioProvider.mime = "audio/flac"
-        FakeAudioProvider.bytes = byteArrayOf(1, 2, 3, 4)
+        FakeAudioProvider.bytes = content
     }
+
+    private val content = "fLaC".toByteArray()
 
     private fun writesGoTo(stream: OutputStream) =
         shadowOf(context.contentResolver).registerOutputStream(FakeMediaProvider.row, stream)
@@ -101,7 +103,7 @@ class AudioImporterMediaStoreTest {
         val path = AudioImporter(context).import(source)
 
         assertEquals(FakeMediaProvider.PATH, path)
-        assertArrayEquals(byteArrayOf(1, 2, 3, 4), written.toByteArray())
+        assertArrayEquals(content, written.toByteArray())
         val row = FakeMediaProvider.inserted.single()
         assertEquals("song.mp3", row.getAsString(MediaStore.Audio.Media.DISPLAY_NAME))
         assertEquals("Music/Nocturne", row.getAsString(MediaStore.Audio.Media.RELATIVE_PATH))
@@ -131,5 +133,27 @@ class AudioImporterMediaStoreTest {
 
         assertEquals(listOf(FakeMediaProvider.row), FakeMediaProvider.deleted)
         assertTrue(FakeMediaProvider.updated.isEmpty())
+    }
+
+    @Test
+    fun `a stream over the limit removes the half-created row and is never published`() {
+        FakeAudioProvider.columns = mapOf(OpenableColumns.DISPLAY_NAME to "song.mp3")
+        FakeAudioProvider.bytes = "fLaC".toByteArray() + ByteArray(5000)
+        writesGoTo(ByteArrayOutputStream())
+
+        assertThrows(Exception::class.java) { AudioImporter(context, maxBytes = 1000).import(source) }
+
+        assertEquals(listOf(FakeMediaProvider.row), FakeMediaProvider.deleted)
+        assertTrue(FakeMediaProvider.updated.isEmpty())
+    }
+
+    @Test
+    fun `content that isn't audio never reaches MediaStore`() {
+        FakeAudioProvider.bytes = byteArrayOf(0x50, 0x4B, 0x03, 0x04)
+        writesGoTo(ByteArrayOutputStream())
+
+        assertThrows(Exception::class.java) { AudioImporter(context).import(source) }
+
+        assertTrue(FakeMediaProvider.inserted.isEmpty())
     }
 }

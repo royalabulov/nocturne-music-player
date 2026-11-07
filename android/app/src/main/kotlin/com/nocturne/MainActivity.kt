@@ -128,6 +128,12 @@ class MainActivity : AudioServiceActivity() {
                     )
                     result.success(null)
                 }
+                // Permanent knock log → Download folder. Null = nothing recorded yet.
+                "exportLog" -> background(result) {
+                    KnockLog.export()?.let {
+                        saveToDownloads(call.argument<String>("name")!!, "text/plain", it)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
@@ -156,7 +162,7 @@ class MainActivity : AudioServiceActivity() {
             Intent.ACTION_SEND -> streamExtra(intent)?.let { uris.add(it) }
             Intent.ACTION_SEND_MULTIPLE -> streamListExtra(intent)?.let { uris.addAll(it) }
         }
-        val safe = uris.filter { IncomingUriPolicy.isSafe(it, packageName) }
+        val safe = IncomingUriPolicy.accept(uris, packageName, pending = openedUris.size)
         if (safe.isEmpty()) return false
         openedUris.addAll(safe.map { it.toString() })
         // Handle it once (so it doesn't come back when the app is reopened)

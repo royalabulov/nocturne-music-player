@@ -31,6 +31,14 @@ class PocketKnock {
     _push();
   }
 
+  /// Saves the detector's permanent log to the Download folder.
+  /// Result: the visible path, or null if nothing has been recorded yet.
+  static Future<String?> exportLog(String name) async {
+    final r = await _ch.invokeMethod<String>('exportLog', {'name': name});
+    if (r != null && r.startsWith('error:')) throw Exception(r);
+    return r;
+  }
+
   void _push() {
     if (kIsWeb) return;
     unawaited(_ch.invokeMethod<void>('update', {'on': _enabled && _playing, 'sensitivity': _sensitivity}).catchError(

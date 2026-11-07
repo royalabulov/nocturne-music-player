@@ -41,7 +41,8 @@ abstract final class CrashLog {
     };
     final prevPrint = debugPrint;
     debugPrint = (String? message, {int? wrapWidth}) {
-      prevPrint(message, wrapWidth: wrapWidth);
+      // Release: only this private file. A message can name a song, and logcat is not ours.
+      if (!kReleaseMode) prevPrint(message, wrapWidth: wrapWidth);
       if (message != null) add(message);
     };
     add('--- app start ---');

@@ -16,6 +16,9 @@ import 'tag_reader.dart';
 class LyricsFileSource {
   const LyricsFileSource();
 
+  /// Lyrics are kilobytes. A bigger file next to a song isn't worth reading into memory.
+  static const maxLrcBytes = 1024 * 1024;
+
   Future<Lyrics?> read(String path) => Isolate.run(() => readSync(path));
 
   static Lyrics? readSync(String path) {
@@ -37,7 +40,7 @@ class LyricsFileSource {
     for (final ext in const ['.lrc', '.LRC']) {
       try {
         final f = File('$base$ext');
-        if (f.existsSync()) return f.readAsStringSync();
+        if (f.existsSync() && f.lengthSync() <= maxLrcBytes) return f.readAsStringSync();
       } catch (_) {
         // no access (scoped storage) — not an error
       }

@@ -89,6 +89,49 @@ void main() {
     expect(lines[1], contains(',-12.35,none,hipHop,sad,hipHop,none,hipHop,0.2,0.01'));
   });
 
+  group('CSV export cannot carry a spreadsheet formula', () {
+    // A song's tags are written by whoever made the file, and the CSV is opened in Excel
+    String csvFor(String genreTag) {
+      final t = DemoLibrary.tracks().first;
+      final csv = buildVibeCsv(
+        tracks: [t],
+        data: [TrackVibeData(trackId: t.id, genreTag: genreTag, rmsDb: -12.345)],
+        predicted: const {},
+        labels: const [],
+      );
+      return csv.split('\r\n')[1];
+    }
+
+    for (final formula in [
+      '=1+1',
+      '+1+1',
+      '-1+1',
+      '@SUM(A1)',
+      '=cmd|\' /C calc\'!A0',
+      '\t=1+1',
+    ]) {
+      test('neutralized: ${formula.trim()}', () {
+        final row = csvFor(formula);
+        expect(row, contains("'$formula"));
+      });
+    }
+
+    test('a formula with quotes stays one quoted, neutralized cell', () {
+      expect(csvFor('=HYPERLINK("http://x","y")'), contains('"\'=HYPERLINK(""http://x"",""y"")"'));
+    });
+
+    test('real numbers stay numbers', () {
+      final row = csvFor('Rock');
+      expect(row, contains(',-12.35,'));
+      expect(row, isNot(contains("'-12.35")));
+      expect(csvFor('-5'), isNot(contains("'-5")));
+    });
+
+    test('ordinary text is untouched', () {
+      expect(csvFor('Hip-Hop'), contains(',Hip-Hop,'));
+    });
+  });
+
   group('labels in DB', () {
     Future<int> addTrack(AppDatabase db, String name) => db.into(db.tracks).insert(TracksCompanion.insert(
           path: '/music/$name.mp3',

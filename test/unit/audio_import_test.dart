@@ -1,90 +1,76 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/core/demo/demo_library.dart';
-import 'package:sonar/core/demo/demo_overrides.dart';
-import 'package:sonar/data/datasources/media_store_source.dart';
-import 'package:sonar/data/services/library_scanner.dart';
+import 'package:sonar/data/datasources/cover_cache.dart';
+import 'package:sonar/data/db/app_database.dart';
+import 'package:sonar/data/mappers/track_mapper.dart';
+import 'package:sonar/data/repositories/library_repository_impl.dart';
 import 'package:sonar/features/import/audio_import.dart';
-import 'package:sonar/features/library_scan/permission_gate.dart';
-import 'package:sonar/features/library_scan/scan_controller.dart';
-
-/// Without native code: the test supplies the resolve/import answers itself.
-class _FakeStore extends MediaStoreSource {
-  _FakeStore(this.resolved, this.importsTo);
-  final Map<String, ({String? path, String name, int size})> resolved;
-  final Map<String, String> importsTo;
-  final imported = <String>[];
-  final scanned = <String>[];
-
-  @override
-  Future<({String? path, String name, int size})> resolveAudio(String source) async =>
-      resolved[source] ?? (throw const ImportFailed('cannot open'));
-
-  @override
-  Future<String> importAudio(String source) async {
-    imported.add(source);
-    return importsTo[source] ?? (throw const ImportFailed('copy failed'));
-  }
-
-  @override
-  Future<void> scanAndWait(List<String> paths) async => scanned.addAll(paths);
-}
-
-class _FakeScan extends ScanController {
-  int scans = 0;
-
-  @override
-  ScanState build() => const ScanState(permission: MediaPermission.granted, progress: ScanProgress.idle);
-
-  @override
-  Future<void> requestAndScan() async => scans++;
-}
 
 void main() {
-  final demo = DemoLibrary.tracks();
-  late ProviderContainer c;
-  late _FakeScan scan;
+  group('which files are used in place instead of being copied', () {
+    test('a song on shared storage', () {
+      expect(AudioImport.isPublicPath('/storage/emulated/0/Music/song.mp3'), isTrue);
+      expect(AudioImport.isPublicPath('/storage/1234-ABCD/Music/song.mp3'), isTrue);
+    });
 
-  setUp(() {
-    scan = _FakeScan();
-    c = ProviderContainer(overrides: [...demoOverrides(), scanControllerProvider.overrideWith(() => scan)]);
-  });
-  tearDown(() => c.dispose());
+    test('not app-private folders', () {
+      expect(AudioImport.isPublicPath('/data/user/0/com.nocturne/cache/song.mp3'), isFalse);
+      expect(AudioImport.isPublicPath('/storage/emulated/0/Android/data/com.other/cache/song.mp3'), isFalse);
+    });
 
-  test('file already in library → played as-is, nothing copied or scanned', () async {
-    final known = demo[3];
-    final store = _FakeStore({'content://x/1': (path: known.path, name: 'a.mp3', size: known.fileSize)}, {});
-    final r = await AudioImport(c.read, store: store).ingest(['content://x/1']);
-    expect(r.tracks.map((t) => t.id), [known.id]);
-    expect(r.copied, 0);
-    expect(store.imported, isEmpty);
-    expect(scan.scans, 0);
+    test('not a path that only looks public', () {
+      expect(AudioImport.isPublicPath('/storage/emulated/0/../../../data/user/0/com.nocturne/databases/x'), isFalse);
+      expect(AudioImport.isPublicPath('/storage/emulated/0/Music/../secret.mp3'), isFalse);
+    });
   });
 
-  test('messenger-style URI (no path) → copied to Music/Nocturne, scanned, found', () async {
-    // The "copied" file lands at the path that is in the library after the scan
-    final target = demo[5];
-    final store = _FakeStore(
-      {'content://messenger/9': (path: null, name: 'new song.mp3', size: 1)},
-      {'content://messenger/9': target.path},
-    );
-    final r = await AudioImport(c.read, store: store).ingest(['content://messenger/9']);
-    expect(store.imported, ['content://messenger/9']);
-    expect(store.scanned, [target.path]);
-    expect(scan.scans, greaterThanOrEqualTo(1));
-    expect(r.copied, 1);
-    expect(r.tracks.single.id, target.id);
-  });
+  group('finding a file already in the library by name and size', () {
+    late AppDatabase db;
+    late LibraryRepositoryImpl repo;
 
-  test('order is kept and failures are counted', () async {
-    final a = demo[1], b = demo[2];
-    final store = _FakeStore({
-      'u:a': (path: a.path, name: 'a', size: a.fileSize),
-      'u:bad': (path: null, name: 'bad.mp3', size: 0), // import fails
-      'u:b': (path: b.path, name: 'b', size: b.fileSize),
-    }, {});
-    final r = await AudioImport(c.read, store: store).ingest(['u:a', 'u:bad', 'u:b', 'u:unknown']);
-    expect(r.tracks.map((t) => t.id), [a.id, b.id]);
-    expect(r.failed, 2);
+    Future<void> add(String path, int size) => db.into(db.tracks).insert(TracksCompanion.insert(
+          path: path,
+          title: 'T',
+          artist: 'A',
+          album: 'B',
+          format: 'mp3',
+          fileSize: Value(size),
+          dateAdded: 1,
+          dateModified: 1,
+        ));
+
+    setUp(() {
+      db = AppDatabase(NativeDatabase.memory());
+      repo = LibraryRepositoryImpl(db, TrackMapper(CoverCache()));
+    });
+    tearDown(() => db.close());
+
+    test('finds the same name and size', () async {
+      await add('/storage/emulated/0/Music/a_b.mp3', 100);
+      expect((await repo.findTrackByFile('a_b.mp3', 100))?.path, '/storage/emulated/0/Music/a_b.mp3');
+    });
+
+    test('another size is another file', () async {
+      await add('/storage/emulated/0/Music/song.mp3', 100);
+      expect(await repo.findTrackByFile('song.mp3', 200), isNull);
+    });
+
+    // The name comes from another app: % and _ must not act as wildcards
+    test('an underscore in the name matches only an underscore', () async {
+      await add('/storage/emulated/0/Music/axb.mp3', 100);
+      expect(await repo.findTrackByFile('a_b.mp3', 100), isNull);
+    });
+
+    test('a percent sign in the name matches only a percent sign', () async {
+      await add('/storage/emulated/0/Music/secret song.mp3', 100);
+      expect(await repo.findTrackByFile('%.mp3', 100), isNull);
+      expect(await repo.findTrackByFile('%', 100), isNull);
+    });
+
+    test('names with these characters are still found', () async {
+      await add('/storage/emulated/0/Music/100%_love.mp3', 100);
+      expect(await repo.findTrackByFile('100%_love.mp3', 100), isNotNull);
+    });
   });
 }

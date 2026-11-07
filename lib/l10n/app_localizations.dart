@@ -703,6 +703,30 @@ abstract class L10n {
   /// **'High'**
   String get knockHigh;
 
+  /// No description provided for @knockLogExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Save knock log'**
+  String get knockLogExport;
+
+  /// No description provided for @knockLogExportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Knock detection records, saved to the Download folder. They stay on this phone otherwise'**
+  String get knockLogExportHint;
+
+  /// No description provided for @knockLogEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing recorded yet'**
+  String get knockLogEmpty;
+
+  /// No description provided for @knockLogSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved → {path}'**
+  String knockLogSaved(String path);
+
   /// No description provided for @saveBackupDialog.
   ///
   /// In en, this message translates to:
@@ -1632,12 +1656,6 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'{count, plural, =1{Sleep timer: 1 minute left} other{Sleep timer: {count} minutes left}}'**
   String sleepTimerLeftSpoken(int count);
-
-  /// No description provided for @stopsWhenTrackEnds.
-  ///
-  /// In en, this message translates to:
-  /// **'Stops when this track ends'**
-  String get stopsWhenTrackEnds;
 
   /// No description provided for @stopsIn.
   ///
@@ -2621,6 +2639,12 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Every day'**
   String get reminderEveryDay;
+
+  /// No description provided for @stopsWhenTrackEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops when this track ends'**
+  String get stopsWhenTrackEnds;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

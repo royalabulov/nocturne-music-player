@@ -166,8 +166,10 @@ class LibraryRepositoryImpl implements LibraryRepository {
 
   @override
   Future<Track?> findTrackByFile(String fileName, int size) async {
+    // The name comes from another app: % and _ in it are plain characters, not wildcards
+    final name = fileName.replaceAllMapped(RegExp(r'[\\%_]'), (m) => '\\${m[0]}');
     final rows = await (db.select(db.tracks)
-          ..where((t) => t.fileSize.equals(size) & t.path.like('%/$fileName'))
+          ..where((t) => t.fileSize.equals(size) & t.path.like('%/$name', escapeChar: r'\'))
           ..limit(1))
         .get();
     return rows.isEmpty ? null : mapper.toDomain(rows.first);

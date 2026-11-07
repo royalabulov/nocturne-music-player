@@ -370,6 +370,21 @@ class L10nEn extends L10n {
   String get knockHigh => 'High';
 
   @override
+  String get knockLogExport => 'Save knock log';
+
+  @override
+  String get knockLogExportHint =>
+      'Knock detection records, saved to the Download folder. They stay on this phone otherwise';
+
+  @override
+  String get knockLogEmpty => 'Nothing recorded yet';
+
+  @override
+  String knockLogSaved(String path) {
+    return 'Saved → $path';
+  }
+
+  @override
   String get saveBackupDialog => 'Save Nocturne backup';
 
   @override
@@ -922,9 +937,6 @@ class L10nEn extends L10n {
     );
     return '$_temp0';
   }
-
-  @override
-  String get stopsWhenTrackEnds => 'Stops when this track ends';
 
   @override
   String stopsIn(String time) {
@@ -1525,4 +1537,7 @@ class L10nEn extends L10n {
 
   @override
   String get reminderEveryDay => 'Every day';
+
+  @override
+  String get stopsWhenTrackEnds => 'Stops when this track ends';
 }

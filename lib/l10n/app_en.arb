@@ -255,6 +255,17 @@
   "knockLow": "Low",
   "knockMedium": "Medium",
   "knockHigh": "High",
+  "knockLogExport": "Save knock log",
+  "knockLogExportHint": "Knock detection records, saved to the Download folder. They stay on this phone otherwise",
+  "knockLogEmpty": "Nothing recorded yet",
+  "knockLogSaved": "Saved → {path}",
+  "@knockLogSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "saveBackupDialog": "Save Nocturne backup",
   "backupSaved": "Backup saved",
   "backupFailed": "Couldn’t create the backup",
@@ -579,7 +590,6 @@
       }
     }
   },
-  "stopsWhenTrackEnds": "Stops when this track ends",
   "stopsIn": "Stops in {time}",
   "@stopsIn": {
     "placeholders": {
@@ -1003,5 +1013,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "stopsWhenTrackEnds": "Stops when this track ends"
 }

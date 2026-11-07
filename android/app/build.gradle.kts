@@ -6,13 +6,27 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Release signing: android/key.properties (not committed to git). Without it (or with
-// enabled=false) the debug key is used, so a fresh clone still builds.
+// Release signing: android/key.properties (not committed to git). A fresh clone without it
+// (or with enabled=false) still runs debug builds and tests, but a release build stops: the
+// debug key is public, so nothing signed with it may ship by accident.
+// To try a release build locally anyway: ALLOW_DEBUG_SIGNING=true flutter build apk
 val keyProps = Properties().apply {
     val f = rootProject.file("key.properties")
     if (f.exists()) f.inputStream().use { load(it) }
 }
 val useReleaseKey = keyProps.getProperty("enabled") == "true"
+
+gradle.taskGraph.whenReady {
+    val buildsRelease = allTasks.any {
+        it.project == project && (it.name == "packageRelease" || it.name == "signReleaseBundle")
+    }
+    if (buildsRelease && !useReleaseKey && System.getenv("ALLOW_DEBUG_SIGNING") != "true") {
+        throw GradleException(
+            "Release build without a release key: android/key.properties is missing or has " +
+                "enabled=false. Set ALLOW_DEBUG_SIGNING=true only for a local try-out.",
+        )
+    }
+}
 
 android {
     namespace = "com.nocturne"

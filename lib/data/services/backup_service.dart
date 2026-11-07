@@ -1,12 +1,11 @@
-// restore() still reads untyped JSON. A bad value throws and the transaction rolls
-// back, so nothing is half-written; typed, validated parsing will replace this.
-// ignore_for_file: avoid_dynamic_calls
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 
 import '../db/app_database.dart';
 import '../../l10n/l10n.dart';
+import 'backup_file.dart';
 
 /// Restore result — shown in a Settings snackbar.
 class RestoreReport {
@@ -31,14 +30,15 @@ class RestoreReport {
 ///
 /// Reason: switching to the release signature requires uninstalling the old install.
 class BackupService {
-  BackupService(this.db);
+  BackupService(this.db, {this.maxBytes = defaultMaxBytes});
   final AppDatabase db;
 
-  static const format = 'sonar-backup';
-  static const version = 1;
+  /// Years of history fit in a fraction of this.
+  static const defaultMaxBytes = 64 * 1024 * 1024;
+  final int maxBytes;
 
-  /// scan_state keys carried over from Settings (not the scan's internal keys).
-  static const _settingKeys = {'audioSettings', 'autoScan'};
+  static const format = BackupFile.format;
+  static const version = BackupFile.version;
 
   Future<String> export() async {
     final paths = {for (final t in await db.select(db.tracks).get()) t.id: t.path};
@@ -49,7 +49,7 @@ class BackupService {
           ..orderBy([(r) => OrderingTerm.asc(r.position)]))
         .get();
     final hist = await db.select(db.playHistory).get();
-    final settings = await (db.select(db.scanState)..where((s) => s.key.isIn(_settingKeys))).get();
+    final settings = await (db.select(db.scanState)..where((s) => s.key.isIn(BackupFile.settingKeys))).get();
     final folders = await db.select(db.scanFolders).get();
     final labels = await db.select(db.vibeLabels).get();
 
@@ -99,16 +99,16 @@ class BackupService {
   }
 
   /// Merges: existing data isn't deleted, duplicates aren't added.
+  /// A file that isn't a valid backup throws [FormatException] and changes nothing.
   Future<RestoreReport> restore(String json) async {
-    final data = jsonDecode(json);
-    if (data is! Map || data['format'] != format) {
-      throw const FormatException('Not a Nocturne backup file');
-    }
+    if (json.length > maxBytes) throw const FormatException('Backup file too large');
+    final backup = await compute(BackupFile.parse, json);
+
     final ids = {for (final t in await db.select(db.tracks).get()) t.path: t.id};
     final missing = <String>{};
-    int? idOf(Object? path) {
+    int? idOf(String path) {
       final id = ids[path];
-      if (id == null && path is String) missing.add(path);
+      if (id == null) missing.add(path);
       return id;
     }
 
@@ -118,28 +118,27 @@ class BackupService {
       // favorites (insertOrIgnore returns a rowid, not whether it was added →
       // we check the existing set ourselves)
       final favs = {for (final f in await db.select(db.favorites).get()) f.trackId};
-      for (final f in (data['favorites'] as List? ?? const [])) {
-        final id = idOf(f['path']);
+      for (final f in backup.favorites) {
+        final id = idOf(f.path);
         if (id == null || !favs.add(id)) continue;
         await db.into(db.favorites).insert(
-              FavoritesCompanion.insert(trackId: Value(id), addedAt: f['addedAt'] as int),
+              FavoritesCompanion.insert(trackId: Value(id), addedAt: f.addedAt),
             );
         favCount++;
       }
 
       // playlists — added to an existing playlist with the same name
       final existing = {for (final p in await db.select(db.playlists).get()) p.name: p.id};
-      for (final pl in (data['playlists'] as List? ?? const [])) {
-        final name = pl['name'] as String;
-        var plId = existing[name];
+      for (final pl in backup.playlists) {
+        var plId = existing[pl.name];
         if (plId == null) {
           plId = await db.into(db.playlists).insert(PlaylistsCompanion.insert(
-                name: name,
-                description: Value(pl['description'] as String? ?? ''),
-                createdAt: pl['createdAt'] as int,
-                updatedAt: pl['updatedAt'] as int,
+                name: pl.name,
+                description: Value(pl.description),
+                createdAt: pl.createdAt,
+                updatedAt: pl.updatedAt,
               ));
-          existing[name] = plId;
+          existing[pl.name] = plId;
           plCount++;
         }
         final inside = {
@@ -147,7 +146,7 @@ class BackupService {
             r.trackId,
         };
         var position = inside.length;
-        for (final path in (pl['tracks'] as List? ?? const [])) {
+        for (final path in pl.tracks) {
           final id = idOf(path);
           if (id == null || !inside.add(id)) continue;
           await db.into(db.playlistTracks).insert(
@@ -161,44 +160,41 @@ class BackupService {
       final seen = {
         for (final h in await db.select(db.playHistory).get()) '${h.trackId}@${h.playedAt}',
       };
-      for (final h in (data['history'] as List? ?? const [])) {
-        final id = idOf(h['path']);
+      for (final h in backup.history) {
+        final id = idOf(h.path);
         if (id == null) continue;
-        final playedAt = h['playedAt'] as int;
-        if (!seen.add('$id@$playedAt')) continue;
+        if (!seen.add('$id@${h.playedAt}')) continue;
         await db.into(db.playHistory).insert(PlayHistoryCompanion.insert(
               trackId: id,
-              playedAt: playedAt,
-              completed: Value(h['completed'] as bool? ?? false),
-              positionMs: Value(h['positionMs'] as int? ?? 0),
+              playedAt: h.playedAt,
+              completed: Value(h.completed),
+              positionMs: Value(h.positionMs),
             ));
         playCount++;
       }
 
       // settings + scan folders
-      final settings = (data['settings'] as Map? ?? const {}).cast<String, Object?>();
-      for (final e in settings.entries) {
-        if (!_settingKeys.contains(e.key) || e.value is! String) continue;
+      for (final e in backup.settings.entries) {
         await db.into(db.scanState).insertOnConflictUpdate(
-              ScanStateCompanion.insert(key: e.key, value: e.value! as String),
+              ScanStateCompanion.insert(key: e.key, value: e.value),
             );
       }
       // vibe labels — the backup's answer replaces an existing one for the same song
-      for (final l in (data['vibeLabels'] as List? ?? const [])) {
-        final id = idOf(l['path']);
+      for (final l in backup.vibeLabels) {
+        final id = idOf(l.path);
         if (id == null) continue;
         await db.into(db.vibeLabels).insertOnConflictUpdate(VibeLabelsCompanion.insert(
               trackId: Value(id),
-              mood: l['mood'] as String,
-              genre: l['genre'] as String,
-              predictedMood: l['predictedMood'] as String,
-              predictedGenre: l['predictedGenre'] as String,
-              labeledAt: l['labeledAt'] as int,
+              mood: l.mood,
+              genre: l.genre,
+              predictedMood: l.predictedMood,
+              predictedGenre: l.predictedGenre,
+              labeledAt: l.labeledAt,
             ));
       }
-      for (final f in (data['scanFolders'] as List? ?? const [])) {
+      for (final f in backup.scanFolders) {
         await db.into(db.scanFolders).insert(
-              ScanFoldersCompanion.insert(path: f['path'] as String, enabled: Value(f['enabled'] as bool? ?? true)),
+              ScanFoldersCompanion.insert(path: f.path, enabled: Value(f.enabled)),
               mode: InsertMode.insertOrIgnore,
             );
       }

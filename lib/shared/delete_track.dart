@@ -21,7 +21,7 @@ import '../l10n/l10n.dart';
 Future<void> confirmAndDeleteTrack(BuildContext context, Track track) async {
   final container = ProviderScope.containerOf(context, listen: false);
   final dialogContext = rootNavigatorKey.currentContext ?? context;
-  debugPrint('delete: asking to confirm #${track.id} ${track.path}');
+  debugPrint('delete: asking to confirm #${track.id}');
 
   final yes = await showDialog<bool>(
     context: dialogContext,
