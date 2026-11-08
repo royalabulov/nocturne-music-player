@@ -87,8 +87,12 @@ void main() {
 
     List<int> text(String s) => [3, ...utf8.encode(s)];
 
+    /// A JPEG of side × side as far as its header goes, [size] bytes in all.
+    List<int> jpeg(int size, int side) => [0xFF, 0xD8, 0xFF, 0xC0, 0, 17, 8, side >> 8, side & 255, side >> 8, side & 255, ...List.filled(size - 11, 7)];
+
     /// APIC: encoding, MIME type, picture type (3 = front cover), empty description, image.
-    List<int> cover(int size) => [0, ...'image/jpeg'.codeUnits, 0, 3, 0, ...List.filled(size, 7)];
+    List<int> picture(List<int> image) => [0, ...'image/jpeg'.codeUnits, 0, 3, 0, ...image];
+    List<int> cover(int size, {int side = 500}) => picture(jpeg(size, side));
 
     test('control characters can\'t reach the UI or the notification', () {
       final tag = readFile({'TIT2': text('Bad\u0007Title'), 'TPE1': text('Ar\ntist'), 'TALB': text('Al\u001Bbum')});
@@ -104,6 +108,23 @@ void main() {
       expect(tag.artist.length, TagReader.maxTextChars);
       expect(tag.album.length, TagReader.maxTextChars);
       expect(tag.genre!.length, TagReader.maxTextChars);
+    });
+
+    test('a cut never lands between the two halves of an emoji', () {
+      final tag = readFile({'TIT2': text('${'x' * (TagReader.maxTextChars - 1)}😀tail')});
+      expect(tag.title, 'x' * (TagReader.maxTextChars - 1));
+    });
+
+    test('an emoji that fits stays whole', () {
+      final tag = readFile({'TIT2': text('${'x' * (TagReader.maxTextChars - 2)}😀tail')});
+      expect(tag.title, '${'x' * (TagReader.maxTextChars - 2)}😀');
+    });
+
+    test('half a character in a corrupt tag does not reach the screen', () {
+      // UTF-16 with a first half and no second half, read through our own fallback too
+      final broken = [1, 0xFF, 0xFE, 0x41, 0x00, 0x3D, 0xD8, 0x42, 0x00];
+      final tag = readFile({'TIT2': broken});
+      expect(tag.title.codeUnits.where((c) => c >= 0xD800 && c <= 0xDFFF), isEmpty);
     });
 
     test('normal tags are untouched', () {
@@ -132,6 +153,20 @@ void main() {
       final tooBig = readFile({'TIT2': text('a'), 'APIC': cover(TagReader.maxCoverBytes + 1)});
       expect(tooBig.title, 'a');
       expect(tooBig.cover, isNull);
+    });
+
+    test('a small file holding an enormous picture is dropped: decoding it would fill the memory', () {
+      final bomb = readFile({'TIT2': text('a'), 'APIC': cover(1000, side: 30000)});
+      expect(bomb.title, 'a');
+      expect(bomb.cover, isNull);
+    });
+
+    test('a large cover that is still a reasonable size is kept', () {
+      expect(readFile({'TIT2': text('a'), 'APIC': cover(1000, side: 4000)}).cover, hasLength(1000));
+    });
+
+    test('something that is no image at all is dropped', () {
+      expect(readFile({'TIT2': text('a'), 'APIC': picture(List.filled(1000, 7))}).cover, isNull);
     });
   });
 

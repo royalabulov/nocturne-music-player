@@ -61,7 +61,7 @@ class SmartAnalysisController extends Notifier<bool> {
           } catch (e) {
             // Corrupt/unreadable file: record it so it doesn't get stuck in the queue
             await repo.save(p.trackId, kVibeAnalysisVersion);
-            CrashLog.add('vibe analysis failed: ${p.path}: $e');
+            CrashLog.add('vibe analysis failed: ${p.path.split('/').last}: $e');
           }
           // Breathing room for UI and playback: the native work is on its own thread, but the channel is on the UI isolate
           await Future<void>.delayed(const Duration(milliseconds: 30));

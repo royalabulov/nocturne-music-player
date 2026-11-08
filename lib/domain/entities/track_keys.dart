@@ -1,7 +1,20 @@
 import 'track.dart';
 
-/// How names are compared: "Paster " and "paster" are the same.
-String normalizeName(String s) => s.trim().toLowerCase();
+/// How names are compared: "Paster " and "paster" are the same, and so are "QIZ" and "qız":
+/// toLowerCase makes I into i, while in Azerbaijani it is ı. Some systems write İ as i + a dot.
+String normalizeName(String s) => s.trim().toLowerCase().replaceAll('ı', 'i').replaceAll('\u0307', '');
+
+/// Library search, on any letters. Not in SQL: SQLite ignores case only for ASCII, so "şəhər"
+/// wouldn't find "Şəhər".
+List<Track> searchTracks(List<Track> tracks, String query) {
+  final q = normalizeName(query);
+  if (q.isEmpty) return tracks;
+  bool has(String s) => normalizeName(s).contains(q);
+  return [
+    for (final t in tracks)
+      if (has(t.title) || has(t.artist) || has(t.album)) t,
+  ];
+}
 
 /// "Artist feat. X" → "Artist": features don't create separate artists.
 /// Names like "Simon & Garfunkel", "AC/DC" aren't split.

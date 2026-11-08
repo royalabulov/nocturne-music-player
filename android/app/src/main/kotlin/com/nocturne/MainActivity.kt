@@ -2,8 +2,6 @@ package com.nocturne
 
 import android.content.Intent
 import android.database.ContentObserver
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -134,12 +132,14 @@ class MainActivity : AudioServiceActivity() {
     // ── open with / share ─────────────────────────────────
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        IncomingUriPolicy.dropUnreadableExtras(intent)
         super.onCreate(savedInstanceState)
         // On recreate (rotation etc.) don't handle the same intent twice
         if (savedInstanceState == null) collectOpened(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
+        IncomingUriPolicy.dropUnreadableExtras(intent)
         super.onNewIntent(intent)
         setIntent(intent)
         if (collectOpened(intent)) channel?.invokeMethod("openedUrisAvailable", null)
@@ -148,29 +148,13 @@ class MainActivity : AudioServiceActivity() {
     /// VIEW (tap a file → "Open with") and SEND/SEND_MULTIPLE (Share) URIs.
     private fun collectOpened(intent: Intent?): Boolean {
         if (intent == null) return false
-        val uris = ArrayList<Uri>()
-        when (intent.action) {
-            Intent.ACTION_VIEW -> intent.data?.let { uris.add(it) }
-            Intent.ACTION_SEND -> streamExtra(intent)?.let { uris.add(it) }
-            Intent.ACTION_SEND_MULTIPLE -> streamListExtra(intent)?.let { uris.addAll(it) }
-        }
-        val safe = IncomingUriPolicy.accept(uris, packageName, pending = openedUris.size)
+        val safe = IncomingUriPolicy.accept(IncomingUriPolicy.urisOf(intent), packageName, pending = openedUris.size)
         if (safe.isEmpty()) return false
         openedUris.addAll(safe.map { it.toString() })
         // Handle it once (so it doesn't come back when the app is reopened)
         intent.action = Intent.ACTION_MAIN
         return true
     }
-
-    @Suppress("DEPRECATION")
-    private fun streamExtra(i: Intent): Uri? =
-        if (Build.VERSION.SDK_INT >= 33) i.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-        else i.getParcelableExtra(Intent.EXTRA_STREAM)
-
-    @Suppress("DEPRECATION")
-    private fun streamListExtra(i: Intent): List<Uri>? =
-        if (Build.VERSION.SDK_INT >= 33) i.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
-        else i.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

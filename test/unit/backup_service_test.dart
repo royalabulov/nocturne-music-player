@@ -78,6 +78,9 @@ void main() {
     const song = '/music/a.mp3';
     const validPlaylist = {'name': 'Mix', 'createdAt': 1, 'updatedAt': 1, 'tracks': [song]};
     const validPlay = {'path': song, 'playedAt': 100};
+
+    /// One past DateTime's limit: fine as a number, a RangeError on every screen that shows it.
+    const tooLate = 8640000000000001;
     const validLabel = {
       'path': song,
       'mood': 'happy',
@@ -104,9 +107,14 @@ void main() {
       'a favorite without a date': {'favorites': [{'path': song}]},
       'a favorite date is text': {'favorites': [{'path': song, 'addedAt': '1'}]},
       'a favorite date is negative': {'favorites': [{'path': song, 'addedAt': -1}]},
+      'a favorite date past what a date can be': {'favorites': [{'path': song, 'addedAt': tooLate}]},
       'a playlist is not an object': {'playlists': ['x']},
       'a playlist name is not text': {'playlists': [{...validPlaylist, 'name': 1}]},
       'a playlist name is absurdly long': {'playlists': [{...validPlaylist, 'name': 'x' * 100000}]},
+      'a playlist name is empty': {'playlists': [{...validPlaylist, 'name': ''}]},
+      'a playlist name is blank': {'playlists': [{...validPlaylist, 'name': '   '}]},
+      'a playlist created past what a date can be': {'playlists': [{...validPlaylist, 'createdAt': tooLate}]},
+      'a playlist updated past what a date can be': {'playlists': [{...validPlaylist, 'updatedAt': tooLate}]},
       'a playlist description is not text': {'playlists': [{...validPlaylist, 'description': 1}]},
       'a playlist date is negative': {'playlists': [{...validPlaylist, 'createdAt': -5}]},
       'playlist tracks is not a list': {'playlists': [{...validPlaylist, 'tracks': 'x'}]},
@@ -114,12 +122,15 @@ void main() {
       'a play is not an object': {'history': [1]},
       'a play date is text': {'history': [{...validPlay, 'playedAt': 'x'}]},
       'a play date is negative': {'history': [{...validPlay, 'playedAt': -1}]},
+      'a play date past what a date can be': {'history': [{...validPlay, 'playedAt': tooLate}]},
       'a play position is negative': {'history': [{...validPlay, 'positionMs': -1}]},
+      'a play position is absurd': {'history': [{...validPlay, 'positionMs': 9000000000000000000}]},
       'a play flag is text': {'history': [{...validPlay, 'completed': 'yes'}]},
       'a label is not an object': {'vibeLabels': [1]},
       'a label value is not text': {'vibeLabels': [{...validLabel, 'mood': 1}]},
       'a label value is absurdly long': {'vibeLabels': [{...validLabel, 'genre': 'x' * 1000}]},
       'a label date is missing': {'vibeLabels': [{...validLabel}..remove('labeledAt')]},
+      'a label date past what a date can be': {'vibeLabels': [{...validLabel, 'labeledAt': tooLate}]},
       'settings is not an object': {'settings': []},
       'scan folders is not a list': {'scanFolders': 'x'},
       'a scan folder is not an object': {'scanFolders': [1]},
@@ -136,6 +147,23 @@ void main() {
         await expectLater(svc.restore(backup(fields)), throwsFormatException);
       });
     }
+
+    test('the latest date there is still works, on the screens too', () async {
+      const latest = 8640000000000000;
+      await svc.restore(backup({
+        'playlists': [{...validPlaylist, 'createdAt': latest, 'updatedAt': latest}],
+        'history': [{...validPlay, 'playedAt': latest, 'positionMs': 365 * 24 * 60 * 60 * 1000}],
+      }));
+      final playlist = await db.select(db.playlists).getSingle();
+      final play = await db.select(db.playHistory).getSingle();
+      expect(DateTime.fromMillisecondsSinceEpoch(playlist.updatedAt).year, greaterThan(275000));
+      expect(DateTime.fromMillisecondsSinceEpoch(play.playedAt).year, greaterThan(275000));
+    });
+
+    test('a file saved with a BOM by a text editor is still the same backup', () async {
+      final r = await svc.restore('\uFEFF${backup({'favorites': [{'path': song, 'addedAt': 1}]})}');
+      expect(r.favorites, 1);
+    });
 
     test('one bad value refuses the whole file: nothing is half-written', () async {
       final json = backup({

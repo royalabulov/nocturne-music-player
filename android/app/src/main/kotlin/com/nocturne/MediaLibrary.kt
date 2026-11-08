@@ -14,6 +14,15 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /// What the app reads from and adds to the phone's media index.
 class MediaLibrary(context: Context) {
+    companion object {
+        /// Music, or anything long enough to be a song, whatever the system thinks it is. Except
+        /// voice recordings, which are the person's own (Android 12 and later can tell).
+        fun audioSelection(sdk: Int = Build.VERSION.SDK_INT): String {
+            val songs = "${MediaStore.Audio.Media.IS_MUSIC} != 0 OR ${MediaStore.Audio.Media.DURATION} > 30000"
+            return if (sdk >= Build.VERSION_CODES.S) "($songs) AND ${MediaStore.Audio.Media.IS_RECORDING} = 0" else songs
+        }
+    }
+
     private val context = context.applicationContext
     private val resolver get() = context.contentResolver
 
@@ -26,9 +35,8 @@ class MediaLibrary(context: Context) {
             MediaStore.Audio.Media.SIZE,
             MediaStore.Audio.Media.DATE_MODIFIED,
         )
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 OR ${MediaStore.Audio.Media.DURATION} > 30000"
         val cursor = resolver.query(
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection, selection, null, null
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection, audioSelection(), null, null
         ) ?: return out
         cursor.use { c ->
             val dataCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)

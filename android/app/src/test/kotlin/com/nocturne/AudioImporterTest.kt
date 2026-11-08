@@ -190,6 +190,45 @@ class AudioImporterTest {
         assertTrue(target.listFiles().isNullOrEmpty())
     }
 
+    // ── import: the space left on the phone ───────────────────
+
+    @Test
+    fun `a copy that would leave too little space is refused without reading it`() {
+        provide("song.mp3", null, size = 1000)
+        val free = AudioImporter.MIN_FREE_BYTES + 999
+        val failure = assertThrows(Exception::class.java) { AudioImporter(context, freeBytes = { free }).import(source) }
+        assertEquals("not enough storage", failure.message)
+        assertTrue(target.listFiles().isNullOrEmpty())
+    }
+
+    @Test
+    fun `a copy that leaves just enough space goes through`() {
+        provide("song.mp3", audio(1000))
+        val free = AudioImporter.MIN_FREE_BYTES + 1000
+        assertEquals(1000L, File(AudioImporter(context, freeBytes = { free }).import(source)).length())
+    }
+
+    @Test
+    fun `a stream that says nothing about its size stops when the space runs out`() {
+        provide("endless.mp3", audio(3 * 1024 * 1024), size = null)
+        var free = Long.MAX_VALUE
+        var asked = 0
+        val importer = AudioImporter(context, freeBytes = {
+            if (++asked > 1) free = 0
+            free
+        })
+        val failure = assertThrows(Exception::class.java) { importer.import(source) }
+        assertEquals("not enough storage", failure.message)
+        assertTrue(target.listFiles().isNullOrEmpty())
+    }
+
+    @Test
+    fun `a file already there needs no space`() {
+        provide("song.mp3", audio(16))
+        val first = importer.import(source)
+        assertEquals(first, AudioImporter(context, freeBytes = { 0 }).import(source))
+    }
+
     // ── import: the file name ─────────────────────────────────
 
     private fun nameFor(name: String): String {
@@ -252,5 +291,25 @@ class AudioImporterTest {
         val name = nameFor("ə".repeat(400) + ".flac")
         assertTrue(name.endsWith(".flac"))
         assertTrue("${name.toByteArray().size} bytes", name.toByteArray().size <= 240)
+    }
+
+    /// The whole name used to be re-encoded for every character dropped: minutes for this one.
+    @Test
+    fun `a name of megabytes takes no time`() {
+        val started = System.nanoTime()
+        val name = nameFor("a".repeat(2_000_000) + ".mp3")
+        val seconds = (System.nanoTime() - started) / 1e9
+        assertTrue(name.endsWith(".mp3"))
+        assertTrue("${name.toByteArray().size} bytes", name.toByteArray().size <= 240)
+        assertTrue("$seconds s", seconds < 10)
+    }
+
+    @Test
+    fun `cutting a long name never splits an emoji`() {
+        // The "a" makes half an emoji fit in the last bytes: a whole one doesn't, half of one does
+        val name = nameFor("a" + "😀".repeat(200) + ".mp3")
+        assertTrue(name.endsWith(".mp3"))
+        val base = name.removeSuffix(".mp3")
+        assertEquals("a" + "😀".repeat(58), base)
     }
 }

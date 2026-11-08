@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/utils/well_formed.dart';
 import '../../domain/entities/lyrics.dart';
 import 'lrc_parser.dart';
 
@@ -117,7 +118,7 @@ class LrclibSource {
     return LrclibFound(synced: synced, plain: plain, instrumental: instrumental && synced == null && plain == null);
   }
 
-  static String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v : null;
+  static String? _text(Object? v) => v is String && v.trim().isNotEmpty ? wellFormed(v) : null;
 
   /// A search answer is a few KB of text per hit; anything near this is not an answer.
   static const maxResponseBytes = 2 * 1024 * 1024;

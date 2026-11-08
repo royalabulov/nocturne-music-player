@@ -72,6 +72,9 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
       androidNotificationOngoing: false,
       androidStopForegroundOnPause: false,
       androidNotificationIcon: 'drawable/ic_stat_sonar',
+      // Without this the plugin decodes a cover at full size just for the notification
+      artDownscaleWidth: 512,
+      artDownscaleHeight: 512,
     ),
   );
 

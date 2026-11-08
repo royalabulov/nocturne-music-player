@@ -6,8 +6,10 @@ import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:path/path.dart' as p;
 
 import '../../core/utils/bounded_isolate.dart';
+import '../../core/utils/well_formed.dart';
 import '../../domain/entities/audio_format.dart';
 import '../../domain/entities/track.dart';
+import 'image_size.dart';
 
 /// Result of reading tags — the raw form before it becomes a Track.
 class TagInfo {
@@ -98,7 +100,7 @@ abstract final class TagReader {
     if (pics != null && pics.isNotEmpty) {
       final front = pics.where((x) => x.pictureType == PictureType.coverFront).firstOrNull;
       final bytes = (front ?? pics.first).bytes;
-      if (bytes.length <= maxCoverBytes) cover = bytes;
+      if (bytes.length <= maxCoverBytes && isDecodableCover(bytes)) cover = bytes;
     }
 
     var title = _clean(m?.title);
@@ -168,7 +170,9 @@ abstract final class TagReader {
     if (s == null) return null;
     final t = _fixUtf16(s).replaceAll(String.fromCharCode(0), '').replaceAll(_control, ' ').trim();
     if (t.isEmpty) return null;
-    return t.length > maxTextChars ? t.substring(0, maxTextChars) : t;
+    if (t.length <= maxTextChars) return wellFormed(t);
+    // Not between the two halves of an emoji
+    return wellFormed(t.substring(0, isHighSurrogate(t.codeUnitAt(maxTextChars - 1)) ? maxTextChars - 1 : maxTextChars));
   }
 
   static final _control = RegExp(r'[\x01-\x1F\x7F]');

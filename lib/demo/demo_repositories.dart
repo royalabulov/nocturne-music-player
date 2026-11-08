@@ -4,6 +4,7 @@ import 'package:rxdart/rxdart.dart';
 
 import '../domain/entities/playlist.dart';
 import '../domain/entities/track.dart';
+import '../domain/entities/track_keys.dart';
 import '../domain/repositories/analysis_repository.dart';
 import '../domain/repositories/history_repository.dart';
 import '../domain/entities/lyrics.dart';
@@ -46,15 +47,7 @@ class DemoLibraryRepository implements LibraryRepository {
   @override
   Stream<List<Track>> watchTracks({TrackSort sort = TrackSort.recentlyAdded, String query = ''}) =>
       _tracks.map((list) {
-        final q = query.trim().toLowerCase();
-        final out = [
-          for (final t in list)
-            if (q.isEmpty ||
-                t.title.toLowerCase().contains(q) ||
-                t.artist.toLowerCase().contains(q) ||
-                t.album.toLowerCase().contains(q))
-              t,
-        ];
+        final out = [...searchTracks(list, query)];
         switch (sort) {
           case TrackSort.recentlyAdded:
             out.sort((a, b) => (b.dateAdded ?? DateTime(0)).compareTo(a.dateAdded ?? DateTime(0)));

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
 import '../../domain/entities/track.dart';
+import '../../domain/entities/track_keys.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../datasources/media_store_source.dart';
@@ -28,11 +29,6 @@ class LibraryRepositoryImpl implements LibraryRepository {
   @override
   Stream<List<Track>> watchTracks({TrackSort sort = TrackSort.recentlyAdded, String query = ''}) {
     final q = db.select(db.tracks)..where(_visible);
-    final needle = query.trim();
-    if (needle.isNotEmpty) {
-      final like = '%$needle%';
-      q.where((t) => t.title.like(like) | t.artist.like(like) | t.album.like(like));
-    }
     q.orderBy(switch (sort) {
       TrackSort.recentlyAdded => [
           (t) => OrderingTerm.desc(t.dateAdded),
@@ -51,7 +47,7 @@ class LibraryRepositoryImpl implements LibraryRepository {
       TrackSort.longest => [(t) => OrderingTerm.desc(t.durationMs), (t) => OrderingTerm.asc(t.id)],
       TrackSort.shortest => [(t) => OrderingTerm.asc(t.durationMs), (t) => OrderingTerm.asc(t.id)],
     });
-    return q.watch().map(mapper.toDomainList);
+    return q.watch().map((rows) => searchTracks(mapper.toDomainList(rows), query));
   }
 
   @override

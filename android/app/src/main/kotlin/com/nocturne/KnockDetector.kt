@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -52,7 +53,7 @@ import kotlin.math.sqrt
 /// long as they stay well below the knocks; a jolt near knock strength drops the sequence.
 /// Pocket test 2 (walking): knocks peaked 14–60 m/s², 210–306 ms apart.
 /// Every decision is logged for tuning: permanently in [KnockLog] (with the raw samples of
-/// sequences and strong spikes), and to logcat: adb logcat -s NocturneKnock
+/// sequences and strong spikes), and in debug builds to logcat: adb logcat -s NocturneKnock
 object KnockDetector : SensorEventListener {
     private const val TAG = "NocturneKnock"
     private const val MS = 1_000_000L // ns
@@ -97,8 +98,16 @@ object KnockDetector : SensorEventListener {
     @Volatile private var threshold = spikeThresholds[1]
     @Volatile private var strong = strongThresholds[1]
 
+    /// logcat is the phone's, not ours: a release build keeps quiet there. [KnockLog] stays.
+    private var logcatOn = false
+
+    private inline fun logcat(message: () -> String) {
+        if (logcatOn) Log.d(TAG, message())
+    }
+
     fun init(context: Context) {
         if (!::app.isInitialized) app = context.applicationContext
+        logcatOn = app.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
         KnockLog.init(app)
     }
 
@@ -116,7 +125,7 @@ object KnockDetector : SensorEventListener {
             unregisterScreenReceiver()
             stopListening()
         }
-        Log.i(TAG, "active=$on threshold=$threshold")
+        logcat { "active=$on threshold=$threshold" }
         KnockLog.write(JSONObject().put("event", "active").put("on", on).put("sensitivity", sensitivity))
     }
 
@@ -177,7 +186,7 @@ object KnockDetector : SensorEventListener {
         resetSignal()
         // 5000 µs = 200 Hz: a knock lasts ~10–30 ms; higher rates need an extra permission
         listening = sm.registerListener(this, a, 5000, sensorHandler)
-        Log.i(TAG, "listening=$listening")
+        logcat { "listening=$listening" }
         KnockLog.write(JSONObject().put("event", "listening").put("on", listening))
     }
 
@@ -185,7 +194,7 @@ object KnockDetector : SensorEventListener {
         if (!listening) return
         sensors?.unregisterListener(this)
         listening = false
-        Log.i(TAG, "listening=false")
+        logcat { "listening=false" }
         KnockLog.write(JSONObject().put("event", "listening").put("on", false))
     }
 
@@ -498,8 +507,10 @@ object KnockDetector : SensorEventListener {
     private fun logSpike(
         event: String, reason: String, spike: Spike, s: Stats? = null, rawFrom: Long? = null, t: Long = 0L,
     ) {
-        Log.d(TAG, "$event $reason ${spike.desc}" +
-            (if (s != null) " rms=${f(s.rms)} motion=${f(s.maxMotion)} maxBefore=${f(s.maxHp)}" else ""))
+        logcat {
+            "$event $reason ${spike.desc}" +
+                (if (s != null) " rms=${f(s.rms)} motion=${f(s.maxMotion)} maxBefore=${f(s.maxHp)}" else "")
+        }
         val o = JSONObject().put("event", event).put("reason", reason)
             .put("threshold", threshold).put("strong", strong)
         putSpike(o, spike)
@@ -514,8 +525,10 @@ object KnockDetector : SensorEventListener {
     private fun logDecision(decision: String, reason: String?, count: Int, turn: Double, t: Long, spike: Spike? = null) {
         val gaps = (1 until count.coerceAtMost(3)).map { (knockTimes[it] - knockTimes[it - 1]) / MS }
         val peaks = (0 until count.coerceAtMost(3)).map { round(knockPeaks[it]) }
-        Log.i(TAG, "DECISION $decision ${reason ?: ""} knocks=$count${if (walking) " (walking)" else ""} " +
-            "gaps=$gaps peaks=$peaks turn=${f(turn)}° ${spike?.desc ?: ""}")
+        logcat {
+            "DECISION $decision ${reason ?: ""} knocks=$count${if (walking) " (walking)" else ""} " +
+                "gaps=$gaps peaks=$peaks turn=${f(turn)}° ${spike?.desc ?: ""}"
+        }
         val o = JSONObject().put("event", "decision").put("decision", decision)
             .put("reason", reason ?: JSONObject.NULL).put("knocks", count).put("walking", walking)
             .put("gapsMs", JSONArray(gaps)).put("peaks", JSONArray(peaks)).put("turn", round(turn))

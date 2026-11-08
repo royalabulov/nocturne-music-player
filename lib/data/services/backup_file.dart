@@ -58,6 +58,13 @@ class BackupFile {
   static const _maxLabel = 64;
   static const _maxSetting = 64 * 1024;
 
+  /// The latest date DateTime can hold. A later one still looks like a number here, then breaks
+  /// every screen that shows it, for good: a restore merges, so it can't be taken back.
+  static const _maxDate = 8640000000000000;
+
+  /// A year. More than any play, and all the plays a file can hold still add up without overflow.
+  static const _maxPositionMs = 365 * 24 * 60 * 60 * 1000;
+
   final List<BackupFavorite> favorites;
   final List<BackupPlaylist> playlists;
   final List<BackupPlay> history;
@@ -69,7 +76,8 @@ class BackupFile {
   final List<BackupArtist> artists;
 
   static BackupFile parse(String json) {
-    final Object? root = jsonDecode(json);
+    // Text editors on Windows put a BOM in front when the file is saved
+    final Object? root = jsonDecode(json.startsWith('\uFEFF') ? json.substring(1) : json);
     if (root is! Map<String, Object?> || root['format'] != format) {
       throw const FormatException('Not a Nocturne backup file');
     }
@@ -92,13 +100,13 @@ class BackupFile {
   }
 
   static BackupFavorite _favorite(Map<String, Object?> m) =>
-      (path: _text(m, 'path', _maxPath), addedAt: _count(m, 'addedAt'));
+      (path: _text(m, 'path', _maxPath), addedAt: _date(m, 'addedAt'));
 
   static BackupPlaylist _playlist(Map<String, Object?> m) => (
-        name: _text(m, 'name', _maxName),
+        name: _name(m),
         description: _text(m, 'description', _maxDescription, orElse: ''),
-        createdAt: _count(m, 'createdAt'),
-        updatedAt: _count(m, 'updatedAt'),
+        createdAt: _date(m, 'createdAt'),
+        updatedAt: _date(m, 'updatedAt'),
         tracks: [
           for (final t in _list(m, 'tracks'))
             if (t is String && t.length <= _maxPath) t else throw const FormatException('Bad playlist track'),
@@ -107,9 +115,9 @@ class BackupFile {
 
   static BackupPlay _play(Map<String, Object?> m) => (
         path: _text(m, 'path', _maxPath),
-        playedAt: _count(m, 'playedAt'),
+        playedAt: _date(m, 'playedAt'),
         completed: _flag(m, 'completed', orElse: false),
-        positionMs: _count(m, 'positionMs', orElse: 0),
+        positionMs: _count(m, 'positionMs', _maxPositionMs, orElse: 0),
       );
 
   static BackupFolder _folder(Map<String, Object?> m) =>
@@ -121,13 +129,20 @@ class BackupFile {
         genre: _text(m, 'genre', _maxLabel),
         predictedMood: _text(m, 'predictedMood', _maxLabel),
         predictedGenre: _text(m, 'predictedGenre', _maxLabel),
-        labeledAt: _count(m, 'labeledAt'),
+        labeledAt: _date(m, 'labeledAt'),
       );
 
   static BackupArtist _artist(Map<String, Object?> m) {
     final artist = _text(m, 'artist', _maxName);
     if (artist.trim().isEmpty) throw const FormatException('Bad value for artist');
     return (path: _text(m, 'path', _maxPath), artist: artist);
+  }
+
+  /// The app never lets a playlist have a blank name, and nobody could pick one from a list.
+  static String _name(Map<String, Object?> m) {
+    final name = _text(m, 'name', _maxName);
+    if (name.trim().isEmpty) throw const FormatException('Bad value for name');
+    return name;
   }
 
   /// Only [settingKeys], and only text. Anything else in there is ignored.
@@ -160,10 +175,12 @@ class BackupFile {
     throw FormatException('Bad value for $key');
   }
 
-  /// Dates and positions: whole numbers from 0 up.
-  static int _count(Map<String, Object?> m, String key, {int? orElse}) {
+  static int _date(Map<String, Object?> m, String key) => _count(m, key, _maxDate);
+
+  /// Dates and positions: whole numbers from 0 to [max].
+  static int _count(Map<String, Object?> m, String key, int max, {int? orElse}) {
     final value = m[key] ?? orElse;
-    if (value is int && value >= 0) return value;
+    if (value is int && value >= 0 && value <= max) return value;
     throw FormatException('Bad value for $key');
   }
 

@@ -42,6 +42,19 @@ class IncomingUriPolicyTest {
         assertFalse(isSafe("content://com.nocturne.androidx-startup/anything"))
     }
 
+    /// To Android "0@com.nocturne.x" is the same provider, for user 0.
+    @Test
+    fun `our own providers with a user in front are refused too`() {
+        assertFalse(isSafe("content://0@com.nocturne/anything"))
+        assertFalse(isSafe("content://0@com.nocturne.androidx-startup/anything"))
+        assertFalse(isSafe("content://10@com.nocturne.androidx-startup/anything"))
+    }
+
+    @Test
+    fun `another app's provider with a user in front is still another app's`() {
+        assertTrue(isSafe("content://0@com.whatsapp.provider.media/item/1"))
+    }
+
     @Test
     fun `file on shared storage is accepted`() {
         assertTrue(isSafe("file:///storage/emulated/0/Music/song.mp3"))

@@ -23,10 +23,16 @@ import java.io.OutputStream
 class AudioImporter(
     private val context: Context,
     private val maxBytes: Long = MAX_IMPORT_BYTES,
+    private val freeBytes: () -> Long = { context.getExternalFilesDir(null)?.usableSpace ?: Long.MAX_VALUE },
 ) {
     companion object {
         /// A long FLAC mix fits; an endless stream from a hostile app doesn't.
         const val MAX_IMPORT_BYTES = 2L * 1024 * 1024 * 1024
+
+        /// A copy stops short of this. Another app can send one big file after another without
+        /// anyone confirming, and a phone with no space left stops working properly.
+        const val MIN_FREE_BYTES = 200L * 1024 * 1024
+        private const val FREE_CHECK_EVERY_BYTES = 1024L * 1024
 
         /// File systems allow 255 bytes; this leaves room for " (12)".
         private const val MAX_NAME_BYTES = 240
@@ -80,6 +86,7 @@ class AudioImporter(
         if (info.size > maxBytes) error("file too large")
         val name = safeName(info.name)
         existing(name, info.size)?.let { return it }
+        requireSpaceFor(info.size.coerceAtLeast(0))
         return openInput(source).buffered().use { input ->
             requireAudio(input)
             write(name, mimeOf(source, name), input)
@@ -104,15 +111,25 @@ class AudioImporter(
         if (!AudioSniffer.looksLikeAudio(head, size)) error("not an audio file")
     }
 
-    /// What a provider says about the size means nothing: the real limit is here.
+    private fun requireSpaceFor(bytes: Long) {
+        if (freeBytes() - bytes < MIN_FREE_BYTES) error("not enough storage")
+    }
+
+    /// What a provider says about the size means nothing: the real limits are here.
     private fun copyLimited(input: InputStream, output: OutputStream) {
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var total = 0L
+        var sinceCheck = 0L
         while (true) {
             val n = input.read(buffer)
             if (n < 0) return
             total += n
+            sinceCheck += n
             if (total > maxBytes) error("file too large")
+            if (sinceCheck >= FREE_CHECK_EVERY_BYTES) {
+                sinceCheck = 0
+                requireSpaceFor(0)
+            }
             output.write(buffer, 0, n)
         }
     }
@@ -181,9 +198,11 @@ class AudioImporter(
         val cleaned = n.replace(UNSAFE_NAME_CHARS, "_").trim().trim('.').trim().ifEmpty { "audio" }
         val ext = cleaned.substringAfterLast('.', "")
         val hasAudioExt = ext.lowercase() in AUDIO_EXTENSIONS
-        var base = if (hasAudioExt) cleaned.substringBeforeLast('.') else cleaned
+        // Cut first: the name is another app's word, and it can be megabytes long
+        var base = (if (hasAudioExt) cleaned.substringBeforeLast('.') else cleaned).take(MAX_NAME_BYTES)
         val suffix = if (hasAudioExt) ".$ext" else ".mp3"
         while ((base + suffix).toByteArray().size > MAX_NAME_BYTES) base = base.dropLast(1)
+        if (base.lastOrNull()?.isHighSurrogate() == true) base = base.dropLast(1)
         return base + suffix
     }
 

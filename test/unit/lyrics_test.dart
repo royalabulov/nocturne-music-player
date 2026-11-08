@@ -1,7 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nocturne/data/datasources/lrc_parser.dart';
@@ -44,6 +45,57 @@ void main() {
       expect(activeLyricLine(l, const Duration(seconds: 10)), 1);
       expect(activeLyricLine(l, const Duration(seconds: 15)), 1);
       expect(activeLyricLine(l, const Duration(minutes: 3)), 2);
+    });
+  });
+
+  group('old .lrc files', () {
+    test('UTF-8 is read as UTF-8', () {
+      expect(LyricsFileSource.decodeLrc(Uint8List.fromList(utf8.encode('[00:01]Şəhər ğüöç'))), '[00:01]Şəhər ğüöç');
+    });
+
+    test('the Windows code page keeps the letters it has', () {
+      // "Gönül şarkısı, ĞİŞ" and a typographic quote, in Windows-1254
+      final bytes = [0x47, 0xF6, 0x6E, 0xFC, 0x6C, 0x20, 0xFE, 0x61, 0x72, 0x6B, 0xFD, 0x73, 0xFD, 0x2C, 0x20, 0xD0, 0xDD, 0xDE, 0x92];
+      expect(LyricsFileSource.decodeLrc(Uint8List.fromList(bytes)), 'Gönül şarkısı, ĞİŞ’');
+    });
+
+    test('such a file is found and shown, it used to count as no file', () {
+      final dir = Directory.systemTemp.createTempSync('nocturne_lrc');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      File('${dir.path}/song.mp3').writeAsBytesSync(List.filled(16, 0));
+      File('${dir.path}/song.lrc').writeAsBytesSync([...'[00:01.00]'.codeUnits, 0xFE, 0x61, 0x72, 0x6B, 0xFD]);
+      expect(LyricsFileSource.readSync('${dir.path}/song.mp3')?.lines.single.text, 'şarkı');
+    });
+  });
+
+  group('half a character in lyrics, which go to the screen without passing the database', () {
+    const broken = [1, 0xFF, 0xFE, 0x41, 0x00, 0x3D, 0xD8, 0x42, 0x00, 0, 0];
+
+    bool isClean(String s) => s.codeUnits.every((c) => c < 0xD800 || c > 0xDFFF);
+
+    test('from a tag', () {
+      final dir = Directory.systemTemp.createTempSync('nocturne_lrc');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      // USLT: encoding, language, an empty description, then the text; here in ID3v2.4
+      final data = [1, ...'eng'.codeUnits, 0xFF, 0xFE, 0, 0, ...broken.sublist(1)];
+      final n = data.length;
+      final frame = [...'USLT'.codeUnits, (n >> 21) & 0x7F, (n >> 14) & 0x7F, (n >> 7) & 0x7F, n & 0x7F, 0, 0, ...data];
+      final s = frame.length;
+      File('${dir.path}/song.mp3').writeAsBytesSync([
+        ...'ID3'.codeUnits, 4, 0, 0, (s >> 21) & 0x7F, (s >> 14) & 0x7F, (s >> 7) & 0x7F, s & 0x7F,
+        ...frame, ...List.filled(256, 0),
+      ]);
+      final lyrics = LyricsFileSource.readSync('${dir.path}/song.mp3');
+      expect(lyrics?.plain, isNotNull);
+      expect(isClean(lyrics!.plain!), isTrue);
+    });
+
+    test('from the server', () async {
+      final source = LrclibSource(get: (_) async => (200, [
+            {'duration': 180, 'plainLyrics': 'abc\uD83Ddef'},
+          ]));
+      final answer = await source.find(title: 't', artist: 'a', duration: const Duration(seconds: 180));
+      expect((answer as LrclibFound).plain, 'abc�def');
     });
   });
 

@@ -50,9 +50,19 @@ abstract final class CrashLog {
 
   static void add(String line) {
     if (_file == null) return;
-    _pending.add('${DateTime.now().toIso8601String()}  $line');
+    _pending.add('${DateTime.now().toIso8601String()}  ${withoutFolders(line)}');
     _flush ??= Timer(const Duration(milliseconds: 500), _write);
   }
+
+  /// The log can be copied out of the app: a crash needs the file's name, not where the person
+  /// keeps their files. The same for a URI from another app.
+  @visibleForTesting
+  static String withoutFolders(String text) =>
+      text.replaceAll(_folders, '…/').replaceAll(_contentUri, 'content://…');
+
+  /// Starts where a path starts: "package:nocturne/data/x.dart" in a stack trace is not one.
+  static final _folders = RegExp(r'''(?<![\w:.])/(?:storage|sdcard|mnt|data/user|data/data)/[^\n'"]*/''');
+  static final _contentUri = RegExp(r'''content://[^\s'"]+''');
 
   static void _write() {
     _flush = null;

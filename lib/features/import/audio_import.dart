@@ -31,9 +31,18 @@ class ImportResult {
 /// 2. A readable public file on the phone → MediaScanner + scan (no copy).
 /// 3. Otherwise (messenger apps, file picker cache) → copy to Music/Nocturne + scan.
 class AudioImport {
-  AudioImport(this._ref);
+  AudioImport(
+    this._ref, {
+    this.resolveTimeout = const Duration(seconds: 30),
+    this.importTimeout = const Duration(minutes: 15),
+  });
 
   final Ref _ref;
+
+  /// Another app answers these calls. One that never does must not block "Open with" until
+  /// the app restarts. The copy is allowed long enough for the biggest file on a slow card.
+  final Duration resolveTimeout;
+  final Duration importTimeout;
   DeviceFiles get _files => _ref.read(deviceFilesProvider);
   bool _busy = false;
   bool _again = false;
@@ -48,7 +57,7 @@ class AudioImport {
     for (var i = 0; i < sources.length; i++) {
       final src = sources[i];
       try {
-        final info = await _files.resolveAudio(src);
+        final info = await _files.resolveAudio(src).timeout(resolveTimeout);
         var path = info.path;
         var t = path == null ? null : await repo.getTrackByPath(path);
         if (t == null && info.size > 0) t = await repo.findTrackByFile(info.name, info.size);
@@ -57,7 +66,7 @@ class AudioImport {
           continue;
         }
         if (path == null || !isSharedStoragePath(path)) {
-          path = await _files.importAudio(src);
+          path = await _files.importAudio(src).timeout(importTimeout);
           copied++;
         }
         slots[i] = path;
