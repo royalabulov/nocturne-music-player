@@ -39,6 +39,8 @@
   "queue": "Növbə",
   "queuePosition": "{position} / {total}",
   "toastTrackMissing": "«{title}» tapılmadı, keçildi",
+  "toastTrackUnreadable": "«{title}» açılmadı",
+  "toastNoMusicPermission": "Musiqi fayllarına icazə yoxdur",
   "notificationChannel": "Nocturne oxutma",
   "groupSmartGroups": "Ağıllı qruplar",
   "groupPlayback": "Oxutma",

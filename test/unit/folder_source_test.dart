@@ -98,6 +98,26 @@ void main() {
     });
   });
 
+  // Scoped storage shuts some folders (Android/data); a single recursive listing stopped
+  // there and every song after it was left out.
+  test('a folder that cannot be read is skipped, the walk goes on', () async {
+    song('A/a.mp3');
+    song('Locked/x.mp3');
+    song('Z/z.mp3');
+    song('Z/Deeper/d.mp3');
+    final locked = p.join(root.path, 'Locked');
+    Stream<FileSystemEntity> list(Directory d) => p.equals(d.path, locked)
+        ? Stream.error(FileSystemException('Permission denied', d.path))
+        : d.list(followLinks: false);
+
+    final walked = await FolderSource(list: list).walk([root.path]);
+
+    expect(
+      [for (final r in walked) p.relative(r.path, from: root.path).replaceAll(r'\', '/')]..sort(),
+      ['A/a.mp3', 'Z/Deeper/d.mp3', 'Z/z.mp3'],
+    );
+  });
+
   test('a folder that does not exist is nothing', () async {
     expect(await found(p.join(root.path, 'missing')), isEmpty);
   });

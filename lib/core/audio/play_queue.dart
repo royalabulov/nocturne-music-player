@@ -70,17 +70,22 @@ class PlayQueue {
 
   bool contains(int trackId) => tracks.any((t) => t.id == trackId);
 
-  /// Takes a song out; null if it wasn't there. True = it was the one playing: [pos] then holds
-  /// the song that took its place (the last one if it was at the end).
+  /// Takes a song out, every copy of it (Play next can add one twice); null if it wasn't
+  /// there. True = one of them was playing: [pos] then holds the song that took its place
+  /// (the last one if it was at the end).
   bool? remove(int trackId) {
-    final idx = tracks.indexWhere((t) => t.id == trackId);
-    if (idx < 0) return null;
-    final removedPos = order.indexOf(idx);
-    final wasCurrent = removedPos == pos;
-    tracks = [...tracks]..removeAt(idx);
-    order = [for (final i in order) if (i != idx) i > idx ? i - 1 : i];
-    if (removedPos >= 0 && removedPos < pos) pos -= 1;
-    if (wasCurrent && order.isNotEmpty) pos = pos.clamp(0, order.length - 1);
+    bool? wasCurrent;
+    for (var idx = tracks.indexWhere((t) => t.id == trackId);
+        idx >= 0;
+        idx = tracks.indexWhere((t) => t.id == trackId)) {
+      final removedPos = order.indexOf(idx);
+      final current = removedPos == pos;
+      tracks = [...tracks]..removeAt(idx);
+      order = [for (final i in order) if (i != idx) i > idx ? i - 1 : i];
+      if (removedPos >= 0 && removedPos < pos) pos -= 1;
+      if (current && order.isNotEmpty) pos = pos.clamp(0, order.length - 1);
+      wasCurrent = (wasCurrent ?? false) || current;
+    }
     return wasCurrent;
   }
 

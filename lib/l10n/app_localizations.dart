@@ -331,6 +331,18 @@ abstract class L10n {
   /// **'\"{title}\" wasn’t found — skipped'**
   String toastTrackMissing(String title);
 
+  /// No description provided for @toastTrackUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" couldn’t be played'**
+  String toastTrackUnreadable(String title);
+
+  /// No description provided for @toastNoMusicPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'No permission to read music files'**
+  String get toastNoMusicPermission;
+
   /// No description provided for @notificationChannel.
   ///
   /// In en, this message translates to:

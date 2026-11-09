@@ -147,6 +147,14 @@ class L10nAz extends L10n {
   }
 
   @override
+  String toastTrackUnreadable(String title) {
+    return '«$title» açılmadı';
+  }
+
+  @override
+  String get toastNoMusicPermission => 'Musiqi fayllarına icazə yoxdur';
+
+  @override
   String get notificationChannel => 'Nocturne oxutma';
 
   @override

@@ -12,6 +12,13 @@ class FakeJustAudio extends JustAudioPlatform {
   /// File paths containing this word count as "deleted" — load throws.
   static const missingMarker = 'missing';
 
+  /// Paths containing this word take [slowLoad] to open (a stalled SD card).
+  static const slowMarker = 'slow';
+  static const slowLoad = Duration(milliseconds: 400);
+
+  /// Paths containing this word load as a file with no sound in it (0 s long).
+  static const silentMarker = 'silent';
+
   @override
   Future<AudioPlayerPlatform> init(InitRequest request) async =>
       players[request.id] = FakePlayer(request.id);
@@ -32,6 +39,9 @@ class FakeJustAudio extends JustAudioPlatform {
   }
 
   /// Finish the song of the player that is currently playing (playing=true).
+  /// Break the song of the player that is currently playing.
+  void failActive() => players.values.singleWhere((p) => p.playing).fail();
+
   void completeActive() {
     final playing = players.values.where((p) => p.playing).toList();
     if (playing.length != 1) {
@@ -69,6 +79,24 @@ class FakePlayer extends AudioPlayerPlatform {
     _emit();
   }
 
+  /// The file breaks while playing (SD card out): like ExoPlayer, the player goes idle and
+  /// the event carries the error.
+  void fail() {
+    state = ProcessingStateMessage.idle;
+    _events.add(PlaybackEventMessage(
+      processingState: state,
+      updateTime: DateTime.now(),
+      updatePosition: position,
+      bufferedPosition: position,
+      duration: null,
+      icyMetadata: null,
+      currentIndex: 0,
+      androidAudioSessionId: null,
+      errorCode: 0,
+      errorMessage: 'Source error',
+    ));
+  }
+
   Future<void> close() => _events.close();
 
   static String? _uriOf(AudioSourceMessage m) => switch (m) {
@@ -84,9 +112,12 @@ class FakePlayer extends AudioPlayerPlatform {
   Future<LoadResponse> load(LoadRequest request) async {
     final u = _uriOf(request.audioSourceMessage);
     if (u != null && u.contains(FakeJustAudio.missingMarker)) {
+      fail(); // like ExoPlayer: the error event first, then the failed load
       throw PlatformException(code: 'fnf', message: 'File not found: $u');
     }
+    if (u != null && u.contains(FakeJustAudio.slowMarker)) await Future<void>.delayed(FakeJustAudio.slowLoad);
     uri = u;
+    duration = u != null && u.contains(FakeJustAudio.silentMarker) ? Duration.zero : const Duration(minutes: 3);
     position = request.initialPosition ?? Duration.zero;
     state = ProcessingStateMessage.ready;
     _emit();

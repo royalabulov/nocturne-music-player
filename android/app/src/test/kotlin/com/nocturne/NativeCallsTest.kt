@@ -1,6 +1,8 @@
 package com.nocturne
 
 import android.app.Activity
+import android.app.PendingIntent
+import android.content.Intent
 import io.flutter.plugin.common.MethodChannel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -81,6 +83,36 @@ class NativeCallsTest {
         AudioDeleter(activity).deleteBatch(listOf(file.path), answer)
         assertEquals(mapOf("status" to "deleted", "deleted" to listOf(file.path)), answer.value)
         assertFalse(file.exists())
+    }
+
+    private fun dialog() = PendingIntent.getActivity(activity, 0, Intent(), PendingIntent.FLAG_IMMUTABLE).intentSender
+
+    /// Android can recreate the activity while the system delete dialog is open: the answer
+    /// then reaches a new activity with a new deleter, and the call must still be answered.
+    @Test
+    fun `the dialog's answer reaches the call even after the activity was recreated`() {
+        val answer = Answer()
+        AudioDeleter(activity).askUser(dialog(), "/storage/emulated/0/Music/gone.mp3", answer)
+        assertEquals(0, answer.calls)
+
+        val recreated = Robolectric.buildActivity(Activity::class.java).setup().get()
+        AudioDeleter(recreated).onActivityResult(4711, Activity.RESULT_CANCELED)
+
+        assertEquals("cancelled", answer.value)
+        assertEquals(1, answer.calls)
+    }
+
+    @Test
+    fun `an activity closing for good answers the waiting call, so the next delete isn't busy`() {
+        val waiting = Answer()
+        AudioDeleter(activity).askUser(dialog(), "/storage/emulated/0/Music/a.mp3", waiting)
+
+        AudioDeleter.abandon()
+        assertEquals("cancelled", waiting.value)
+
+        val next = Answer()
+        AudioDeleter(activity).delete("/storage/emulated/0/Music/gone.mp3", next)
+        assertEquals("deleted", next.value)
     }
 
     @Test

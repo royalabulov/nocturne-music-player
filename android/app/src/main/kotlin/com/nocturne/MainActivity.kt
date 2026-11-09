@@ -30,6 +30,8 @@ class MainActivity : AudioServiceActivity() {
     }
 
     override fun onDestroy() {
+        // Recreated (not finishing): the dialog's answer comes to the new activity instead
+        if (isFinishing) AudioDeleter.abandon()
         contentResolver.unregisterContentObserver(audioObserver)
         analyzer.close()
         super.onDestroy()

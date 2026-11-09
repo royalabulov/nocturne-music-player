@@ -18,9 +18,6 @@ import java.io.File
 /// Every call is answered: a result on success or refusal, [fail] with the reason otherwise.
 class AudioDeleter(private val activity: Activity) {
     private val resolver get() = activity.contentResolver
-    private var pending: MethodChannel.Result? = null
-    private var pendingPath: String? = null
-    private var pendingBatch: List<String>? = null
 
     /// Result: "deleted" | "cancelled".
     fun delete(path: String, result: MethodChannel.Result) {
@@ -130,7 +127,7 @@ class AudioDeleter(private val activity: Activity) {
         }
     }
 
-    private fun askUser(sender: IntentSender, path: String?, result: MethodChannel.Result) {
+    internal fun askUser(sender: IntentSender, path: String?, result: MethodChannel.Result) {
         pending = result
         pendingPath = path
         try {
@@ -180,8 +177,30 @@ class AudioDeleter(private val activity: Activity) {
         }
     }
 
-    private companion object {
-        const val REQUEST_CODE = 4711
-        const val BUSY = "another delete is waiting for confirmation"
+    companion object {
+        private const val REQUEST_CODE = 4711
+        private const val BUSY = "another delete is waiting for confirmation"
+
+        // The call waiting for the system dialog lives outside the activity: if Android
+        // recreates the activity while the dialog is open, the answer goes to the new one, and
+        // with the state kept per activity the Dart side waited forever.
+        private var pending: MethodChannel.Result? = null
+        private var pendingPath: String? = null
+        private var pendingBatch: List<String>? = null
+
+        /// The activity is closing for good: no answer will come, so the waiting call is told
+        /// "cancelled" (otherwise every later delete would be refused as busy).
+        fun abandon() {
+            val result = pending ?: return
+            val batch = pendingBatch
+            pending = null
+            pendingPath = null
+            pendingBatch = null
+            if (batch != null) {
+                result.success(mapOf("status" to "cancelled", "deleted" to batch.filter { !File(it).exists() }))
+            } else {
+                result.success("cancelled")
+            }
+        }
     }
 }

@@ -24,6 +24,7 @@ import 'features/forgotten/forgotten.dart';
 import 'features/forgotten/forgotten_reminder.dart';
 import 'features/import/audio_import.dart';
 import 'features/library_scan/scan_controller.dart';
+import 'features/library_scan/unplayable_track.dart';
 import 'core/audio/player_providers.dart';
 import 'features/settings/settings_controller.dart';
 import 'features/smart_groups/smart_groups.dart';
@@ -58,10 +59,7 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
     builder: () => NocturneAudioHandler(
       // Records the play and measures how long it's really heard
       onTrackStarted: (t) => container.read(listenTrackerProvider).trackStarted(t.id),
-      onTrackUnavailable: (t) {
-        unawaited(container.read(libraryRepositoryProvider).markMissing(t.id));
-        showToast(l10n.toastTrackMissing(t.title), error: true);
-      },
+      onTrackUnavailable: (t) => unawaited(_reportUnplayable(container, t)),
       sourceBuilder: sourceBuilder,
     ),
     config: AudioServiceConfig(
@@ -100,7 +98,12 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
   // Playback memory: save the position every 5 seconds while playing.
   handler.position.where((_) => handler.playing).throttleTime(const Duration(seconds: 5)).listen((pos) {
     final t = handler.currentTrackValue;
-    if (t != null) unawaited(container.read(historyRepositoryProvider).saveResumePoint(t.id, pos));
+    if (t == null) return;
+    // A full disk fails this every 5 seconds: playback goes on, the error isn't worth a crash entry
+    unawaited(container
+        .read(historyRepositoryProvider)
+        .saveResumePoint(t.id, pos)
+        .catchError((Object e) => debugPrint('resume point not saved: $e')));
   });
 
   // "Open with Nocturne" / Share: if the app was opened this way, take the file and play it;
@@ -138,6 +141,19 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
       unawaited(container.read(smartAnalysisProvider.notifier).start());
     });
   });
+}
+
+/// A song wouldn't play: hide it only if its file is really gone, otherwise say why.
+Future<void> _reportUnplayable(ProviderContainer c, Track t) async {
+  switch (await whyUnplayable(t.path)) {
+    case Unplayable.missing:
+      showToast(l10n.toastTrackMissing(t.title), error: true);
+      await c.read(libraryRepositoryProvider).markMissing(t.id);
+    case Unplayable.noPermission:
+      showToast(l10n.toastNoMusicPermission, error: true);
+    case Unplayable.unreadable:
+      showToast(l10n.toastTrackUnreadable(t.title), error: true);
+  }
 }
 
 /// A reminder was tapped: open Forgotten favorites with that song on top (no sound —

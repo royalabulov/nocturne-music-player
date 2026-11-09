@@ -28,6 +28,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     NocturneEffects? effects,
     AudioSource Function(Track)? sourceBuilder,
     bool manageAudioSession = true,
+    this._loadTimeout = const Duration(seconds: 20),
   })  : effects = effects ?? NocturneEffects(),
         _sourceFor = sourceBuilder ?? _fileSource {
     // manageAudioSession=false: the audio_session plugin is not available in tests.
@@ -49,6 +50,9 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
       p.playingStream.listen((_) => _onPlayerEvent(p));
       p.positionStream.listen((pos) => _onPosition(p, pos));
       p.durationStream.listen((_) => _onPlayerEvent(p));
+      // A file that breaks while it plays (SD card out, deleted by another app) arrives only
+      // here: just_audio doesn't skip on its own (maxSkipsOnError is 0).
+      p.errorStream.listen((e) => _onPlayerError(p, e));
     }
   }
 
@@ -59,6 +63,15 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   final AudioSource Function(Track) _sourceFor;
   static AudioSource _fileSource(Track t) => AudioSource.file(t.path, tag: t.id);
   final NocturneEffects effects;
+
+  /// How long a file may take to open. Without a limit, a load that never answered (a
+  /// stalled SD card) held the serial queue, and no button worked until the app restarted.
+  final Duration _loadTimeout;
+
+  /// Files that fail to open one after another before playback stops. When every file
+  /// fails (no permission, a format the player can't read), walking the whole queue only
+  /// reported each song as broken.
+  static const _maxFailedLoads = 3;
 
   final _current = BehaviorSubject<Track?>.seeded(null);
   final _queue = BehaviorSubject<List<Track>>.seeded(const []);
@@ -95,7 +108,8 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   /// For play history — called when the track changes.
   final void Function(Track track)? onTrackStarted;
 
-  /// File failed to open (deleted / moved / corrupt) — mark missing in the DB, tell the user.
+  /// The file failed to open or broke while playing. The handler can't tell why (deleted,
+  /// no permission, a format it can't read), so the app finds out and tells the user.
   final void Function(Track track)? onTrackUnavailable;
 
   Stream<Track?> get currentTrack => _current.stream;
@@ -121,6 +135,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   Future<void> _playTracks(List<Track> tracks, {int startIndex = 0, bool shuffle = false}) async {
     if (tracks.isEmpty) return;
     _cancelFade();
+    _quickEnds = 0;
     _q.replace(tracks, startIndex: startIndex, shuffled: shuffle);
     _publishQueue();
     await _loadActive(_q.pos, autoplay: true);
@@ -205,6 +220,9 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
       _holdAtEnd = false;
       return skipToNext();
     }
+    // Playback gave up on files that wouldn't open: play tries the current one again (the
+    // permission may be back, the SD card back in).
+    if (_gaveUp) return _serial(() => _loadActive(_q.pos, autoplay: true));
     if (_active.processingState == ProcessingState.completed) {
       await _active.seek(Duration.zero);
     }
@@ -258,6 +276,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
 
   Future<void> _stopAll() async {
     _stopped = true;
+    _gaveUp = false;
     _cancelFade();
     await _quietStop(_a);
     await _quietStop(_b);
@@ -350,6 +369,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     if (track == null) return;
 
     _stopped = false;
+    _gaveUp = false;
     // Keep publishing "playing" during the transition: if false slips in,
     // audio_service drops foreground, then calls startForeground again in the
     // background (screen off) → Android 12+ kills the app with
@@ -371,26 +391,24 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
       // player collided and just_audio never finished loading → the switch hung.
       _swapRoles();
       if (_active.position > Duration.zero) {
-        await _guard('seek', () => _active.seek(Duration.zero));
+        await _guard('seek', () => _active.seek(Duration.zero), timeout: _loadTimeout);
       }
     } else {
       await _quietStop(_standby);
       _standbyPos = null;
+      _activeLoad++;
+      _loadingActive = true;
+      Object? failure;
       try {
-        await _active.setAudioSource(_sourceFor(track));
+        await _active.setAudioSource(_sourceFor(track)).timeout(_loadTimeout);
       } catch (e) {
-        debugPrint('NocturneAudioHandler: load failed "${track.path.split('/').last}": $e');
-        _switching = false;
-        onTrackUnavailable?.call(track);
-        // Corrupt / deleted file — skip to the next (stop if none open,
-        // so repeat-all doesn't loop forever)
-        final next = _q.next(manual: true);
-        if (next != null && next != orderPos && failures + 1 < _q.order.length) {
-          _q.pos = next;
-          return _loadActive(next, autoplay: autoplay, failures: failures + 1);
-        }
-        _publishState();
-        return;
+        failure = e;
+      }
+      _loadingActive = false;
+      if (failure != null) {
+        debugPrint('NocturneAudioHandler: load failed "${track.path.split('/').last}": $failure');
+        _failedLoad = _activeLoad;
+        return _skipUnplayable(track, orderPos, autoplay: autoplay, failures: failures);
       }
     }
     await _guard('setVolume', () => _active.setVolume(_gainFor(track)));
@@ -404,6 +422,51 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     await _preloadStandby();
   }
 
+  /// [track] at [orderPos] wouldn't open or broke while playing: report it and move to the
+  /// next one, until [_maxFailedLoads] in a row have failed (or the queue has no other song,
+  /// so repeat-all doesn't loop forever). Then it pauses, so it doesn't look like it's
+  /// playing, and play tries again.
+  Future<void> _skipUnplayable(Track track, int orderPos, {required bool autoplay, required int failures}) async {
+    _switching = false;
+    onTrackUnavailable?.call(track);
+    final tries = failures + 1;
+    final next = _q.next(manual: true);
+    if (next != null && next != orderPos && tries < min(_q.order.length, _maxFailedLoads)) {
+      _q.pos = next;
+      return _loadActive(next, autoplay: autoplay, failures: tries);
+    }
+    _gaveUp = true;
+    await _guard('pause', () => _active.pause(), timeout: _loadTimeout);
+    _publishState();
+  }
+
+  /// Every file the active player is given; [_failedLoad] is the one that already failed.
+  /// An error that arrives later for that file was handled by the load.
+  int _activeLoad = 0;
+  int _failedLoad = -1;
+
+  /// The active player is opening a file: an error now is the load's own, which it handles.
+  bool _loadingActive = false;
+
+  /// Playback stopped after files failed to open (see [_skipUnplayable]).
+  bool _gaveUp = false;
+
+  void _onPlayerError(AudioPlayer p, PlayerException e) {
+    if (p != _active || _loadingActive) return; // standby: reloaded before it plays
+    final load = _activeLoad;
+    unawaited(_serial(() async {
+      // Checked again in the queue: by now a newer file may be playing
+      if (p != _active || load != _activeLoad || load == _failedLoad || _stopped) return;
+      if (p.processingState != ProcessingState.idle) return;
+      final track = _q.current;
+      if (track == null) return;
+      debugPrint('NocturneAudioHandler: playback failed "${track.path.split('/').last}": ${e.code} ${e.message}');
+      _failedLoad = load;
+      _cancelFade();
+      await _skipUnplayable(track, _q.pos, autoplay: p.playing, failures: 0);
+    }));
+  }
+
   /// Stop the player; errors/delays must not block the transition.
   Future<void> _quietStop(AudioPlayer p) async {
     try {
@@ -413,9 +476,11 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     }
   }
 
-  Future<void> _guard(String what, Future<void> Function() f) async {
+  /// [timeout] only for calls that answer right away: play's future stays open until the
+  /// song ends.
+  Future<void> _guard(String what, Future<void> Function() f, {Duration? timeout}) async {
     try {
-      await f();
+      await (timeout == null ? f() : f().timeout(timeout));
     } catch (e) {
       debugPrint('NocturneAudioHandler: $what failed: $e');
     }
@@ -438,8 +503,8 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     try {
       // A completed player still has playWhenReady = true → pause first so it
       // doesn't start playing out loud as soon as the new file loads.
-      await _standby.pause();
-      await _standby.setAudioSource(_sourceFor(track)).timeout(const Duration(seconds: 20));
+      await _standby.pause().timeout(_loadTimeout);
+      await _standby.setAudioSource(_sourceFor(track)).timeout(_loadTimeout);
       await _standby.setVolume(_gainFor(track));
     } catch (e) {
       // "Loading interrupted" = a newer load arrived; it sets _standbyPos
@@ -454,6 +519,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     _active = _standby;
     _standby = t;
     _standbyPos = null;
+    _activeLoad++;
   }
 
   void _announce(Track track) {
@@ -501,6 +567,11 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   }
 
   bool _completionQueued = false;
+
+  /// Songs in a row that ended before [_tooShortToPlay] (see [_onActiveCompleted]).
+  int _quickEnds = 0;
+  static const _maxQuickEnds = 3;
+  static const _tooShortToPlay = Duration(milliseconds: 500);
 
   // ── sleep timer ───────────────────────────────────────────
 
@@ -561,10 +632,24 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
         onStoppedAfterCurrent?.call();
         return;
       }
+      // A file with no sound in it ends the moment it starts: on repeat it would restart
+      // without pause and record a play each time. A few in a row → stop here; play then
+      // moves on to the next song, like after the sleep timer's "End of track".
+      if (_active.position < _tooShortToPlay) {
+        if (++_quickEnds >= _maxQuickEnds) {
+          _quickEnds = 0;
+          _holdAtEnd = true;
+          await _guard('pause', () => _active.pause(), timeout: _loadTimeout);
+          _publishState();
+          return;
+        }
+      } else {
+        _quickEnds = 0;
+      }
       final next = _q.next();
       if (next == null) {
         // End of the queue: stop and keep the position at the end
-        await _guard('pause', () => _active.pause());
+        await _guard('pause', () => _active.pause(), timeout: _loadTimeout);
         _publishState();
         return;
       }

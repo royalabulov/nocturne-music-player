@@ -77,6 +77,15 @@
       }
     }
   },
+  "toastTrackUnreadable": "\"{title}\" couldn’t be played",
+  "@toastTrackUnreadable": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "toastNoMusicPermission": "No permission to read music files",
   "notificationChannel": "Nocturne playback",
   "groupSmartGroups": "Smart groups",
   "groupPlayback": "Playback",

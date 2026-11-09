@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -28,13 +29,16 @@ class LibraryScanner {
     required this.folders,
     required this.covers,
     TagBatchReader? readTags,
-  }) : _readTags = readTags ?? TagReader.readMany;
+    Future<bool> Function(String path)? fileExists,
+  })  : _readTags = readTags ?? TagReader.readMany,
+        _fileExists = fileExists ?? ((path) => File(path).exists());
 
   final AppDatabase db;
   final MediaStoreSource mediaStore;
   final FolderSource folders;
   final CoverCache covers;
   final TagBatchReader _readTags;
+  final Future<bool> Function(String path) _fileExists;
 
   final _progress = StreamController<ScanProgress>.broadcast();
   Stream<ScanProgress> get progress => _progress.stream;
@@ -108,9 +112,12 @@ class LibraryScanner {
           reappeared.add(e.id);
         }
       }
+      // Not listed is not the same as gone: MediaStore rebuilding its index after a system
+      // update answers with nothing, and one unreadable folder can cut the walk short. Only
+      // a file that isn't on disk any more is hidden.
       final missingIds = [
         for (final e in existing.values)
-          if (!raw.containsKey(e.path) && !e.isMissing) e.id,
+          if (!raw.containsKey(e.path) && !e.isMissing && !await _stillThere(e.path)) e.id,
       ];
 
       p = p.copyWith(phase: ScanPhase.reading, total: toRead.length);
@@ -134,7 +141,7 @@ class LibraryScanner {
             skipped[r.path] = skipSignature(r);
             continue;
           }
-          final coverHash = tag.cover == null ? null : await covers.store(tag.cover!);
+          final coverHash = tag.cover == null ? null : await _storeCover(tag.cover!);
           final prev = existing[r.path];
           final companion = TracksCompanion(
             path: Value(r.path),
@@ -208,6 +215,27 @@ class LibraryScanner {
       _emit(p);
       debugPrint('LibraryScanner failed: $e\n$st');
       return p;
+    }
+  }
+
+  /// A file that can't be checked counts as still there: hiding a song by mistake is worse
+  /// than showing one that's gone (playing it finds out and hides it).
+  Future<bool> _stillThere(String path) async {
+    try {
+      return await _fileExists(path);
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// A cover that can't be written (full disk) leaves the song without one; it used to stop
+  /// the whole scan, so no new song got in at all.
+  Future<String?> _storeCover(Uint8List bytes) async {
+    try {
+      return await covers.store(bytes);
+    } catch (e) {
+      debugPrint('LibraryScanner: cover not saved: $e');
+      return null;
     }
   }
 

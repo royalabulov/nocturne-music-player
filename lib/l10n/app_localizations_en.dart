@@ -149,6 +149,14 @@ class L10nEn extends L10n {
   }
 
   @override
+  String toastTrackUnreadable(String title) {
+    return '\"$title\" couldn’t be played';
+  }
+
+  @override
+  String get toastNoMusicPermission => 'No permission to read music files';
+
+  @override
   String get notificationChannel => 'Nocturne playback';
 
   @override

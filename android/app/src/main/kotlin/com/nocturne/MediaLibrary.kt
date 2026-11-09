@@ -88,7 +88,13 @@ class MediaLibrary(context: Context) {
             }
             val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                 ?: error("MediaStore insert failed")
-            resolver.openOutputStream(uri)!!.use { it.write(bytes) }
+            try {
+                (resolver.openOutputStream(uri) ?: error("cannot write")).use { it.write(bytes) }
+            } catch (e: Exception) {
+                // Otherwise a half-written, never-published entry stays in Download
+                runCatching { resolver.delete(uri, null, null) }
+                throw e
+            }
             values.clear()
             values.put(MediaStore.Downloads.IS_PENDING, 0)
             resolver.update(uri, values, null, null)

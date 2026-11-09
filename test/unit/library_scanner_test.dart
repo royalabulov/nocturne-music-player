@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
@@ -25,6 +26,18 @@ class _FakeStore extends MediaStoreSource {
   Future<List<RawAudio>> enumerate() async => files;
   @override
   Future<void> notify(List<String> paths) async {}
+}
+
+/// Covers that land nowhere: [full] true = the disk is full and every write fails.
+class _Covers extends CoverCache {
+  _Covers(this.full);
+  final bool Function() full;
+
+  @override
+  Future<String> store(Uint8List bytes) async {
+    if (full()) throw const FileSystemException('No space left on device');
+    return 'hash';
+  }
 }
 
 class _NoFolders extends FolderSource {
@@ -229,6 +242,77 @@ void main() {
       final result = await scanner.scan();
       expect(result.phase, ScanPhase.done);
       expect(await rows(), [('Ezhel', 'Felaket')]);
+    });
+  });
+
+  group('songs that are not listed', () {
+    late Set<String> onDisk;
+    late bool coversFail;
+
+    TagInfo tagOf(String path) => TagInfo(
+          title: path.split('/').last,
+          artist: 'A',
+          album: 'B',
+          durationMs: 100000,
+          format: AudioFormat.mp3,
+          cover: Uint8List.fromList([1, 2, 3]),
+        );
+
+    RawAudio file(String path) => RawAudio(path: path, size: 500 * 1024, dateModified: 1);
+
+    setUp(() {
+      onDisk = {};
+      coversFail = false;
+      scanner = LibraryScanner(
+        db: db,
+        mediaStore: store,
+        folders: _NoFolders(),
+        covers: _Covers(() => coversFail),
+        readTags: (paths) async => {for (final p in paths) p: tagOf(p)},
+        fileExists: (path) async => onDisk.contains(path),
+      );
+    });
+
+    Future<Set<String>> visible() async =>
+        {for (final t in await (db.select(db.tracks)..where((t) => t.isMissing.not())).get()) t.path};
+
+    // After a system update MediaStore rebuilds its index and answers with nothing for a while
+    test('an empty MediaStore answer hides nothing that is still on disk', () async {
+      final songs = [for (var i = 0; i < 5; i++) '/m/$i.mp3'];
+      store.files = [for (final s in songs) file(s)];
+      onDisk = songs.toSet();
+      await scanner.scan();
+
+      store.files = [];
+      final result = await scanner.scan();
+
+      expect(result.phase, ScanPhase.done);
+      expect(await visible(), songs.toSet());
+    });
+
+    test('a song whose file is really gone is still hidden', () async {
+      store.files = [file('/m/kept.mp3'), file('/m/deleted.mp3')];
+      onDisk = {'/m/kept.mp3', '/m/deleted.mp3'};
+      await scanner.scan();
+
+      store.files = [file('/m/kept.mp3')];
+      onDisk = {'/m/kept.mp3'};
+      await scanner.scan();
+
+      expect(await visible(), {'/m/kept.mp3'});
+    });
+
+    // A full disk: before, the first cover that couldn't be written stopped the whole scan
+    test('a cover that cannot be saved does not stop the scan', () async {
+      coversFail = true;
+      store.files = [file('/m/a.mp3'), file('/m/b.mp3')];
+
+      final result = await scanner.scan();
+
+      expect(result.phase, ScanPhase.done);
+      final rows = await db.select(db.tracks).get();
+      expect(rows.map((t) => t.path).toSet(), {'/m/a.mp3', '/m/b.mp3'});
+      expect(rows.map((t) => t.coverHash), everyElement(isNull));
     });
   });
 

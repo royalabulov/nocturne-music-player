@@ -152,6 +152,24 @@ void main() {
       expect(q.currentIndex, isNull);
     });
 
+    // Play next can put a song in twice: when its file is deleted, a copy left behind would
+    // fail to open later and be reported as missing.
+    test('every copy of the song goes', () {
+      q.replace(five, startIndex: 1);
+      q.insertNext(_t(4));
+      expect(q.remove(4), isFalse);
+      expect(played(), [1, 2, 3, 5]);
+      expect(q.current?.id, 2);
+    });
+
+    test('a copy that was playing: the song after the copies takes its place', () {
+      q.replace(five, startIndex: 2);
+      q.insertNext(_t(3)); // 1 2 [3] 3 4 5
+      expect(q.remove(3), isTrue);
+      expect(played(), [1, 2, 4, 5]);
+      expect(q.current?.id, 4);
+    });
+
     test('in shuffle the rest of the order stays', () {
       q.replace(five, shuffled: true);
       final before = played();
