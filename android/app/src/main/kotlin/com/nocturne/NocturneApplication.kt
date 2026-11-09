@@ -1,6 +1,8 @@
 package com.nocturne
 
 import android.app.Application
+import com.nocturne.enginehook.EngineHookPlugin
+import io.flutter.embedding.engine.plugins.FlutterPlugin
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -15,6 +17,13 @@ import java.util.Locale
 class NocturneApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        // Before any Flutter engine exists: each one gets the app's channels the moment it is made
+        EngineHookPlugin.setListener(object : EngineHookPlugin.Listener {
+            override fun onAttached(binding: FlutterPlugin.FlutterPluginBinding) =
+                EngineChannels.attach(binding.applicationContext, binding.binaryMessenger)
+
+            override fun onDetached(binding: FlutterPlugin.FlutterPluginBinding) = EngineChannels.detach()
+        })
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
             runCatching {

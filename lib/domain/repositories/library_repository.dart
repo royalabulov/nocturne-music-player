@@ -95,6 +95,10 @@ abstract interface class LibraryRepository {
 
   Future<Track?> getTrack(int id);
 
+  /// The songs among [ids] that are still in the library (not missing), in no set order.
+  /// For the stored play queue, which may hold thousands.
+  Future<List<Track>> getTracks(List<int> ids);
+
   /// By file path (Open with Nocturne: is the file already in the library?).
   Future<Track?> getTrackByPath(String path);
 

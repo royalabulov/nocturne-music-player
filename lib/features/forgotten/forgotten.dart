@@ -34,9 +34,12 @@ class ForgottenSettings {
 
 /// Stored in scan_state. ForgottenReminder listens to this: a new rule re-plans the reminders.
 class ForgottenSettingsController extends Notifier<ForgottenSettings> {
+  /// Done once the stored rule is in [state]; until then it holds the defaults.
+  Future<void> ready = Future.value();
+
   @override
   ForgottenSettings build() {
-    unawaited(_load());
+    ready = _load();
     return const ForgottenSettings();
   }
 

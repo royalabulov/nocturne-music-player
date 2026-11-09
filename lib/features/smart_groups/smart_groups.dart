@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -58,6 +59,10 @@ class SmartAnalysisController extends Notifier<bool> {
             final segments = r.segments;
             final features = await Isolate.run(() => extractMusicFeatures(segments));
             await repo.save(p.trackId, kVibeAnalysisVersion, scores: {...r.scores, ...features}, rmsDb: r.rmsDb);
+          } on MissingPluginException {
+            // The analyzer isn't there (the engine started without it): no song is at fault.
+            // Recording each as failed kept them out of smart groups for good.
+            _stop = true;
           } catch (e) {
             // Corrupt/unreadable file: record it so it doesn't get stuck in the queue
             await repo.save(p.trackId, kVibeAnalysisVersion);

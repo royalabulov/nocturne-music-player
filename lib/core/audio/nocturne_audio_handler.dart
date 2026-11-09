@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
@@ -9,6 +10,7 @@ import 'package:rxdart/rxdart.dart';
 import '../../domain/entities/track.dart';
 import 'audio_effects.dart';
 import 'play_queue.dart';
+import 'queue_snapshot.dart';
 import '../../l10n/l10n.dart';
 import '../utils/display_names.dart';
 
@@ -27,21 +29,31 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     this.onTrackUnavailable,
     NocturneEffects? effects,
     AudioSource Function(Track)? sourceBuilder,
+    this.savedQueue,
     bool manageAudioSession = true,
+    Stream<AudioInterruptionEvent>? interruptions,
+    Stream<void>? becomingNoisy,
     this._loadTimeout = const Duration(seconds: 20),
   })  : effects = effects ?? NocturneEffects(),
         _sourceFor = sourceBuilder ?? _fileSource {
     // manageAudioSession=false: the audio_session plugin is not available in tests.
+    // Interruptions are handled here, not by just_audio: its "duck ended" doubled the
+    // volume, so a notification sound made a ReplayGain-lowered song 6 dB louder each time.
     _a = AudioPlayer(
       audioPipeline: this.effects.pipelineA,
-      handleInterruptions: manageAudioSession,
+      handleInterruptions: false,
       handleAudioSessionActivation: manageAudioSession,
     );
     _b = AudioPlayer(
       audioPipeline: this.effects.pipelineB,
-      handleInterruptions: manageAudioSession,
+      handleInterruptions: false,
       handleAudioSessionActivation: manageAudioSession,
     );
+    if (interruptions != null || becomingNoisy != null) {
+      _followSession(interruptions, becomingNoisy);
+    } else if (manageAudioSession) {
+      unawaited(AudioSession.instance.then((s) => _followSession(s.interruptionEventStream, s.becomingNoisyEventStream)));
+    }
     _active = _a;
     _standby = _b;
 
@@ -112,10 +124,36 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   /// no permission, a format it can't read), so the app finds out and tells the user.
   final void Function(Track track)? onTrackUnavailable;
 
+  /// The queue stored before the app was last closed or killed. Play with an empty queue
+  /// (a Bluetooth button, a fresh start) plays it; with none stored, play does nothing.
+  final Future<SavedQueue?> Function()? savedQueue;
+
+  /// The queue as it should be stored; null when it is empty.
+  QueueSnapshot? get snapshot => _q.isEmpty
+      ? null
+      : QueueSnapshot(
+          trackIds: [for (final t in _q.tracks) t.id],
+          order: List.of(_q.order),
+          pos: _q.pos,
+          shuffle: _q.shuffle,
+          repeat: _q.repeat,
+        );
+
+  /// Where the current song starts when nothing is loaded yet (a restored queue, after
+  /// stop). Null once it is loaded.
+  Duration? _pendingStart;
+
+  /// The restored song is shown but wasn't announced: its first play counts as a play.
+  int? _unannouncedId;
+
+  /// Paused by a call or another app: play again when it ends.
+  bool _resumeAfterInterruption = false;
+
   Stream<Track?> get currentTrack => _current.stream;
   Track? get currentTrackValue => _current.valueOrNull;
   Stream<List<Track>> get trackQueue => _queue.stream;
   Stream<Duration> get position => _position.stream;
+  Duration get positionValue => _position.value;
   Stream<Duration?> get duration => _duration.stream;
   bool get playing => _active.playing;
 
@@ -190,7 +228,9 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
 
     if (_q.isEmpty) {
       await _stopAll(); // not stop() — that also goes through the serial queue and would deadlock
+      _pendingStart = null;
       _current.add(null);
+      mediaItem.add(null);
       return;
     }
     if (isCurrent) {
@@ -208,14 +248,38 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     await _stopAll();
     _q.clear();
     _standbyPos = null;
+    _pendingStart = null;
     _publishQueue();
     _current.add(null);
+    mediaItem.add(null); // the lock screen and a car's display don't keep the old song
   });
+
+  /// Shows the stored queue without playing or loading anything; play starts it at its
+  /// position. Ignored if something was queued meanwhile ("Open with", a Bluetooth play).
+  Future<void> restoreQueue(SavedQueue saved) => _serial(() async {
+    if (_q.isEmpty) _restore(saved);
+  });
+
+  void _restore(SavedQueue saved) {
+    _q.restore(saved.tracks, saved.order, saved.pos, shuffled: saved.shuffle, repeatMode: saved.repeat);
+    _standbyPos = null;
+    _pendingStart = saved.position;
+    _stopped = true; // nothing loaded: idle, not "loading"
+    final t = _q.current!;
+    _unannouncedId = t.id;
+    _publishQueue();
+    _current.add(t);
+    mediaItem.add(_toMediaItem(t));
+    _duration.add(t.duration);
+    _position.add(saved.position);
+    _publishState();
+  }
 
   // ── transport ─────────────────────────────────────────────
 
   @override
   Future<void> play() async {
+    _resumeAfterInterruption = false;
     if (_holdAtEnd) {
       _holdAtEnd = false;
       return skipToNext();
@@ -223,6 +287,8 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     // Playback gave up on files that wouldn't open: play tries the current one again (the
     // permission may be back, the SD card back in).
     if (_gaveUp) return _serial(() => _loadActive(_q.pos, autoplay: true));
+    // Nothing loaded: playing the empty player only showed a silent "playing" notification
+    if (_q.isEmpty || _active.processingState == ProcessingState.idle) return _serial(_playFromIdle);
     if (_active.processingState == ProcessingState.completed) {
       await _active.seek(Duration.zero);
     }
@@ -231,8 +297,33 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     if (_fading) unawaited(_standby.play());
   }
 
+  /// Play with nothing loaded: the stored queue if the queue is empty, then the current song
+  /// from where it stopped. With nothing stored nothing happens.
+  Future<void> _playFromIdle() async {
+    if (_q.isEmpty) {
+      final saved = await _loadSaved();
+      if (saved == null) return;
+      _restore(saved);
+    }
+    if (_active.processingState != ProcessingState.idle) {
+      unawaited(_active.play()); // loaded meanwhile (a load was queued before this)
+      return;
+    }
+    await _loadActive(_q.pos, autoplay: true, startAt: _pendingStart);
+  }
+
+  Future<SavedQueue?> _loadSaved() async {
+    try {
+      return await savedQueue?.call();
+    } catch (e) {
+      debugPrint('NocturneAudioHandler: stored queue not read: $e');
+      return null;
+    }
+  }
+
   @override
   Future<void> pause() async {
+    _resumeAfterInterruption = false;
     await _active.pause();
     if (_fading) await _standby.pause();
   }
@@ -240,8 +331,40 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   @override
   Future<void> seek(Duration position) async {
     _holdAtEnd = false;
+    if (_q.current != null && _active.processingState == ProcessingState.idle) {
+      // Nothing loaded yet: play starts here
+      _pendingStart = position;
+      _position.add(position);
+      _publishState();
+      return;
+    }
     if (_fading) _finishFadeNow();
     await _active.seek(position);
+  }
+
+  /// Swiped out of the recent apps. Playing: it goes on. Paused: stop, so the notification
+  /// and the service go and Android may end the process; the queue is stored and comes back.
+  @override
+  Future<void> onTaskRemoved() async {
+    if (!playing) await stop();
+  }
+
+  /// Calls, alarms and other apps' sound. Done here, not in just_audio (see the constructor).
+  void _followSession(Stream<AudioInterruptionEvent>? interruptions, Stream<void>? becomingNoisy) {
+    interruptions?.listen((e) {
+      if (e.begin) {
+        // Ducking: Android lowers a music stream itself, the volume isn't touched here
+        if (e.type == AudioInterruptionType.duck || !playing) return;
+        unawaited(pause());
+        _resumeAfterInterruption = true; // after pause(), which clears it
+      } else {
+        final resume = e.type == AudioInterruptionType.pause && _resumeAfterInterruption;
+        _resumeAfterInterruption = false;
+        if (resume) unawaited(play());
+      }
+    });
+    // Headphones unplugged, Bluetooth gone: don't go on out of the speaker
+    becomingNoisy?.listen((_) => unawaited(pause()));
   }
 
   @override
@@ -271,8 +394,12 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     await _loadActive(_q.pos, autoplay: true);
   }
 
+  /// The queue and the current song stay (the mini player too): play goes on from here.
   @override
-  Future<void> stop() => _serial(_stopAll);
+  Future<void> stop() => _serial(() async {
+    if (_q.current != null && _active.processingState != ProcessingState.idle) _pendingStart = _active.position;
+    await _stopAll();
+  });
 
   Future<void> _stopAll() async {
     _stopped = true;
@@ -363,8 +490,10 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
 
   // ── loading ───────────────────────────────────────────────
 
-  Future<void> _loadActive(int orderPos, {required bool autoplay, int failures = 0}) async {
+  /// [startAt]: where the song begins (a restored queue, play after stop).
+  Future<void> _loadActive(int orderPos, {required bool autoplay, int failures = 0, Duration? startAt}) async {
     _holdAtEnd = false;
+    _pendingStart = null;
     final track = _q.trackAt(orderPos);
     if (track == null) return;
 
@@ -400,7 +529,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
       _loadingActive = true;
       Object? failure;
       try {
-        await _active.setAudioSource(_sourceFor(track)).timeout(_loadTimeout);
+        await _active.setAudioSource(_sourceFor(track), initialPosition: startAt).timeout(_loadTimeout);
       } catch (e) {
         failure = e;
       }
@@ -523,7 +652,8 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   }
 
   void _announce(Track track) {
-    if (_current.valueOrNull?.id != track.id || _q.repeat == AudioServiceRepeatMode.one) {
+    if (_current.valueOrNull?.id != track.id || _q.repeat == AudioServiceRepeatMode.one || _unannouncedId == track.id) {
+      _unannouncedId = null;
       _current.add(track);
       mediaItem.add(_toMediaItem(track));
       final ti = _q.currentIndex!;
@@ -557,7 +687,8 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
 
   void _onPosition(AudioPlayer p, Duration pos) {
     if (p != _active) return;
-    _position.add(pos);
+    // Stopped or not loaded yet: the place play starts from, not the empty player's zero
+    _position.add(p.processingState == ProcessingState.idle ? _pendingStart ?? pos : pos);
     if (_fading || crossfade == Duration.zero || !p.playing || stopAfterCurrent) return;
     final d = p.duration;
     if (d == null || d < crossfade * 2) return; // track too short — no fade
@@ -776,7 +907,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
         ProcessingState.completed => AudioProcessingState.completed,
       },
       playing: playing,
-      updatePosition: p.position,
+      updatePosition: p.processingState == ProcessingState.idle ? _pendingStart ?? p.position : p.position,
       bufferedPosition: p.bufferedPosition,
       speed: p.speed,
       queueIndex: index == null ? null : index - _sysQueueOffset,

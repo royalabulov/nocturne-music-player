@@ -15,9 +15,12 @@ import 'reminder_plan.dart';
 
 /// Reminder settings, stored in scan_state. Changing them re-plans the notifications.
 class ReminderSettingsController extends Notifier<ReminderSettings> {
+  /// Done once the stored settings are in [state]; until then it holds the defaults.
+  Future<void> ready = Future.value();
+
   @override
   ReminderSettings build() {
-    unawaited(_load());
+    ready = _load();
     return const ReminderSettings();
   }
 
@@ -109,6 +112,16 @@ class ForgottenReminder {
     }
   }
 
+  /// The settings the plan is made from, once they are read from the database. At the start
+  /// the providers still held their defaults (reminders off), so the first plan of every
+  /// start cancelled all reminders until the app was next sent to the background.
+  @visibleForTesting
+  Future<(ReminderSettings, ForgottenSettings)> settingsForPlan() async {
+    await ref.read(reminderSettingsProvider.notifier).ready;
+    await ref.read(forgottenSettingsProvider.notifier).ready;
+    return (ref.read(reminderSettingsProvider), ref.read(forgottenSettingsProvider));
+  }
+
   Future<void> _reschedule() async {
     for (var i = 0; i < _maxPlanned; i++) {
       await _plugin.cancel(id: _baseId + i);
@@ -128,11 +141,10 @@ class ForgottenReminder {
       }
     } catch (_) {}
 
-    final s = ref.read(reminderSettingsProvider);
+    final (s, rule) = await settingsForPlan();
     final planned = {...shown};
     if (s.enabled) {
       final times = nextReminderTimes(now, s, count: _maxPlanned);
-      final rule = ref.read(forgottenSettingsProvider);
       // Every song with enough plays (or ❤) — the "not played for N days" part is
       // checked per reminder time in pickReminderSongs.
       final candidates =

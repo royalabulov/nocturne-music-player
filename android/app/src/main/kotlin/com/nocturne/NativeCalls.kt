@@ -1,6 +1,7 @@
 package com.nocturne
 
-import android.app.Activity
+import android.os.Handler
+import android.os.Looper
 import io.flutter.plugin.common.MethodChannel
 
 /// A failed call reaches Dart as a PlatformException with this code, never as a normal result
@@ -11,11 +12,13 @@ fun MethodChannel.Result.fail(reason: String, details: Any? = null) = error(CALL
 
 fun Throwable.reason(): String = "${javaClass.simpleName}: $message"
 
-/// Runs [work] off the UI thread (file copying, analysis) and answers on it.
-fun Activity.background(result: MethodChannel.Result, work: () -> Any?) {
+/// Runs [work] off the UI thread (file copying, analysis) and answers on it. Needs no
+/// activity: the channels work with no window too.
+fun background(result: MethodChannel.Result, work: () -> Any?) {
+    val main = Handler(Looper.getMainLooper())
     Thread {
         val outcome = runCatching(work)
-        runOnUiThread {
+        main.post {
             outcome.fold(result::success) { result.fail(it.reason()) }
         }
     }.start()

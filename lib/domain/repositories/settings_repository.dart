@@ -26,6 +26,7 @@ abstract final class SettingsKeys {
   static const forgottenRemindPlanned = 'forgottenRemindPlanned';
   static const resumeTrackId = 'resumeTrackId';
   static const resumePositionMs = 'resumePositionMs';
+  static const playQueue = 'playQueue';
   static const listenTrackingSince = 'listenTrackingSince';
   static const lastScanAt = 'lastScanAt';
   static const tagReaderVersion = 'tagReaderVersion';
@@ -65,6 +66,7 @@ abstract final class SettingsKeys {
     // Track ids change after a reinstall.
     resumeTrackId,
     resumePositionMs,
+    playQueue,
     // The history and the scan's own bookkeeping belong to this install.
     listenTrackingSince,
     lastScanAt,

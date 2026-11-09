@@ -1,3 +1,5 @@
+import 'dart:math' show min;
+
 import 'track_filter_sql.dart';
 import '../../domain/entities/audio_format.dart';
 import 'package:drift/drift.dart';
@@ -127,6 +129,18 @@ class LibraryRepositoryImpl implements LibraryRepository {
   Future<Track?> getTrack(int id) async {
     final row = await (db.select(db.tracks)..where((t) => t.id.equals(id))).getSingleOrNull();
     return row == null ? null : mapper.toDomain(row);
+  }
+
+  @override
+  Future<List<Track>> getTracks(List<int> ids) async {
+    final out = <Track>[];
+    // In parts: SQLite caps how many values one query may take
+    for (var i = 0; i < ids.length; i += 500) {
+      final part = ids.sublist(i, min(i + 500, ids.length));
+      final rows = await (db.select(db.tracks)..where((t) => t.id.isIn(part) & t.isMissing.equals(false))).get();
+      out.addAll(rows.map(mapper.toDomain));
+    }
+    return out;
   }
 
   @override

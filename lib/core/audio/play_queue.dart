@@ -89,6 +89,16 @@ class PlayQueue {
     return wasCurrent;
   }
 
+  /// A queue as it was stored ([order] is already shuffled if [shuffled]).
+  void restore(List<Track> list, List<int> playOrder, int position,
+      {required bool shuffled, required AudioServiceRepeatMode repeatMode}) {
+    tracks = List.of(list);
+    order = List.of(playOrder);
+    pos = position;
+    shuffle = shuffled;
+    repeat = repeatMode;
+  }
+
   void clear() {
     tracks = const [];
     order = const [];

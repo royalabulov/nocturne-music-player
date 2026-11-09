@@ -8,11 +8,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:just_audio/just_audio.dart' show AudioSource;
-import 'package:rxdart/rxdart.dart';
 
 import 'app.dart';
 import 'core/audio/listen_tracker.dart';
 import 'core/audio/nocturne_audio_handler.dart';
+import 'core/audio/playback_memory.dart';
+import 'core/audio/service_release.dart';
 import 'core/diagnostics/crash_log.dart';
 import 'core/di/providers.dart';
 import 'core/ui/toast.dart';
@@ -55,18 +56,23 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
       .catchError((Object e) => debugPrint('AudioSession unavailable: $e'));
 
   late final ProviderContainer container;
+  late final PlaybackMemory memory;
   final handler = await AudioService.init(
     builder: () => NocturneAudioHandler(
       // Records the play and measures how long it's really heard
       onTrackStarted: (t) => container.read(listenTrackerProvider).trackStarted(t.id),
       onTrackUnavailable: (t) => unawaited(_reportUnplayable(container, t)),
       sourceBuilder: sourceBuilder,
+      // Play with nothing queued (a Bluetooth button after the app was ended): the last queue
+      savedQueue: () => memory.load(evenClosed: true),
     ),
     config: AudioServiceConfig(
       androidNotificationChannelId: 'com.nocturne.playback',
       androidNotificationChannelName: l10n.notificationChannel,
       // Stay in foreground while paused too: otherwise some phones kill the process in the
-      // background, and startForeground again from the background crashes on Android 12+.
+      // background, and startForeground again from the background crashes on Android 12+
+      // (resuming after a call). The wake lock the plugin would keep with it is released by
+      // releaseServiceWhenIdle below.
       androidNotificationOngoing: false,
       androidStopForegroundOnPause: false,
       androidNotificationIcon: 'drawable/ic_stat_sonar',
@@ -95,16 +101,20 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
   // Audio settings (EQ / crossfade / ReplayGain) are loaded from the DB and applied to the player.
   container.read(audioSettingsProvider);
 
-  // Playback memory: save the position every 5 seconds while playing.
-  handler.position.where((_) => handler.playing).throttleTime(const Duration(seconds: 5)).listen((pos) {
-    final t = handler.currentTrackValue;
-    if (t == null) return;
-    // A full disk fails this every 5 seconds: playback goes on, the error isn't worth a crash entry
-    unawaited(container
-        .read(historyRepositoryProvider)
-        .saveResumePoint(t.id, pos)
-        .catchError((Object e) => debugPrint('resume point not saved: $e')));
-  });
+  // Playback memory: the queue and the place in the song, so both survive the app being ended.
+  memory = PlaybackMemory(
+    settings: container.read(settingsRepositoryProvider),
+    library: container.read(libraryRepositoryProvider),
+    history: container.read(historyRepositoryProvider),
+  );
+  memory.attach(handler);
+  unawaited(memory.load().then((saved) async {
+    if (saved != null) await handler.restoreQueue(saved);
+  }).catchError((Object e) => debugPrint('queue not restored: $e')));
+
+  // Nothing heard: the playback service lets the CPU sleep (and drops its notification once stopped)
+  final service = container.read(playbackServiceProvider);
+  releaseServiceWhenIdle(handler.playbackState, paused: service.paused, stopped: service.stopped);
 
   // "Open with Nocturne" / Share: if the app was opened this way, take the file and play it;
   // while open, native code reports new files.

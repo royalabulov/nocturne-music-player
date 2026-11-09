@@ -58,7 +58,7 @@ void main() {
         'filterMinBytes', 'filterMaxBytes', 'filterMinMs', 'filterMaxMs',
         'forgottenMinPlays', 'forgottenDays', 'onlineMode',
         'forgottenRemind', 'forgottenRemindDays', 'forgottenRemindTime', 'forgottenRemindPlanned',
-        'resumeTrackId', 'resumePositionMs', 'listenTrackingSince',
+        'resumeTrackId', 'resumePositionMs', 'playQueue', 'listenTrackingSince',
         'lastScanAt', 'tagReaderVersion', 'skippedFiles2', 'uploaderArtists',
         'artistOverrides',
       });

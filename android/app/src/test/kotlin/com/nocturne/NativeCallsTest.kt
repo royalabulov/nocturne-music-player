@@ -53,7 +53,7 @@ class NativeCallsTest {
     fun `background work that throws is an error, not a result`() {
         val answer = Answer()
         val done = java.util.concurrent.CountDownLatch(1)
-        activity.background(answer) {
+        background(answer) {
             done.countDown()
             error("disk full")
         }

@@ -75,6 +75,9 @@ dependencies {
     // Smart groups: YAMNet audio classifier (on-device, offline). LiteRT = TensorFlow Lite.
     implementation("com.google.ai.edge.litert:litert:1.4.2")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // PlaybackServiceControl talks to audio_service's AudioService, a MediaBrowserServiceCompat.
+    // Same version audio_service already brings, so nothing new goes into the APK.
+    implementation("androidx.media:media:1.7.0")
 
     // Unit tests of the native code (src/test), run on the JVM. Never part of the APK.
     testImplementation("junit:junit:4.13.2")

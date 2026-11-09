@@ -97,6 +97,12 @@ class DemoLibraryRepository implements LibraryRepository {
   Future<Track?> getTrack(int id) async => _tracks.value.where((t) => t.id == id).firstOrNull;
 
   @override
+  Future<List<Track>> getTracks(List<int> ids) async {
+    final wanted = ids.toSet();
+    return [for (final t in _tracks.value) if (wanted.contains(t.id)) t];
+  }
+
+  @override
   Future<Track?> getTrackByPath(String path) async => _tracks.value.where((t) => t.path == path).firstOrNull;
 
   @override
