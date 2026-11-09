@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:just_audio/just_audio.dart' show AudioSource;
 
 import 'app.dart';
+import 'core/audio/audio_effects.dart';
 import 'core/audio/listen_tracker.dart';
 import 'core/audio/nocturne_audio_handler.dart';
 import 'core/audio/playback_memory.dart';
@@ -17,6 +18,7 @@ import 'core/audio/service_release.dart';
 import 'core/diagnostics/crash_log.dart';
 import 'core/di/providers.dart';
 import 'core/ui/toast.dart';
+import 'data/datasources/playback_service_source.dart';
 import 'domain/entities/track.dart';
 import 'domain/repositories/settings_repository.dart';
 import 'app_router.dart';
@@ -57,8 +59,14 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
 
   late final ProviderContainer container;
   late final PlaybackMemory memory;
+  // Before the players exist: on a phone that can't make a system equalizer they are built
+  // without one (just_audio would fail every song).
+  final equalizer = await PlaybackServiceSource().equalizerWorks();
+  if (!equalizer) CrashLog.add('no system equalizer on this phone: players built without one');
+
   final handler = await AudioService.init(
     builder: () => NocturneAudioHandler(
+      effects: NocturneEffects(equalizer: equalizer),
       // Records the play and measures how long it's really heard
       onTrackStarted: (t) => container.read(listenTrackerProvider).trackStarted(t.id),
       onTrackUnavailable: (t) => unawaited(_reportUnplayable(container, t)),

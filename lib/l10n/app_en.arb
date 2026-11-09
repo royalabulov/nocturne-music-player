@@ -320,6 +320,7 @@
   "zeroSec": "0 sec",
   "fiveMinPlus": "5 min+",
   "eqUnavailable": "Play any track first — the system equalizer becomes available once audio is initialised.",
+  "eqNotSupported": "This phone has no system equalizer. Music plays without it.",
   "bassBoost": "Bass Boost",
   "autoPresetOn": "Auto preset is on: the preset you pick here is remembered for \"{output}\" and switches when you change output.",
   "@autoPresetOn": {

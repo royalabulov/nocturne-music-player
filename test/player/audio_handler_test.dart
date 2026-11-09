@@ -220,6 +220,42 @@ void main() {
     expect(slow.currentTrackValue?.id, 3);
   });
 
+  // A load that never answered left just_audio's player waiting for good: every later song
+  // timed out on it too, until the app was restarted
+  test('a player that stopped answering is replaced, and the next song plays', () async {
+    final stuck = NocturneAudioHandler(
+      onTrackUnavailable: unavailable.add,
+      manageAudioSession: false,
+      loadTimeout: const Duration(milliseconds: 250),
+    );
+    addTearDown(stuck.dispose);
+    await stuck.playTracks([track(1, path: '/music/stuck.mp3'), ...five.skip(1)]);
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    expect(unavailable.map((t) => t.id), [1]);
+    expect(stuck.currentTrackValue?.id, 2);
+    expect(stuck.playing, isTrue);
+    expect(fake.players.values.where((p) => p.stuck), isEmpty, reason: 'the stuck one was let go');
+
+    await stuck.skipToNext();
+    await settle();
+    expect(stuck.currentTrackValue?.id, 3);
+    expect(stuck.playing, isTrue);
+  });
+
+  test('the player getting the next song ready is replaced too when it stops answering', () async {
+    final stuck = NocturneAudioHandler(
+      onTrackUnavailable: unavailable.add,
+      manageAudioSession: false,
+      loadTimeout: const Duration(milliseconds: 250),
+    );
+    addTearDown(stuck.dispose);
+    await stuck.playTracks([track(1), track(2, path: '/music/stuck.mp3'), track(3)]);
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    expect(stuck.currentTrackValue?.id, 1);
+    expect(stuck.playing, isTrue);
+    expect(fake.players.values.where((p) => p.stuck), isEmpty);
+  });
+
   test('a file that breaks while playing is reported and skipped', () async {
     await h.playTracks(five);
     await settle();

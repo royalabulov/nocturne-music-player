@@ -39,37 +39,58 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     // manageAudioSession=false: the audio_session plugin is not available in tests.
     // Interruptions are handled here, not by just_audio: its "duck ended" doubled the
     // volume, so a notification sound made a ReplayGain-lowered song 6 dB louder each time.
-    _a = AudioPlayer(
-      audioPipeline: this.effects.pipelineA,
-      handleInterruptions: false,
-      handleAudioSessionActivation: manageAudioSession,
-    );
-    _b = AudioPlayer(
-      audioPipeline: this.effects.pipelineB,
-      handleInterruptions: false,
-      handleAudioSessionActivation: manageAudioSession,
-    );
+    _manageSession = manageAudioSession;
+    _players = [_newPlayer(this.effects.pipeline(0)), _newPlayer(this.effects.pipeline(1))];
     if (interruptions != null || becomingNoisy != null) {
       _followSession(interruptions, becomingNoisy);
     } else if (manageAudioSession) {
       unawaited(AudioSession.instance.then((s) => _followSession(s.interruptionEventStream, s.becomingNoisyEventStream)));
     }
-    _active = _a;
-    _standby = _b;
-
-    for (final p in [_a, _b]) {
-      p.playbackEventStream.listen((_) => _onPlayerEvent(p));
-      p.playingStream.listen((_) => _onPlayerEvent(p));
-      p.positionStream.listen((pos) => _onPosition(p, pos));
-      p.durationStream.listen((_) => _onPlayerEvent(p));
-      // A file that breaks while it plays (SD card out, deleted by another app) arrives only
-      // here: just_audio doesn't skip on its own (maxSkipsOnError is 0).
-      p.errorStream.listen((e) => _onPlayerError(p, e));
-    }
+    _active = _players[0];
+    _standby = _players[1];
   }
 
-  late final AudioPlayer _a, _b;
+  late final bool _manageSession;
+
+  /// The two players, by effects slot. One can be swapped for a new one ([_replace]).
+  late final List<AudioPlayer> _players;
   late AudioPlayer _active, _standby;
+  final _listening = <AudioPlayer, List<StreamSubscription<void>>>{};
+
+  AudioPlayer _newPlayer(AudioPipeline pipeline) {
+    final p = AudioPlayer(
+      audioPipeline: pipeline,
+      handleInterruptions: false,
+      handleAudioSessionActivation: _manageSession,
+    );
+    _listening[p] = [
+      p.playbackEventStream.listen((_) => _onPlayerEvent(p)),
+      p.playingStream.listen((_) => _onPlayerEvent(p)),
+      p.positionStream.listen((pos) => _onPosition(p, pos)),
+      p.durationStream.listen((_) => _onPlayerEvent(p)),
+      // A file that breaks while it plays (SD card out, deleted by another app) arrives only
+      // here: just_audio doesn't skip on its own (maxSkipsOnError is 0).
+      p.errorStream.listen((e) => _onPlayerError(p, e)),
+    ];
+    return p;
+  }
+
+  /// A load that never answered leaves just_audio's player waiting for good: every later
+  /// file on it timed out too, until the app was restarted. The player is thrown away with its
+  /// equalizer and a new one takes its place and role.
+  void _replace(AudioPlayer stuck) {
+    final slot = _players.indexOf(stuck);
+    if (slot < 0) return;
+    for (final s in _listening.remove(stuck) ?? const <StreamSubscription<void>>[]) {
+      unawaited(s.cancel());
+    }
+    // It may never answer this either
+    unawaited(stuck.dispose().catchError((Object e) => debugPrint('NocturneAudioHandler: dispose failed: $e')));
+    final fresh = _players[slot] = _newPlayer(effects.renew(slot));
+    if (_active == stuck) _active = fresh;
+    if (_standby == stuck) _standby = fresh;
+    debugPrint('NocturneAudioHandler: player $slot replaced after it stopped answering');
+  }
 
   /// Track → AudioSource. Default: the file. In the web demo, a synthesized WAV (data: URI).
   final AudioSource Function(Track) _sourceFor;
@@ -405,8 +426,9 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     _stopped = true;
     _gaveUp = false;
     _cancelFade();
-    await _quietStop(_a);
-    await _quietStop(_b);
+    for (final p in _players) {
+      await _quietStop(p);
+    }
     await super.stop();
   }
 
@@ -480,8 +502,9 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
 
   Future<void> dispose() async {
     _cancelFade();
-    await _a.dispose();
-    await _b.dispose();
+    for (final p in _players) {
+      await p.dispose();
+    }
     await _current.close();
     await _queue.close();
     await _duration.close();
@@ -536,6 +559,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
       _loadingActive = false;
       if (failure != null) {
         debugPrint('NocturneAudioHandler: load failed "${track.path.split('/').last}": $failure');
+        if (failure is TimeoutException) _replace(_active);
         _failedLoad = _activeLoad;
         return _skipUnplayable(track, orderPos, autoplay: autoplay, failures: failures);
       }
@@ -640,6 +664,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
       // itself, we leave it alone here.
       debugPrint('NocturneAudioHandler: preload failed "${track.path.split('/').last}": $e');
       if (_standbyPos == next) _standbyPos = null;
+      if (e is TimeoutException) _replace(_standby);
     }
   }
 

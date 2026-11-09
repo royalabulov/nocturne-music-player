@@ -63,9 +63,17 @@ abstract final class TagReader {
   static Future<Map<String, TagInfo?>> readMany(List<String> paths) =>
       runBounded(() => {for (final path in paths) path: read(path)}, timeout: batchTimeout);
 
+  /// The format from the name, and for an .m4a from its bitrate too ([AudioFormat.forM4a]).
+  /// [audioBytes]: the file without its pictures, so a big cover on a short song doesn't look
+  /// like a high bitrate.
+  static AudioFormat formatOf(String path, {required int audioBytes, required int durationMs}) {
+    final byName = AudioFormat.fromExtension(p.extension(path));
+    if (p.extension(path).toLowerCase() != '.m4a' || durationMs <= 0) return byName;
+    return AudioFormat.forM4a(averageKbps: (audioBytes * 8 / durationMs).round());
+  }
+
   static TagInfo? read(String path) {
     final file = File(path);
-    final format = AudioFormat.fromExtension(p.extension(path));
     AudioMetadata? m;
     double? replayGain;
     try {
@@ -83,6 +91,11 @@ abstract final class TagReader {
     }
 
     final durationMs = m?.duration?.inMilliseconds ?? 0;
+    final format = formatOf(
+      path,
+      audioBytes: size - (m?.pictures.fold<int>(0, (sum, x) => sum + x.bytes.length) ?? 0),
+      durationMs: durationMs,
+    );
     // In MP3 VBR the first frame's bitrate is misleading → compute the average bitrate
     int? bitrateKbps;
     if (!format.isLossless && durationMs > 0) {

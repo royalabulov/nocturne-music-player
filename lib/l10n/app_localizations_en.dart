@@ -496,6 +496,10 @@ class L10nEn extends L10n {
       'Play any track first — the system equalizer becomes available once audio is initialised.';
 
   @override
+  String get eqNotSupported =>
+      'This phone has no system equalizer. Music plays without it.';
+
+  @override
   String get bassBoost => 'Bass Boost';
 
   @override

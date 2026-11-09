@@ -925,6 +925,12 @@ abstract class L10n {
   /// **'Play any track first — the system equalizer becomes available once audio is initialised.'**
   String get eqUnavailable;
 
+  /// No description provided for @eqNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has no system equalizer. Music plays without it.'**
+  String get eqNotSupported;
+
   /// No description provided for @bassBoost.
   ///
   /// In en, this message translates to:

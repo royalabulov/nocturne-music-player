@@ -127,7 +127,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                     ? Padding(
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         child: Text(
-                          l10n.eqUnavailable,
+                          ref.read(audioHandlerProvider).effects.supported ? l10n.eqUnavailable : l10n.eqNotSupported,
                           textAlign: TextAlign.center,
                           style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
                         ),

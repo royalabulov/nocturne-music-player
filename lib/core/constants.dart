@@ -8,7 +8,8 @@ const kMaxTextScale = 1.5;
 /// v6: no artist → taken from an "Artist - Title" name (guessArtist), "- Topic" cleaned.
 /// v7: quoted names aren't split, a "01 " track number is dropped.
 /// v8: "- Topic" is cleaned from album names too.
-const kTagReaderVersion = 8;
+/// v9: .m4a told apart (AAC or ALAC by bitrate), AIFF and APE named.
+const kTagReaderVersion = 9;
 
 /// Version of the smart-groups audio analysis (Kotlin AudioAnalyzer + stored
 /// classes). When it goes up, every song is re-analyzed in the background.

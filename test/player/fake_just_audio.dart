@@ -19,6 +19,10 @@ class FakeJustAudio extends JustAudioPlatform {
   /// Paths containing this word load as a file with no sound in it (0 s long).
   static const silentMarker = 'silent';
 
+  /// Paths containing this word never finish loading, and the player never answers a
+  /// load again (the native side stopped answering: a stalled card, a hung decoder).
+  static const stuckMarker = 'stuck';
+
   @override
   Future<AudioPlayerPlatform> init(InitRequest request) async =>
       players[request.id] = FakePlayer(request.id);
@@ -56,6 +60,9 @@ class FakePlayer extends AudioPlayerPlatform {
 
   final _events = StreamController<PlaybackEventMessage>.broadcast();
   bool playing = false;
+
+  /// Stopped answering loads for good ([FakeJustAudio.stuckMarker]).
+  bool stuck = false;
   String? uri;
   Duration position = Duration.zero;
   double volume = 1;
@@ -111,6 +118,10 @@ class FakePlayer extends AudioPlayerPlatform {
   @override
   Future<LoadResponse> load(LoadRequest request) async {
     final u = _uriOf(request.audioSourceMessage);
+    if (stuck || (u != null && u.contains(FakeJustAudio.stuckMarker))) {
+      stuck = true;
+      await Completer<void>().future;
+    }
     if (u != null && u.contains(FakeJustAudio.missingMarker)) {
       fail(); // like ExoPlayer: the error event first, then the failed load
       throw PlatformException(code: 'fnf', message: 'File not found: $u');

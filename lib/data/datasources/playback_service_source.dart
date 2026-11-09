@@ -15,6 +15,19 @@ class PlaybackServiceSource {
   /// Stopped: the notification goes too.
   Future<void> stopped() => _call('stopped');
 
+  /// Whether the phone can give a player a system equalizer (Kotlin `EqualizerProbe`). Asked
+  /// before the players exist: one that can't make it would play nothing. Unknown counts as
+  /// yes, as it always did.
+  Future<bool> equalizerWorks() async {
+    if (kIsWeb || !Platform.isAndroid) return true;
+    try {
+      return await _ch.invokeMethod<bool>('equalizerWorks') ?? true;
+    } catch (e) {
+      debugPrint('equalizer probe: $e');
+      return true;
+    }
+  }
+
   Future<void> _call(String method) async {
     if (kIsWeb || !Platform.isAndroid) return;
     try {

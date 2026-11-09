@@ -497,6 +497,10 @@ class L10nAz extends L10n {
       'Əvvəlcə hər hansı mahnını oxudun — sistem ekvalayzeri səs başlayandan sonra əlçatan olur.';
 
   @override
+  String get eqNotSupported =>
+      'Bu telefonda sistem ekvalayzeri yoxdur. Musiqi onsuz çalır.';
+
+  @override
   String get bassBoost => 'Bas gücləndirmə';
 
   @override

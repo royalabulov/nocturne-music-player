@@ -130,6 +130,7 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
             when (call.method) {
                 "paused" -> result.success(PlaybackServiceControl.paused())
                 "stopped" -> result.success(PlaybackServiceControl.stopped())
+                "equalizerWorks" -> background(result) { EqualizerProbe.works(context) }
                 else -> result.notImplemented()
             }
         }

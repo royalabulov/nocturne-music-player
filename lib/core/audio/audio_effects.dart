@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -72,23 +73,50 @@ class EqPreset {
 /// through the same EQ. Android system Equalizer (bound to the ExoPlayer audio session).
 /// On iOS the pipeline is empty (phase 5+).
 class NocturneEffects {
-  NocturneEffects()
-      : _eqA = !kIsWeb && Platform.isAndroid ? AndroidEqualizer() : null,
-        _eqB = !kIsWeb && Platform.isAndroid ? AndroidEqualizer() : null;
+  /// [equalizer]: false on a phone that can't make a system equalizer (EqualizerProbe.kt).
+  /// just_audio builds one for every player with no try, so there no song played at all;
+  /// without it the music plays and the equalizer screen says it isn't there.
+  /// [android]: tests stand in for the phone.
+  NocturneEffects({bool equalizer = true, @visibleForTesting bool? android})
+      : _withEq = equalizer && (android ?? (!kIsWeb && Platform.isAndroid)) {
+    _eqs = [_newEq(), _newEq()];
+  }
 
-  final AndroidEqualizer? _eqA, _eqB;
+  final bool _withEq;
+  late final List<AndroidEqualizer?> _eqs;
+  AndroidEqualizer? _newEq() => _withEq ? AndroidEqualizer() : null;
 
-  AudioPipeline get pipelineA => AudioPipeline(androidAudioEffects: [if (_eqA != null) _eqA]);
-  AudioPipeline get pipelineB => AudioPipeline(androidAudioEffects: [if (_eqB != null) _eqB]);
+  /// The effects for player [slot] (0 or 1).
+  AudioPipeline pipeline(int slot) => AudioPipeline(androidAudioEffects: [?_eqs[slot]]);
 
-  bool get supported => _eqA != null;
+  /// A new equalizer for player [slot], whose player is being replaced (an equalizer belongs to
+  /// one player). It gets the current on/off state and, once its player has loaded, the gains.
+  AudioPipeline renew(int slot) {
+    final eq = _eqs[slot] = _newEq();
+    if (eq != null) {
+      unawaited(eq.setEnabled(_enabled));
+      final gains = _applied;
+      if (gains.isNotEmpty) unawaited(eq.parameters.then((_) => _setBands(eq, gains)));
+    }
+    return pipeline(slot);
+  }
+
+  bool get supported => _withEq;
+
+  bool _enabled = false;
+  List<double> _applied = const [];
+
+  /// The gains last sent to the equalizers (after [withHeadroom]).
+  @visibleForTesting
+  List<double> get applied => _applied;
 
   List<EqBand>? _bands;
 
-  /// The device's bands. May come back empty until a player has loaded once.
+  /// The device's bands. Waits until a player has loaded once (the system equalizer exists
+  /// only from then on); empty where there is none.
   Future<List<EqBand>> bands() async {
     if (_bands != null) return _bands!;
-    final eq = _eqA;
+    final eq = _eqs[0];
     if (eq == null) return const [];
     try {
       final p = await eq.parameters;
@@ -103,26 +131,40 @@ class NocturneEffects {
   }
 
   Future<void> setEnabled(bool on) async {
-    for (final eq in [_eqA, _eqB]) {
+    _enabled = on;
+    for (final eq in _eqs) {
       await eq?.setEnabled(on);
     }
   }
 
-  /// dB per band (length = bands().length). Applied to both players.
+  /// dB per band (length = bands().length). Applied to both players, lowered by
+  /// [withHeadroom] so a boost can't push the song past full scale.
   Future<void> setGains(List<double> db) async {
+    final gains = _applied = withHeadroom(db);
     final known = await bands();
-    for (final eq in [_eqA, _eqB]) {
-      if (eq == null) continue;
-      try {
-        final p = await eq.parameters;
-        for (var i = 0; i < p.bands.length && i < db.length; i++) {
-          await p.bands[i].setGain(db[i].clamp(p.minDecibels, p.maxDecibels));
-        }
-      } catch (e) {
-        debugPrint('NocturneEffects: setGains failed: $e');
-      }
+    for (final eq in _eqs) {
+      if (eq != null) await _setBands(eq, gains);
     }
     if (known.isEmpty) _bands = null; // try again next time
+  }
+
+  Future<void> _setBands(AndroidEqualizer eq, List<double> db) async {
+    try {
+      final p = await eq.parameters;
+      for (var i = 0; i < p.bands.length && i < db.length; i++) {
+        await p.bands[i].setGain(db[i].clamp(p.minDecibels, p.maxDecibels));
+      }
+    } catch (e) {
+      debugPrint('NocturneEffects: setGains failed: $e');
+    }
+  }
+
+  /// The curve moved down by its highest boost: the shape stays, nothing is above 0 dB.
+  /// Songs are mastered close to full scale, so "Bass Boost" with the bass slider (+14 dB at
+  /// 60 Hz) clipped and crackled, and came on that much louder than the song itself.
+  static List<double> withHeadroom(List<double> db) {
+    final top = db.fold(0.0, max);
+    return [for (final g in db) g - top];
   }
 
   /// Preset + bass boost (0..1) → dB list for the device's bands.

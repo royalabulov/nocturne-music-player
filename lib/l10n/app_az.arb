@@ -138,6 +138,7 @@
   "zeroSec": "0 san",
   "fiveMinPlus": "5 dəq+",
   "eqUnavailable": "Əvvəlcə hər hansı mahnını oxudun — sistem ekvalayzeri səs başlayandan sonra əlçatan olur.",
+  "eqNotSupported": "Bu telefonda sistem ekvalayzeri yoxdur. Musiqi onsuz çalır.",
   "bassBoost": "Bas gücləndirmə",
   "autoPresetOn": "Avtomatik rejim açıqdır: burada seçdiyiniz ayar «{output}» üçün yadda qalır və qulaqlığı taxanda və ya çıxaranda özü dəyişir.",
   "autoPresetOff": "Avtomatik rejim söndürülüb: bu ayar bütün çıxışlarda işləyir.",
