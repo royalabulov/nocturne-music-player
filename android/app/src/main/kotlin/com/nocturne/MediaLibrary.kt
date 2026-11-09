@@ -2,12 +2,14 @@ package com.nocturne
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import androidx.annotation.RequiresApi
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -20,6 +22,19 @@ class MediaLibrary(context: Context) {
         fun audioSelection(sdk: Int = Build.VERSION.SDK_INT): String {
             val songs = "${MediaStore.Audio.Media.IS_MUSIC} != 0 OR ${MediaStore.Audio.Media.DURATION} > 30000"
             return if (sdk >= Build.VERSION_CODES.S) "($songs) AND ${MediaStore.Audio.Media.IS_RECORDING} = 0" else songs
+        }
+
+        /// One volume's songs as [generation] sees them, from rows of (generation added,
+        /// generation modified): a removed song lowers the count, a new one raises the newest
+        /// "added", a changed one the newest "modified".
+        fun songsStamp(volume: String, rows: Cursor): String {
+            var added = 0L
+            var modified = 0L
+            while (rows.moveToNext()) {
+                added = maxOf(added, rows.getLong(0))
+                modified = maxOf(modified, rows.getLong(1))
+            }
+            return "$volume=${rows.count}/$added/$modified"
         }
     }
 
@@ -54,6 +69,33 @@ class MediaLibrary(context: Context) {
             }
         }
         return out
+    }
+
+    /// A value that changes whenever a song is added, changed or removed in the media index, on
+    /// every storage volume (SD card too). Null before Android 11, which has no generations,
+    /// or when the index can't be read.
+    ///
+    /// Songs only: the index's own counter (MediaStore.getGeneration) also moves for every
+    /// photo taken and every WhatsApp picture, and each of those cost a full library scan on the
+    /// next return to the app.
+    fun generation(): String? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) songsGeneration() else null
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun songsGeneration(): String? {
+        val parts = ArrayList<String>()
+        // The version changes when the index is rebuilt (generations start again from zero)
+        parts.add(MediaStore.getVersion(context))
+        // Generations are counted per volume, so each one is read on its own
+        for (volume in MediaStore.getExternalVolumeNames(context).sorted()) {
+            val cursor = resolver.query(
+                MediaStore.Audio.Media.getContentUri(volume),
+                arrayOf(MediaStore.MediaColumns.GENERATION_ADDED, MediaStore.MediaColumns.GENERATION_MODIFIED),
+                audioSelection(), null, null,
+            ) ?: return null
+            parts.add(cursor.use { songsStamp(volume, it) })
+        }
+        return parts.joinToString(";")
     }
 
     fun scan(paths: List<String>) {

@@ -7,6 +7,8 @@ import android.content.IntentSender
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
@@ -21,7 +23,7 @@ class AudioDeleter(private val activity: Activity) {
 
     /// Result: "deleted" | "cancelled".
     fun delete(path: String, result: MethodChannel.Result) {
-        if (pending != null) {
+        if (pending != null || sorting) {
             result.fail(BUSY)
             return
         }
@@ -88,42 +90,62 @@ class AudioDeleter(private val activity: Activity) {
     /// (paths actually deleted). A failure carries the paths already gone as its details.
     /// Android 11+: our own files without a dialog, the rest in **one** system
     /// dialog. Android 10 and older: "unsupported" → Dart deletes each file separately.
+    ///
+    /// The per-file work (a MediaStore query and a delete attempt each) runs on its own thread:
+    /// on the UI thread, 200 songs froze the screen for seconds and risked "app not responding".
     fun deleteBatch(paths: List<String>, result: MethodChannel.Result) {
-        val done = ArrayList<String>()
-        if (pending != null) {
-            result.fail(BUSY, done)
+        if (pending != null || sorting) {
+            result.fail(BUSY, emptyList<String>())
             return
         }
-        try {
-            val uris = ArrayList<Uri>()
-            for (p in paths) {
-                val uri = mediaStoreUriFor(p)
-                if (uri == null) {
-                    val f = File(p)
-                    if (!f.exists() || f.delete()) done.add(p)
-                    continue
-                }
-                val direct = try {
-                    resolver.delete(uri, null, null) > 0 && !File(p).exists()
-                } catch (e: SecurityException) {
-                    false
-                }
-                if (direct) done.add(p) else uris.add(uri)
+        sorting = true
+        val main = Handler(Looper.getMainLooper())
+        val done = ArrayList<String>()
+        Thread {
+            val outcome = runCatching { deleteOwn(paths, done) }
+            main.post {
+                sorting = false
+                outcome.fold({ uris -> askForTheRest(paths, done, uris, result) }) { result.fail(it.reason(), done) }
             }
-            if (uris.isEmpty()) {
-                result.success(mapOf("status" to "deleted", "deleted" to done))
-                return
+        }.start()
+    }
+
+    /// Deletes what needs no dialog (files MediaStore doesn't know, our own files) and adds
+    /// them to [done]; the rest come back as MediaStore URIs for the system dialog.
+    private fun deleteOwn(paths: List<String>, done: MutableList<String>): List<Uri> {
+        val uris = ArrayList<Uri>()
+        for (p in paths) {
+            val uri = mediaStoreUriFor(p)
+            if (uri == null) {
+                val f = File(p)
+                if (!f.exists() || f.delete()) done.add(p)
+                continue
             }
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            val direct = try {
+                resolver.delete(uri, null, null) > 0 && !File(p).exists()
+            } catch (e: SecurityException) {
+                false
+            }
+            if (direct) done.add(p) else uris.add(uri)
+        }
+        return uris
+    }
+
+    private fun askForTheRest(paths: List<String>, done: List<String>, uris: List<Uri>, result: MethodChannel.Result) {
+        when {
+            uris.isEmpty() -> result.success(mapOf("status" to "deleted", "deleted" to done))
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.R ->
                 result.success(mapOf("status" to "unsupported", "deleted" to done))
-                return
+            // A single delete got its dialog up while this batch was being sorted
+            pending != null -> result.fail(BUSY, done)
+            else -> try {
+                val pi = MediaStore.createDeleteRequest(resolver, uris)
+                pendingBatch = paths
+                askUser(pi.intentSender, null, result)
+            } catch (e: Exception) {
+                pendingBatch = null
+                result.fail(e.reason(), done)
             }
-            val pi = MediaStore.createDeleteRequest(resolver, uris)
-            pendingBatch = paths
-            askUser(pi.intentSender, null, result)
-        } catch (e: Exception) {
-            pendingBatch = null
-            result.fail(e.reason(), done)
         }
     }
 
@@ -187,6 +209,9 @@ class AudioDeleter(private val activity: Activity) {
         private var pending: MethodChannel.Result? = null
         private var pendingPath: String? = null
         private var pendingBatch: List<String>? = null
+
+        /// A batch is being sorted on its own thread (main thread only reads and writes this).
+        private var sorting = false
 
         /// The activity is closing for good: no answer will come, so the waiting call is told
         /// "cancelled" (otherwise every later delete would be refused as busy).

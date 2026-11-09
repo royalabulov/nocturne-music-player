@@ -24,6 +24,20 @@ class MediaStoreSource implements DeviceFiles {
     ];
   }
 
+  /// Changes whenever a song is added, changed or removed in the phone's media index
+  /// (Android 11+, every storage volume; photos and other media don't count). Null where
+  /// there is no such counter or it can't be read: then nobody can tell, and the caller scans.
+  Future<String?> generation() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      return await _ch.invokeMethod<String>('mediaGeneration');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
 /// Add files found by the folder walk but unknown to MediaStore to the index,
 /// so other apps (and Bluetooth/Android Auto) see them too.
   Future<void> notify(List<String> paths) async {

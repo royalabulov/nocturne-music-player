@@ -25,19 +25,27 @@ enum OutputKind {
 }
 
 class OutputDetector {
-  OutputDetector() {
+  /// [session]: the phone's audio session; tests hand in their own.
+  OutputDetector({Future<AudioSession> Function()? session}) : _session = session ?? (() => AudioSession.instance) {
     unawaited(_init());
   }
+
+  final Future<AudioSession> Function() _session;
 
   final _kind = BehaviorSubject<OutputKind>.seeded(OutputKind.speaker);
   Stream<OutputKind> get stream => _kind.stream.distinct();
   OutputKind get current => _kind.value;
 
+  StreamSubscription<void>? _devices;
+  bool _closed = false;
+
   Future<void> _init() async {
     try {
-      final session = await AudioSession.instance;
+      final session = await _session();
+      if (_closed) return;
       await _refresh(session);
-      session.devicesChangedEventStream.listen((_) => _refresh(session));
+      if (_closed) return;
+      _devices = session.devicesChangedEventStream.listen((_) => _refresh(session));
     } catch (_) {
       // Web / unsupported platform → treated as speaker
     }
@@ -46,7 +54,7 @@ class OutputDetector {
   Future<void> _refresh(AudioSession session) async {
     try {
       final devices = await session.getDevices(includeInputs: false);
-      _kind.add(_classify(devices));
+      if (!_closed) _kind.add(_classify(devices));
     } catch (_) {
       // Some devices give no list — treated as speaker
     }
@@ -68,5 +76,11 @@ class OutputDetector {
     return OutputKind.speaker;
   }
 
-  void dispose() => _kind.close();
+  /// Stops following the devices too: the listener used to outlive the detector and add to a
+  /// closed stream on every plug-in.
+  void dispose() {
+    _closed = true;
+    unawaited(_devices?.cancel());
+    unawaited(_kind.close());
+  }
 }

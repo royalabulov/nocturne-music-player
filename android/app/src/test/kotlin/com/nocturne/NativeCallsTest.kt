@@ -81,8 +81,40 @@ class NativeCallsTest {
         val file = tmp.newFile("song.mp3")
         val answer = Answer()
         AudioDeleter(activity).deleteBatch(listOf(file.path), answer)
+        awaitAnswer(answer)
         assertEquals(mapOf("status" to "deleted", "deleted" to listOf(file.path)), answer.value)
         assertFalse(file.exists())
+    }
+
+    /// One MediaStore query and one delete per file: 200 songs on the UI thread froze it for
+    /// seconds. The answer comes back on the UI thread, after the work is done elsewhere.
+    @Test
+    fun `a batch is sorted off the UI thread, and nothing else deletes meanwhile`() {
+        val file = tmp.newFile("song.mp3")
+        val answer = Answer()
+        AudioDeleter(activity).deleteBatch(listOf(file.path), answer)
+        assertEquals(0, answer.calls)
+
+        val second = Answer()
+        AudioDeleter(activity).deleteBatch(listOf(tmp.newFile("b.mp3").path), second)
+        val single = Answer()
+        AudioDeleter(activity).delete("/storage/emulated/0/Music/gone.mp3", single)
+        assertEquals(CALL_FAILED, second.code)
+        assertEquals(CALL_FAILED, single.code)
+
+        awaitAnswer(answer)
+        assertEquals(mapOf("status" to "deleted", "deleted" to listOf(file.path)), answer.value)
+        val next = Answer()
+        AudioDeleter(activity).delete("/storage/emulated/0/Music/gone.mp3", next)
+        assertEquals("deleted", next.value)
+    }
+
+    private fun awaitAnswer(answer: Answer) {
+        for (i in 0 until 200) {
+            shadowOf(Looper.getMainLooper()).idle()
+            if (answer.calls > 0) return
+            Thread.sleep(10)
+        }
     }
 
     private fun dialog() = PendingIntent.getActivity(activity, 0, Intent(), PendingIntent.FLAG_IMMUTABLE).intentSender

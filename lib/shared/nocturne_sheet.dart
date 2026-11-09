@@ -6,6 +6,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_typography.dart';
 import '../l10n/l10n.dart';
+import 'with_text_controller.dart';
 
 /// Shared bottom sheet shell: handle + title + content.
 Future<T?> showNocturneSheet<T>(
@@ -198,36 +199,38 @@ Future<String?> showNameDialog(
   String initial = '',
   String? hint,
 }) {
-  final ctrl = TextEditingController(text: initial);
   return showDialog<String>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.surfaceLow,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
-      title: Text(title, style: AppTypography.headlineMd),
-      content: TextField(
-        controller: ctrl,
-        autofocus: true,
-        style: AppTypography.bodyMd,
-        cursorColor: AppColors.cyan,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(
-          hintText: hint ?? l10n.name,
-          hintStyle: AppTypography.bodyMd.copyWith(color: AppColors.textMuted),
-          filled: true,
-          fillColor: AppColors.surfaceContainer,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md), borderSide: BorderSide.none),
+    builder: (_) => WithTextController(
+      text: initial,
+      builder: (ctx, ctrl) => AlertDialog(
+        backgroundColor: AppColors.surfaceLow,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
+        title: Text(title, style: AppTypography.headlineMd),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          style: AppTypography.bodyMd,
+          cursorColor: AppColors.cyan,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            hintText: hint ?? l10n.name,
+            hintStyle: AppTypography.bodyMd.copyWith(color: AppColors.textMuted),
+            filled: true,
+            fillColor: AppColors.surfaceContainer,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md), borderSide: BorderSide.none),
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
         ),
-        onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.electric),
+            child: Text(l10n.save),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
-        FilledButton(
-          onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-          style: FilledButton.styleFrom(backgroundColor: AppColors.electric),
-          child: Text(l10n.save),
-        ),
-      ],
     ),
   ).then((v) => (v == null || v.isEmpty) ? null : v);
 }

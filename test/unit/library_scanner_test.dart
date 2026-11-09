@@ -22,8 +22,12 @@ import 'package:nocturne/domain/repositories/settings_repository.dart';
 
 class _FakeStore extends MediaStoreSource {
   List<RawAudio> files = [];
+  String? counter = 'v1;external_primary=5';
   @override
-  Future<List<RawAudio>> enumerate() async => files;
+  Future<String?> generation() async => counter;
+  bool broken = false;
+  @override
+  Future<List<RawAudio>> enumerate() async => broken ? throw StateError('MediaStore gone') : files;
   @override
   Future<void> notify(List<String> paths) async {}
 }
@@ -32,11 +36,13 @@ class _FakeStore extends MediaStoreSource {
 class _Covers extends CoverCache {
   _Covers(this.full);
   final bool Function() full;
+  final given = <String?>[];
 
   @override
-  Future<String> store(Uint8List bytes) async {
+  Future<String> store(Uint8List bytes, {String? hash}) async {
     if (full()) throw const FileSystemException('No space left on device');
-    return 'hash';
+    given.add(hash);
+    return hash ?? 'hash';
   }
 }
 
@@ -314,6 +320,99 @@ void main() {
       expect(rows.map((t) => t.path).toSet(), {'/m/a.mp3', '/m/b.mp3'});
       expect(rows.map((t) => t.coverHash), everyElement(isNull));
     });
+  });
+
+  // Returning to the app rescanned everything every time: ~0.4 s of the UI thread for 725 songs
+  group('a scan is needed only when something changed', () {
+    late Directory music;
+
+    setUp(() async {
+      music = Directory.systemTemp.createTempSync('nocturne_music');
+      await db.delete(db.scanFolders).go();
+      await db.into(db.scanFolders).insert(ScanFoldersCompanion.insert(path: music.path));
+      scanner = LibraryScanner(db: db, mediaStore: store, folders: FolderSource(), covers: CoverCache());
+    });
+    tearDown(() => music.deleteSync(recursive: true));
+
+    test('nothing changed: no scan', () async {
+      Directory('${music.path}/Album').createSync();
+      await scanner.scan();
+      expect(await scanner.changedSinceLastScan(), isFalse);
+    });
+
+    test('before the first scan nobody knows', () async {
+      expect(await scanner.changedSinceLastScan(), isTrue);
+    });
+
+    test('the media index changed', () async {
+      await scanner.scan();
+      store.counter = 'v1;external_primary=6';
+      expect(await scanner.changedSinceLastScan(), isTrue);
+    });
+
+    test('a phone without the counter (Android 10) always scans', () async {
+      store.counter = null;
+      await scanner.scan();
+      expect(await scanner.changedSinceLastScan(), isTrue);
+    });
+
+    test('a file landed in a subfolder MediaStore was not told about', () async {
+      final album = Directory('${music.path}/Album')..createSync();
+      await scanner.scan();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      File('${album.path}/new.mp3').writeAsBytesSync([1, 2, 3]);
+      expect(await scanner.changedSinceLastScan(), isTrue);
+    });
+
+    test('a scan folder was added', () async {
+      await scanner.scan();
+      await db.into(db.scanFolders).insert(ScanFoldersCompanion.insert(path: '/elsewhere'));
+      expect(await scanner.changedSinceLastScan(), isTrue);
+    });
+
+    test('after a failed scan the next return scans again', () async {
+      await scanner.scan();
+      store.broken = true;
+      expect((await scanner.scan()).phase, ScanPhase.error);
+      store.broken = false;
+      expect(await scanner.changedSinceLastScan(), isTrue);
+    });
+  });
+
+  test('a scan that changes nothing writes nothing to scan state but the time', () async {
+    await scanner.scan();
+    final writes = <Set<TableUpdate>>[];
+    final sub = db.tableUpdates().listen(writes.add);
+    await scanner.scan();
+    await Future<void>.delayed(Duration.zero);
+    await sub.cancel();
+    expect(writes, hasLength(1)); // lastScanAt + reader version + skipped list, one batch
+  });
+
+  test('the cover is stored under the name the reading isolate worked out', () async {
+    final covers = _Covers(() => false);
+    scanner = LibraryScanner(
+      db: db,
+      mediaStore: store,
+      folders: _NoFolders(),
+      covers: covers,
+      readTags: (paths) async => {
+        for (final p in paths)
+          p: TagInfo(
+            title: 't',
+            artist: 'A',
+            album: 'B',
+            durationMs: 100000,
+            format: AudioFormat.mp3,
+            cover: Uint8List.fromList([1, 2, 3]),
+            coverHash: 'from-isolate',
+          ),
+      },
+    );
+    store.files = [const RawAudio(path: '/m/a.mp3', size: 1, dateModified: 1)];
+    await scanner.scan();
+    expect(covers.given, ['from-isolate']);
+    expect((await db.select(db.tracks).getSingle()).coverHash, 'from-isolate');
   });
 
   test('skip signature uses size and modified time', () {

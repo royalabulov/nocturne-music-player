@@ -68,4 +68,28 @@ void main() {
     await tester.tap(find.text('action'));
     expect(tapped, isTrue);
   });
+
+  // A controller made before showDialog was never disposed
+  testWidgets('the name box answers and then lets go of its controller', (tester) async {
+    String? answer;
+    await tester.pumpWidget(MaterialApp(
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: TextButton(
+            onPressed: () async => answer = await showNameDialog(context, title: 'Name', initial: 'Old'),
+            child: const Text('ask'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('ask'));
+    await tester.pumpAndSettle();
+    final controller = tester.widget<TextField>(find.byType(TextField)).controller!;
+    await tester.enterText(find.byType(TextField), '  Night drive ');
+    await tester.tap(find.byType(FilledButton));
+    await tester.pumpAndSettle();
+
+    expect(answer, 'Night drive');
+    expect(() => controller.addListener(() {}), throwsFlutterError, reason: 'disposed once closed');
+  });
 }

@@ -128,8 +128,11 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => importer.handleOpened());
     // Also check when returning from another app (messenger, downloader, browser) — files
-    // in those folders don't always reach MediaStore, so no event may arrive
-    AppLifecycleListener(onResume: () => scan.scheduleAutoScan(delay: const Duration(milliseconds: 800)));
+    // in those folders don't always reach MediaStore, so no event may arrive. Scans only if
+    // the media index or a scan folder changed meanwhile.
+    AppLifecycleListener(
+      onResume: () => scan.scheduleAutoScan(delay: const Duration(milliseconds: 800), onlyIfChanged: true),
+    );
   }
 
   // Forgotten favorites reminder: plan the notifications on start and every time the

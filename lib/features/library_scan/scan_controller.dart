@@ -66,11 +66,16 @@ class ScanController extends Notifier<LibraryScanState> {
   Timer? _debounce;
   bool _queued = false;
 
+  /// Some call since the last scan asked for one whatever the check says.
+  bool _forced = false;
+
   /// A new song was downloaded while the app is open (MediaStore event) or the user
   /// came back to the app. Downloads fire many events → wait for [delay] of quiet,
   /// then scan once. If a scan is already running, scan once more after it ends.
-  void scheduleAutoScan({Duration delay = const Duration(seconds: 3)}) {
+  /// [onlyIfChanged]: coming back to the app scans only when the phone's files changed.
+  void scheduleAutoScan({Duration delay = const Duration(seconds: 3), bool onlyIfChanged = false}) {
     if (kIsWeb) return;
+    _forced |= !onlyIfChanged;
     _debounce?.cancel();
     _debounce = Timer(delay, () async {
       final scanner = ref.read(libraryScannerProvider);
@@ -80,6 +85,9 @@ class ScanController extends Notifier<LibraryScanState> {
         await scanner.scan(); // wait for the running scan
         _queued = false;
       }
+      final forced = _forced;
+      _forced = false;
+      if (!forced && !await scanner.changedSinceLastScan()) return;
       await autoScanIfEnabled();
     });
   }

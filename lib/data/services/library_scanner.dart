@@ -52,6 +52,27 @@ class LibraryScanner {
 
   Future<ScanProgress> scan() => _running ??= _run().whenComplete(() => _running = null);
 
+  /// What the last finished scan saw. Null: no scan yet this session, or it failed.
+  _Seen? _seen;
+
+  /// Whether a scan could find anything new: the songs in the media index changed, a
+  /// folder's contents changed (added, removed, renamed) or the folder list did. Returning
+  /// to the app used to rescan everything each time (~0.4 s of the UI thread for 725 songs,
+  /// more for more).
+  /// True whenever it can't tell: Android 10 has no index counter.
+  Future<bool> changedSinceLastScan() async {
+    final seen = _seen;
+    if (seen == null) return true;
+    final media = await mediaStore.generation();
+    if (media == null || media != seen.media) return true;
+    final roots = await _enabledFolders();
+    if (!setEquals(roots.toSet(), seen.roots)) return true;
+    return !mapEquals(await folders.stampsOf(seen.dirs.keys), seen.dirs);
+  }
+
+  Future<List<String>> _enabledFolders() async =>
+      [for (final f in await (db.select(db.scanFolders)..where((f) => f.enabled)).get()) f.path];
+
   void _emit(ScanProgress p) {
     _last = p;
     _progress.add(p);
@@ -60,11 +81,15 @@ class LibraryScanner {
   Future<ScanProgress> _run() async {
     var p = const ScanProgress(phase: ScanPhase.enumerating);
     _emit(p);
+    _seen = null;
     try {
-      // 1. Enumerate — MediaStore ∪ folder walk
-      final enabledFolders = await (db.select(db.scanFolders)..where((f) => f.enabled)).get();
+      // 1. Enumerate — MediaStore ∪ folder walk. The counter is read first: whatever changes
+      // after it is seen as a change next time.
+      final media = await mediaStore.generation();
+      final roots = await _enabledFolders();
       final fromStore = await mediaStore.enumerate();
-      final fromFolders = await folders.walk(enabledFolders.map((f) => f.path));
+      final fromFolders = await folders.walk(roots);
+      final seen = _Seen(media, roots.toSet(), folders.lastStamps);
 
       final storePaths = {for (final r in fromStore) r.path};
       final raw = <String, RawAudio>{};
@@ -141,7 +166,7 @@ class LibraryScanner {
             skipped[r.path] = skipSignature(r);
             continue;
           }
-          final coverHash = tag.cover == null ? null : await _storeCover(tag.cover!);
+          final coverHash = tag.cover == null ? null : await _storeCover(tag.cover!, tag.coverHash);
           final prev = existing[r.path];
           final companion = TracksCompanion(
             path: Value(r.path),
@@ -208,6 +233,7 @@ class LibraryScanner {
       if (skipped.isNotEmpty) debugPrint('LibraryScanner: ${skipped.length} unreadable files ignored');
 
       p = p.copyWith(phase: ScanPhase.done);
+      _seen = seen;
       _emit(p);
       return p;
     } catch (e, st) {
@@ -230,9 +256,9 @@ class LibraryScanner {
 
   /// A cover that can't be written (full disk) leaves the song without one; it used to stop
   /// the whole scan, so no new song got in at all.
-  Future<String?> _storeCover(Uint8List bytes) async {
+  Future<String?> _storeCover(Uint8List bytes, String? hash) async {
     try {
-      return await covers.store(bytes);
+      return await covers.store(bytes, hash: hash);
     } catch (e) {
       debugPrint('LibraryScanner: cover not saved: $e');
       return null;
@@ -297,13 +323,17 @@ class LibraryScanner {
         changes.add((t.id, TracksCompanion(artist: Value(artist), title: Value(title))));
       }
     }
+    // Nothing to write, nothing written: every write wakes the screens that follow these tables
+    final newUploaders = !setEquals(uploaders, known.toSet());
     await db.batch((b) {
       for (final (id, c) in changes) {
         b.update(db.tracks, c, where: (t) => t.id.equals(id));
       }
-      b.insertAllOnConflictUpdate(db.scanState, [
-        ScanStateCompanion(key: const Value(SettingsKeys.uploaderArtists), value: Value(jsonEncode(uploaders.toList()..sort()))),
-      ]);
+      if (newUploaders) {
+        b.insertAllOnConflictUpdate(db.scanState, [
+          ScanStateCompanion(key: const Value(SettingsKeys.uploaderArtists), value: Value(jsonEncode(uploaders.toList()..sort()))),
+        ]);
+      }
     });
     if (changes.isNotEmpty) debugPrint('LibraryScanner: ${changes.length} artists fixed');
   }
@@ -318,6 +348,14 @@ class LibraryScanner {
   }
 
   void dispose() => _progress.close();
+}
+
+/// The media index counter, the chosen folders and the walked folders' modified times.
+class _Seen {
+  const _Seen(this.media, this.roots, this.dirs);
+  final String? media;
+  final Set<String> roots;
+  final Map<String, int> dirs;
 }
 
 /// Signature for checking that a rejected file is "unchanged": size + modified time.

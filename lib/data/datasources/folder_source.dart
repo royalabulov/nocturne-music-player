@@ -25,9 +25,13 @@ class FolderSource {
   /// finding what MediaStore skips is what this walk is for.
   Future<List<RawAudio>> walk(Iterable<String> folders) async {
     final out = <RawAudio>[];
+    final stamps = <String, int>{};
     for (final f in folders) {
       final dir = Directory(f);
-      if (!await dir.exists()) continue;
+      if (!await dir.exists()) {
+        stamps[f] = _absent;
+        continue;
+      }
       final found = <RawAudio>[];
       final hidden = <String>{};
       // One folder at a time: a folder that can't be read is skipped and the walk goes on.
@@ -36,6 +40,8 @@ class FolderSource {
       final pending = [dir];
       while (pending.isNotEmpty) {
         final current = pending.removeLast();
+        // Before the listing: a file added while it runs changes the time after this
+        stamps[current.path] = await _modified(current.path);
         try {
           await for (final e in _list(current)) {
             if (e is Directory) {
@@ -67,7 +73,24 @@ class FolderSource {
       }
       out.addAll(found.where((r) => !_isInside(r.path, hidden)));
     }
+    lastStamps = stamps;
     return out;
+  }
+
+  /// Modified time of every folder the last [walk] went through (and of each chosen folder
+  /// that wasn't there). A file added, removed or renamed changes its folder's time; a new
+  /// subfolder changes its parent's.
+  Map<String, int> lastStamps = const {};
+
+  /// The same folders' times now, without listing what is inside them.
+  Future<Map<String, int>> stampsOf(Iterable<String> dirs) async =>
+      {for (final d in dirs) d: await _modified(d)};
+
+  static const _absent = -1;
+
+  static Future<int> _modified(String dir) async {
+    final st = await FileStat.stat(dir);
+    return st.type == FileSystemEntityType.notFound ? _absent : st.modified.millisecondsSinceEpoch;
   }
 
   static bool _isInside(String path, Set<String> folders) {

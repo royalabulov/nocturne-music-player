@@ -9,6 +9,7 @@ import '../../core/utils/bounded_isolate.dart';
 import '../../core/utils/well_formed.dart';
 import '../../domain/entities/audio_format.dart';
 import '../../domain/entities/track.dart';
+import 'cover_cache.dart';
 import 'image_size.dart';
 
 /// Result of reading tags — the raw form before it becomes a Track.
@@ -28,6 +29,7 @@ class TagInfo {
     this.sampleRateHz,
     this.bitDepth,
     this.cover,
+    this.coverHash,
     this.replayGainDb,
   });
 
@@ -38,6 +40,10 @@ class TagInfo {
   final AudioFormat format;
   final int? bitrateKbps, sampleRateHz, bitDepth;
   final Uint8List? cover;
+
+  /// [cover]'s name in the cover cache, worked out here in the reading isolate: hashing a
+  /// few MB of cover on the UI isolate stuttered the first scan.
+  final String? coverHash;
   final double? replayGainDb;
 }
 
@@ -137,6 +143,7 @@ abstract final class TagReader {
       sampleRateHz: sampleRate,
       bitDepth: bitDepth,
       cover: cover,
+      coverHash: cover == null ? null : coverHashOf(cover),
       replayGainDb: replayGain,
     );
   }

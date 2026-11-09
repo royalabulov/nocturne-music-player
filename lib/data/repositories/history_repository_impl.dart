@@ -32,6 +32,11 @@ class HistoryRepositoryImpl implements HistoryRepository {
   static const _countsSql = '(h.played_at < $_trackedSinceSql '
       'OR h.position_ms >= MIN(30000, COALESCE(t.duration_ms, 60000) / 2))';
 
+  /// What the history queries re-run on. Not scan_state, although [_trackedSinceSql] reads it:
+  /// that value is written once, together with a new play_history row, while the place in the
+  /// song goes to scan_state every 5 s during playback and re-ran all of these each time.
+  Set<ResultSetImplementation<dynamic, dynamic>> get _historyTables => {db.tracks, db.playHistory};
+
   @override
   Future<int> recordPlay(int trackId) async {
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -55,7 +60,7 @@ class HistoryRepositoryImpl implements HistoryRepository {
           'WHERE $_visibleSql AND h.played_at >= ? AND $_countsSql '
           'GROUP BY t.id ORDER BY $orderBy LIMIT ?',
           variables: [Variable.withInt(since?.millisecondsSinceEpoch ?? 0), Variable.withInt(limit)],
-          readsFrom: {db.tracks, db.playHistory, db.scanState},
+          readsFrom: _historyTables,
         )
         .watch()
         .map((rows) => [
@@ -118,7 +123,7 @@ class HistoryRepositoryImpl implements HistoryRepository {
       'SELECT h.track_id, h.played_at FROM play_history h JOIN tracks t ON t.id = h.track_id '
       'WHERE h.played_at >= ? AND $_countsSql',
       variables: [Variable.withInt(since)],
-      readsFrom: {db.playHistory, db.tracks, db.scanState},
+      readsFrom: _historyTables,
     );
     return q.watch().asyncMap((rows) async {
       final now = DateTime.now().millisecondsSinceEpoch;
@@ -167,7 +172,7 @@ class HistoryRepositoryImpl implements HistoryRepository {
           'THEN h.position_ms ELSE t.duration_ms END), 0) AS ms '
           'FROM play_history h JOIN tracks t ON t.id = h.track_id WHERE h.played_at >= ?',
           variables: [Variable.withInt(since.millisecondsSinceEpoch)],
-          readsFrom: {db.playHistory, db.tracks, db.scanState},
+          readsFrom: _historyTables,
         )
         .watchSingle()
         .map((r) => PlayStats(

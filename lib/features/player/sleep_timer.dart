@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../shared/nocturne_sheet.dart';
+import '../../shared/app_visible.dart';
 import '../../core/audio/player_providers.dart';
 import '../../l10n/l10n.dart';
 
@@ -92,8 +93,12 @@ class SleepTimerButton extends ConsumerStatefulWidget {
   ConsumerState<SleepTimerButton> createState() => _SleepTimerButtonState();
 }
 
-class _SleepTimerButtonState extends ConsumerState<SleepTimerButton> {
+class _SleepTimerButtonState extends ConsumerState<SleepTimerButton> with AppVisible {
   Timer? _tick;
+
+  /// The countdown's once-a-second timer is running.
+  @visibleForTesting
+  bool get ticking => _tick != null;
 
   @override
   void dispose() {
@@ -104,8 +109,8 @@ class _SleepTimerButtonState extends ConsumerState<SleepTimerButton> {
   @override
   Widget build(BuildContext context) {
     final s = ref.watch(sleepTimerProvider);
-    // Update the remaining time every second (only while counting down)
-    if (s.endsAt != null) {
+    // Update the remaining time every second (only while counting down and on screen)
+    if (s.endsAt != null && appVisible) {
       _tick ??= Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() {});
       });

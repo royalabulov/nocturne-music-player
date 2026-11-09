@@ -22,6 +22,7 @@ import '../../core/audio/player_providers.dart';
 import 'forgotten.dart';
 import 'forgotten_reminder.dart';
 import '../../shared/screen_back_button.dart';
+import '../../shared/with_text_controller.dart';
 
 /// Menu → Forgotten favorites: songs played a lot (or favorites) that haven't been
 /// played for a while. The rule (plays, days) is set at the top of the screen.
@@ -413,38 +414,42 @@ class _StepButton extends StatelessWidget {
 
 /// "Custom…": type the number of days (1–365).
 Future<int?> _askDays(BuildContext context, int current) {
-  final ctrl = TextEditingController(text: '$current');
-  int? parse() => int.tryParse(ctrl.text);
   return showDialog<int>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.surfaceLow,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
-      title: Text(l10n.forgottenDays, style: AppTypography.headlineMd),
-      content: TextField(
-        controller: ctrl,
-        autofocus: true,
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)],
-        style: AppTypography.bodyMd,
-        cursorColor: AppColors.cyan,
-        onSubmitted: (_) => Navigator.pop(ctx, parse()),
-        decoration: InputDecoration(
-          suffixText: l10n.forgottenDaysUnit,
-          helperText: l10n.forgottenDaysRange,
-          filled: true,
-          fillColor: AppColors.surfaceContainer,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md), borderSide: BorderSide.none),
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
-        FilledButton(
-          onPressed: () => Navigator.pop(ctx, parse()),
-          style: FilledButton.styleFrom(backgroundColor: AppColors.electric),
-          child: Text(l10n.save),
-        ),
-      ],
+    builder: (_) => WithTextController(
+      text: '$current',
+      builder: (ctx, ctrl) {
+        int? parse() => int.tryParse(ctrl.text);
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceLow,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
+          title: Text(l10n.forgottenDays, style: AppTypography.headlineMd),
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)],
+            style: AppTypography.bodyMd,
+            cursorColor: AppColors.cyan,
+            onSubmitted: (_) => Navigator.pop(ctx, parse()),
+            decoration: InputDecoration(
+              suffixText: l10n.forgottenDaysUnit,
+              helperText: l10n.forgottenDaysRange,
+              filled: true,
+              fillColor: AppColors.surfaceContainer,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md), borderSide: BorderSide.none),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, parse()),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.electric),
+              child: Text(l10n.save),
+            ),
+          ],
+        );
+      },
     ),
   );
 }

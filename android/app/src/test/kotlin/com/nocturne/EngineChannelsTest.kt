@@ -6,8 +6,11 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.StandardMethodCodec
 import java.nio.ByteBuffer
 import org.junit.After
+import android.os.Looper
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.robolectric.Shadows.shadowOf
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -33,6 +36,22 @@ private class Messenger : BinaryMessenger {
                 .fold({ it }, { (it as io.flutter.plugin.common.FlutterException).code })
         }
         return answer
+    }
+
+    /// Like [call], for work answered later on the UI thread: whether it answered at once,
+    /// and the answer once the UI thread ran.
+    fun callAndWait(channel: String, method: String, args: Any? = null): Pair<Boolean, Any?> {
+        var answer: Any? = "no answer"
+        handlers[channel]!!.onMessage(StandardMethodCodec.INSTANCE.encodeMethodCall(MethodCall(method, args)).apply { rewind() }) { reply ->
+            answer = StandardMethodCodec.INSTANCE.decodeEnvelope(reply!!.apply { rewind() })
+        }
+        val atOnce = answer != "no answer"
+        for (i in 0 until 200) {
+            if (answer != "no answer") break
+            Thread.sleep(10)
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+        return atOnce to answer
     }
 }
 
@@ -75,6 +94,16 @@ class EngineChannelsTest {
         OpenedFiles.add(listOf("content://a/1", "content://a/2"))
         assertEquals(listOf("content://a/1", "content://a/2"), messenger.call("com.nocturne/media_store", "takeOpenedUris"))
         assertEquals(emptyList<String>(), messenger.call("com.nocturne/media_store", "takeOpenedUris"))
+    }
+
+    /// Dart runs on this same thread: the song list was read here, so a big library or a busy
+    /// MediaStore froze the screen.
+    @Test
+    fun `the song list is read off the UI thread`() {
+        EngineChannels.attach(context, messenger)
+        val (atOnce, answer) = messenger.callAndWait("com.nocturne/media_store", "queryAudio")
+        assertFalse(atOnce)
+        assertEquals(emptyList<Any>(), answer)
     }
 
     @Test

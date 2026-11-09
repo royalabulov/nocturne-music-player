@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../domain/entities/track.dart';
+import '../../domain/repositories/analysis_repository.dart';
 import '../../domain/entities/restore_report.dart';
 import '../../l10n/l10n.dart';
 import '../forgotten/forgotten.dart';
@@ -83,8 +85,16 @@ class DataTransfer {
     final repo = _ref.read(analysisRepositoryProvider);
     final data = await repo.watchVibeData().first.timeout(limit);
     final labels = await repo.watchLabels().first.timeout(limit);
-    final csv = buildVibeCsv(tracks: tracks, data: data, predicted: classifyLibrary(data), labels: labels);
-    // BOM: so Excel shows Azerbaijani letters correctly
-    return (bytes: utf8.encode('﻿$csv'), songs: tracks.length);
+    // Grouping and writing every song froze the screen on a big library: its own isolate
+    final bytes = await compute(vibesCsvBytes, (tracks: tracks, data: data, labels: labels));
+    return (bytes: bytes, songs: tracks.length);
   }
+}
+
+/// The CSV file's bytes. Top-level, so [compute] can run it in another isolate.
+@visibleForTesting
+Uint8List vibesCsvBytes(({List<Track> tracks, List<TrackVibeData> data, List<VibeLabel> labels}) m) {
+  final csv = buildVibeCsv(tracks: m.tracks, data: m.data, predicted: classifyLibrary(m.data), labels: m.labels);
+  // BOM: so Excel shows Azerbaijani letters correctly
+  return utf8.encode('﻿$csv');
 }

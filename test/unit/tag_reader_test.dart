@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nocturne/data/datasources/cover_cache.dart';
 import 'package:nocturne/data/datasources/tag_reader.dart';
 
 /// ID3v2.4 tag: the given frames + header.
@@ -146,6 +147,13 @@ void main() {
       expect(tags[file.path]!.title, 'Song');
       expect(tags[file.path]!.cover, hasLength(100));
       expect(tags[missing], isNull);
+    });
+
+    // Hashing a few MB of cover on the UI isolate stuttered the first scan
+    test('the cover\'s cache name is worked out with the tags, off the UI isolate', () {
+      final tags = readFile({'TIT2': text('a'), 'APIC': cover(1000)});
+      expect(tags.coverHash, coverHashOf(tags.cover!));
+      expect(readFile({'TIT2': text('a')}).coverHash, isNull);
     });
 
     test('a normal cover is kept, an absurdly big one is dropped', () {

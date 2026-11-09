@@ -48,7 +48,10 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
 
     private fun onMediaCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "queryAudio" -> result.success(library.queryAudio())
+            // Every song on the phone: a big library or a MediaStore busy re-indexing after an
+            // update takes long enough to freeze the screen (Dart shares this thread)
+            "queryAudio" -> background(result) { library.queryAudio() }
+            "mediaGeneration" -> background(result) { library.generation() }
             "scanFiles" -> {
                 library.scan(call.argument<List<String>>("paths") ?: emptyList())
                 result.success(null)
