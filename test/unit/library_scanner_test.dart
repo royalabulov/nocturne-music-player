@@ -14,6 +14,7 @@ import 'package:nocturne/core/utils/bounded_isolate.dart';
 import 'package:nocturne/domain/entities/audio_format.dart';
 import 'package:nocturne/data/db/app_database.dart';
 import 'package:nocturne/data/services/backup_service.dart';
+import 'package:nocturne/data/services/artist_overrides.dart';
 import 'package:nocturne/data/services/library_scanner.dart';
 import 'package:nocturne/data/mappers/track_mapper.dart';
 import 'package:nocturne/data/repositories/library_repository_impl.dart';
@@ -44,6 +45,14 @@ class _Covers extends CoverCache {
     given.add(hash);
     return hash ?? 'hash';
   }
+}
+
+/// A real cover folder in a temporary place.
+class _CoversIn extends CoverCache {
+  _CoversIn(this.dir);
+  final Directory dir;
+  @override
+  Future<Directory> warmUp() async => dir;
 }
 
 class _NoFolders extends FolderSource {
@@ -387,6 +396,173 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     await sub.cancel();
     expect(writes, hasLength(1)); // lastScanAt + reader version + skipped list, one batch
+  });
+
+  // A moved or renamed file became a new song: the favorite, playlists, history, analysis and
+  // lyrics stayed on the vanished one
+  group('a moved song keeps what it had', () {
+    late Set<String> onDisk;
+    late Map<String, String> titles;
+
+    setUp(() {
+      onDisk = {};
+      titles = {};
+      scanner = LibraryScanner(
+        db: db,
+        mediaStore: store,
+        folders: _NoFolders(),
+        covers: CoverCache(),
+        readTags: (paths) async => {
+          for (final p in paths)
+            p: TagInfo(title: titles[p] ?? 'Song', artist: 'A', album: 'B', durationMs: 200000, format: AudioFormat.mp3),
+        },
+        fileExists: (path) async => onDisk.contains(path),
+      );
+    });
+
+    Future<void> at(List<String> paths, {int size = 5000000}) async {
+      store.files = [for (final p in paths) RawAudio(path: p, size: size, dateModified: 1)];
+      onDisk = paths.toSet();
+      await scanner.scan();
+    }
+
+    Future<int> idOf(String path) async =>
+        (await (db.select(db.tracks)..where((t) => t.path.equals(path))).getSingle()).id;
+
+    Future<int> favoriteAndPlay(String path) async {
+      final id = await idOf(path);
+      await db.into(db.favorites).insert(FavoritesCompanion.insert(trackId: Value(id), addedAt: 1));
+      await db.into(db.playHistory).insert(PlayHistoryCompanion.insert(trackId: id, playedAt: 1));
+      return id;
+    }
+
+    test('moved to another folder', () async {
+      await at(['/m/Download/song.mp3']);
+      final id = await favoriteAndPlay('/m/Download/song.mp3');
+
+      await at(['/m/Music/song.mp3']);
+
+      final rows = await db.select(db.tracks).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.id, id);
+      expect(rows.single.path, '/m/Music/song.mp3');
+      expect(rows.single.isMissing, isFalse);
+      expect(await db.select(db.favorites).get(), hasLength(1));
+      expect(await db.select(db.playHistory).get(), hasLength(1));
+    });
+
+    test('renamed: same song, other file name', () async {
+      titles = {'/m/a.mp3': 'Night', '/m/Night - A.mp3': 'Night'};
+      await at(['/m/a.mp3']);
+      final id = await favoriteAndPlay('/m/a.mp3');
+
+      await at(['/m/Night - A.mp3']);
+      expect(await idOf('/m/Night - A.mp3'), id);
+    });
+
+    test('moved while the app was closed, after a scan had already marked it missing', () async {
+      await at(['/m/Download/song.mp3']);
+      final id = await favoriteAndPlay('/m/Download/song.mp3');
+      await at([]);
+      expect((await db.select(db.tracks).getSingle()).isMissing, isTrue);
+
+      await at(['/sd/Music/song.mp3']);
+      expect(await idOf('/sd/Music/song.mp3'), id);
+      expect((await db.select(db.tracks).getSingle()).isMissing, isFalse);
+    });
+
+    test('an edited artist name goes along', () async {
+      await at(['/m/Download/song.mp3']);
+      await db.into(db.scanState).insertOnConflictUpdate(ArtistOverrides.row({'/m/Download/song.mp3': 'Mine'}));
+      await at(['/m/Download/song.mp3']); // the name is applied
+
+      await at(['/m/Music/song.mp3']);
+      expect((await db.select(db.tracks).getSingle()).artist, 'Mine');
+    });
+
+    test('a different song of the same size is a new song', () async {
+      titles = {'/m/a.mp3': 'One', '/m/b.mp3': 'Two'};
+      await at(['/m/a.mp3']);
+      final id = await favoriteAndPlay('/m/a.mp3');
+
+      await at(['/m/b.mp3']);
+      expect(await idOf('/m/b.mp3'), isNot(id));
+    });
+
+    test('two equal copies gone at once can\'t be told apart: no guess', () async {
+      await at(['/m/1/song.mp3', '/m/2/song.mp3']);
+      await at(['/m/3/song.mp3']);
+      final rows = await db.select(db.tracks).get();
+      expect(rows, hasLength(3));
+      expect(rows.where((r) => !r.isMissing).single.path, '/m/3/song.mp3');
+    });
+
+    test('a copy whose original is still there is a new song', () async {
+      await at(['/m/a/song.mp3']);
+      await at(['/m/a/song.mp3', '/m/b/song.mp3']);
+      expect(await db.select(db.tracks).get(), hasLength(2));
+    });
+  });
+
+  // The covers folder only ever grew: re-tagged and deleted songs left their pictures behind
+  test('covers no song uses any more are removed, the rest stay', () async {
+    final dir = Directory.systemTemp.createTempSync('nocturne_covers');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    var coverOfB = Uint8List.fromList([2, 2, 2]);
+    TagInfo tagOf(String path) {
+      final cover = path.endsWith('a.mp3') ? Uint8List.fromList([1, 1, 1]) : coverOfB;
+      return TagInfo(
+        title: path,
+        artist: 'A',
+        album: 'B',
+        durationMs: 100000,
+        format: AudioFormat.mp3,
+        cover: cover,
+        coverHash: coverHashOf(cover),
+      );
+    }
+
+    scanner = LibraryScanner(
+      db: db,
+      mediaStore: store,
+      folders: _NoFolders(),
+      covers: _CoversIn(dir),
+      readTags: (paths) async => {for (final p in paths) p: tagOf(p)},
+    );
+    store.files = [
+      const RawAudio(path: '/m/a.mp3', size: 1, dateModified: 1),
+      const RawAudio(path: '/m/b.mp3', size: 1, dateModified: 1),
+    ];
+    await scanner.scan();
+    final oldB = coverHashOf(coverOfB);
+    expect(dir.listSync(), hasLength(2));
+
+    // b gets a new picture
+    coverOfB = Uint8List.fromList([3, 3, 3]);
+    store.files = [store.files.first, const RawAudio(path: '/m/b.mp3', size: 1, dateModified: 2)];
+    await scanner.scan();
+
+    final names = {for (final f in dir.listSync()) f.uri.pathSegments.last};
+    expect(names, {coverHashOf(Uint8List.fromList([1, 1, 1])), coverHashOf(coverOfB)});
+    expect(names, isNot(contains(oldB)));
+  });
+
+  // What a restore kept waiting is applied once a scan has found the songs
+  test('the after-scan step runs after every finished scan, and can\'t fail the scan', () async {
+    var runs = 0;
+    scanner = LibraryScanner(
+      db: db,
+      mediaStore: store,
+      folders: _NoFolders(),
+      covers: CoverCache(),
+      afterScan: () async {
+        runs++;
+        throw StateError('database busy');
+      },
+    );
+    expect((await scanner.scan()).phase, ScanPhase.done);
+    expect((await scanner.scan()).phase, ScanPhase.done);
+    expect(runs, 2);
   });
 
   test('the cover is stored under the name the reading isolate worked out', () async {

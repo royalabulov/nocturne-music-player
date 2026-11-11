@@ -11,6 +11,7 @@ import '../../data/repositories/history_repository_impl.dart';
 import '../../data/repositories/library_repository_impl.dart';
 import '../../data/repositories/lyrics_repository_impl.dart';
 import '../../data/repositories/playlist_repository_impl.dart';
+import '../../data/services/auto_backup.dart';
 import '../../data/services/backup_service.dart';
 import '../../data/services/library_scanner.dart';
 import '../../domain/entities/playlist.dart';
@@ -42,6 +43,8 @@ final libraryScannerProvider = Provider<LibraryScanner>((ref) {
     mediaStore: MediaStoreSource(),
     folders: FolderSource(),
     covers: ref.watch(coverCacheProvider),
+    // A restore made before the songs were found: their favorites, plays and playlist places
+    afterScan: () => ref.read(backupServiceProvider).applyPending(),
   );
   ref.onDispose(s.dispose);
   return s;
@@ -161,4 +164,13 @@ final playlistIdsContainingProvider = StreamProvider.autoDispose.family<Set<int>
 // ── backup (Settings → Data) ──────────────────────────────
 
 final backupServiceProvider = Provider<BackupService>((ref) => BackupService(ref.watch(databaseProvider)));
+
+/// Weekly copy in Download/Nocturne, written when the app goes to the background.
+final autoBackupProvider = Provider<AutoBackup>(
+  (ref) => AutoBackup(
+    backup: ref.watch(backupServiceProvider),
+    files: ref.watch(deviceFilesProvider),
+    settings: ref.watch(settingsRepositoryProvider),
+  ),
+);
 

@@ -294,7 +294,9 @@
   "backUpDataHint": "Favorites, playlists, play history and audio settings → JSON file",
   "save": "Save",
   "restoreBackup": "Restore from backup",
-  "restoreBackupHint": "Merges into the current library (scan your music first)",
+  "restoreBackupHint": "Merges into the current library; songs not found yet are added as scans find them",
+  "autoBackup": "Weekly backup",
+  "autoBackupHint": "Once a week to Download/Nocturne, the two newest are kept. Stays after the app is removed.",
   "open": "Open",
   "exportSmartData": "Export smart-group data",
   "exportSmartDataHint": "AI scores, guesses and your answers for every song → CSV file",
@@ -321,6 +323,7 @@
   "fiveMinPlus": "5 min+",
   "eqUnavailable": "Play any track first — the system equalizer becomes available once audio is initialised.",
   "eqNotSupported": "This phone has no system equalizer. Music plays without it.",
+  "databaseReset": "Your library data was damaged and has been set aside. Your songs are being found again; restore a backup in Settings to bring back favorites and playlists.",
   "bassBoost": "Bass Boost",
   "autoPresetOn": "Auto preset is on: the preset you pick here is remembered for \"{output}\" and switches when you change output.",
   "@autoPresetOn": {
@@ -911,7 +914,7 @@
       }
     }
   },
-  "restoreMissing": " • {count} tracks not found on this device",
+  "restoreMissing": " • {count} tracks not on this device yet: they're added as soon as a scan finds them",
   "@restoreMissing": {
     "placeholders": {
       "count": {

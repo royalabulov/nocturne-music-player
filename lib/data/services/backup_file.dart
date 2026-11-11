@@ -75,6 +75,47 @@ class BackupFile {
   /// The artist names the user typed (Edit artist).
   final List<BackupArtist> artists;
 
+  bool get isEmpty =>
+      favorites.isEmpty &&
+      playlists.isEmpty &&
+      history.isEmpty &&
+      settings.isEmpty &&
+      scanFolders.isEmpty &&
+      vibeLabels.isEmpty &&
+      artists.isEmpty;
+
+  /// The same layout [parse] reads (the songs part: what waits for a song to turn up).
+  String encodeSongs() => jsonEncode({
+        'format': format,
+        'version': version,
+        'favorites': [for (final f in favorites) {'path': f.path, 'addedAt': f.addedAt}],
+        'playlists': [
+          for (final p in playlists)
+            {
+              'name': p.name,
+              'description': p.description,
+              'createdAt': p.createdAt,
+              'updatedAt': p.updatedAt,
+              'tracks': p.tracks,
+            },
+        ],
+        'history': [
+          for (final h in history)
+            {'path': h.path, 'playedAt': h.playedAt, 'completed': h.completed, 'positionMs': h.positionMs},
+        ],
+        'vibeLabels': [
+          for (final l in vibeLabels)
+            {
+              'path': l.path,
+              'mood': l.mood,
+              'genre': l.genre,
+              'predictedMood': l.predictedMood,
+              'predictedGenre': l.predictedGenre,
+              'labeledAt': l.labeledAt,
+            },
+        ],
+      });
+
   static BackupFile parse(String json) {
     // Text editors on Windows put a BOM in front when the file is saved
     final Object? root = jsonDecode(json.startsWith('\uFEFF') ? json.substring(1) : json);

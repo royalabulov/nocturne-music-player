@@ -681,11 +681,18 @@ class _DataGroup extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final autoBackup = ref.watch(boolSettingProvider(SettingsKeys.autoBackup)).value ?? true;
     return _Group(children: [
       _InfoRow(
         title: l10n.backUpData,
         subtitle: l10n.backUpDataHint,
         trailing: _SmallButton(label: l10n.save, icon: Icons.save_alt_rounded, onTap: () => _backup(context, ref)),
+      ),
+      _ToggleRow(
+        title: l10n.autoBackup,
+        subtitle: l10n.autoBackupHint,
+        value: autoBackup,
+        onChanged: (v) => ref.read(settingsRepositoryProvider).setSetting(SettingsKeys.autoBackup, '$v'),
       ),
       _InfoRow(
         title: l10n.restoreBackup,

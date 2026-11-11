@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 
 import '../../core/constants.dart';
 import '../../domain/repositories/settings_repository.dart';
@@ -30,6 +31,7 @@ class LibraryScanner {
     required this.covers,
     TagBatchReader? readTags,
     Future<bool> Function(String path)? fileExists,
+    this.afterScan,
   })  : _readTags = readTags ?? TagReader.readMany,
         _fileExists = fileExists ?? ((path) => File(path).exists());
 
@@ -37,6 +39,8 @@ class LibraryScanner {
   final MediaStoreSource mediaStore;
   final FolderSource folders;
   final CoverCache covers;
+  /// Runs after every scan that finished, once the library is up to date.
+  final Future<void> Function()? afterScan;
   final TagBatchReader _readTags;
   final Future<bool> Function(String path) _fileExists;
 
@@ -140,10 +144,17 @@ class LibraryScanner {
       // Not listed is not the same as gone: MediaStore rebuilding its index after a system
       // update answers with nothing, and one unreadable folder can cut the walk short. Only
       // a file that isn't on disk any more is hidden.
-      final missingIds = [
+      final goneNow = {
         for (final e in existing.values)
           if (!raw.containsKey(e.path) && !e.isMissing && !await _stillThere(e.path)) e.id,
-      ];
+      };
+      // Songs no longer where they were, by size: a new file may be one of them moved or
+      // renamed, and then it keeps its favorite, playlists, history, analysis and lyrics
+      final gone = <int, List<TrackRow>>{};
+      for (final e in existing.values) {
+        if (!raw.containsKey(e.path) && (e.isMissing || goneNow.contains(e.id))) (gone[e.fileSize] ??= []).add(e);
+      }
+      final moved = <String, String>{}; // old path → new path
 
       p = p.copyWith(phase: ScanPhase.reading, total: toRead.length);
       _emit(p);
@@ -167,7 +178,16 @@ class LibraryScanner {
             continue;
           }
           final coverHash = tag.cover == null ? null : await _storeCover(tag.cover!, tag.coverHash);
-          final prev = existing[r.path];
+          var prev = existing[r.path];
+          if (prev == null) {
+            final was = movedFrom(gone[r.size], r, tag);
+            if (was != null) {
+              gone[r.size]!.remove(was);
+              goneNow.remove(was.id);
+              moved[was.path] = r.path;
+              prev = was;
+            }
+          }
           final companion = TracksCompanion(
             path: Value(r.path),
             title: Value(tag.title),
@@ -212,16 +232,24 @@ class LibraryScanner {
       // 4. Prune / reappear
       p = p.copyWith(phase: ScanPhase.finalizing);
       _emit(p);
-      if (missingIds.isNotEmpty) {
-        await (db.update(db.tracks)..where((t) => t.id.isIn(missingIds)))
+      if (goneNow.isNotEmpty) {
+        await (db.update(db.tracks)..where((t) => t.id.isIn(goneNow)))
             .write(const TracksCompanion(isMissing: Value(true)));
       }
       if (reappeared.isNotEmpty) {
         await (db.update(db.tracks)..where((t) => t.id.isIn(reappeared)))
             .write(const TracksCompanion(isMissing: Value(false)));
       }
+      if (moved.isNotEmpty) await _moveArtistNames(moved);
 
       await _fixArtists();
+      await _pruneCovers();
+      try {
+        await afterScan?.call();
+      } catch (e) {
+        // The scan itself is done; what follows it tries again next time
+        debugPrint('LibraryScanner: after-scan step failed: $e');
+      }
 
       // 5. scan_state
       await db.batch((b) => b.insertAllOnConflictUpdate(db.scanState, [
@@ -242,6 +270,55 @@ class LibraryScanner {
       debugPrint('LibraryScanner failed: $e\n$st');
       return p;
     }
+  }
+
+  /// The song a new file was before it was moved or renamed: of the vanished songs with the
+  /// same size, the one as long as it (to a second) with the same file name or the same title.
+  /// Only a single match counts: two copies of one song can't be told apart.
+  @visibleForTesting
+  static TrackRow? movedFrom(List<TrackRow>? sameSize, RawAudio file, TagInfo tag) {
+    if (sameSize == null) return null;
+    final name = p.basename(file.path);
+    final hits = [
+      for (final e in sameSize)
+        if ((e.durationMs - tag.durationMs).abs() <= 1000 && (p.basename(e.path) == name || e.title == tag.title)) e,
+    ];
+    return hits.length == 1 ? hits.single : null;
+  }
+
+  /// Covers no row points at any more. After the writes, so a cover stored by this scan is kept;
+  /// a failure only leaves the files for next time.
+  Future<void> _pruneCovers() async {
+    try {
+      final used = await (db.selectOnly(db.tracks, distinct: true)
+            ..addColumns([db.tracks.coverHash])
+            ..where(db.tracks.coverHash.isNotNull()))
+          .map((r) => r.read(db.tracks.coverHash)!)
+          .get();
+      final mine = await (db.selectOnly(db.playlists)
+            ..addColumns([db.playlists.coverHash])
+            ..where(db.playlists.coverHash.isNotNull()))
+          .map((r) => r.read(db.playlists.coverHash)!)
+          .get();
+      final removed = await covers.prune({...used, ...mine});
+      if (removed > 0) debugPrint('LibraryScanner: $removed unused covers removed');
+    } catch (e) {
+      debugPrint('LibraryScanner: covers not pruned: $e');
+    }
+  }
+
+  /// Names typed with Edit artist are kept by file path: they go along with a moved file.
+  Future<void> _moveArtistNames(Map<String, String> moved) async {
+    final names = await ArtistOverrides.load(db);
+    var changed = false;
+    for (final MapEntry(key: from, value: to) in moved.entries) {
+      final name = names.remove(from);
+      if (name != null) {
+        names[to] = name;
+        changed = true;
+      }
+    }
+    if (changed) await db.into(db.scanState).insertOnConflictUpdate(ArtistOverrides.row(names));
   }
 
   /// A file that can't be checked counts as still there: hiding a song by mistake is worse

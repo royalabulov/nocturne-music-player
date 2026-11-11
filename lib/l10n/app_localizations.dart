@@ -814,8 +814,20 @@ abstract class L10n {
   /// No description provided for @restoreBackupHint.
   ///
   /// In en, this message translates to:
-  /// **'Merges into the current library (scan your music first)'**
+  /// **'Merges into the current library; songs not found yet are added as scans find them'**
   String get restoreBackupHint;
+
+  /// No description provided for @autoBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly backup'**
+  String get autoBackup;
+
+  /// No description provided for @autoBackupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Once a week to Download/Nocturne, the two newest are kept. Stays after the app is removed.'**
+  String get autoBackupHint;
 
   /// No description provided for @open.
   ///
@@ -930,6 +942,12 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'This phone has no system equalizer. Music plays without it.'**
   String get eqNotSupported;
+
+  /// No description provided for @databaseReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Your library data was damaged and has been set aside. Your songs are being found again; restore a backup in Settings to bring back favorites and playlists.'**
+  String get databaseReset;
 
   /// No description provided for @bassBoost.
   ///
@@ -2349,7 +2367,7 @@ abstract class L10n {
   /// No description provided for @restoreMissing.
   ///
   /// In en, this message translates to:
-  /// **' • {count} tracks not found on this device'**
+  /// **' • {count} tracks not on this device yet: they\'re added as soon as a scan finds them'**
   String restoreMissing(int count);
 
   /// No description provided for @appLanguage.

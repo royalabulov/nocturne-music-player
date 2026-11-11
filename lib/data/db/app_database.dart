@@ -21,9 +21,12 @@ const kDefaultScanFolders = <String>[
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
 
+  /// The file is `<app documents>/<fileName>.sqlite`, drift_flutter's default place.
+  static const fileName = 'sonar';
+
   static QueryExecutor _open() => driftDatabase(
         // The app's old name, on every installed phone: renaming the file loses the library
-        name: 'sonar',
+        name: fileName,
         native: const DriftNativeOptions(shareAcrossIsolates: true),
       );
 

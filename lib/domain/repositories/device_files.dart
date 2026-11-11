@@ -19,6 +19,11 @@ abstract interface class DeviceFiles {
   /// Null if not on Android (the caller falls back to a file picker).
   Future<String?> saveToDownloads(String name, Uint8List bytes, String mime);
 
+  /// Writes a backup copy to Download/Nocturne without a dialog and keeps only the [keep]
+  /// newest files there whose name starts with [prefix]. Result: the visible path; null where
+  /// there is no such folder to write to (not Android).
+  Future<String?> saveBackupCopy(String name, Uint8List bytes, {required String prefix, int keep = 2});
+
   /// Events from native code (while the app is open):
   /// - "Open with Nocturne" / Share brings a new file → [onOpened]
   /// - audio changes in MediaStore (a new song was downloaded) → [onMediaChanged]

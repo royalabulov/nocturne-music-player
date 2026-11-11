@@ -1,5 +1,6 @@
 package com.nocturne
 
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
@@ -119,14 +120,17 @@ class MediaLibrary(context: Context) {
         main.postDelayed({ finish() }, 5000)
     }
 
-    /// Writes a file to the shared Download folder; result: the visible path ("Download/name.csv").
-    /// Android 10+: MediaStore.Downloads (no permission needed); older versions write the file directly.
-    fun saveToDownloads(name: String, mime: String, bytes: ByteArray): String {
+    /// Writes a file to the shared Download folder (in [folder] inside it, if given); result: the
+    /// visible path ("Download/name.csv"). Android 10+: MediaStore.Downloads (no permission
+    /// needed); older versions write the file directly.
+    fun saveToDownloads(name: String, mime: String, bytes: ByteArray, folder: String? = null): String {
+        val shown = if (folder == null) "Download/$name" else "Download/$folder/$name"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, name)
                 put(MediaStore.Downloads.MIME_TYPE, mime)
                 put(MediaStore.Downloads.IS_PENDING, 1)
+                if (folder != null) put(MediaStore.Downloads.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/$folder")
             }
             val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                 ?: error("MediaStore insert failed")
@@ -140,13 +144,40 @@ class MediaLibrary(context: Context) {
             values.clear()
             values.put(MediaStore.Downloads.IS_PENDING, 0)
             resolver.update(uri, values, null, null)
-            return "Download/$name"
+            return shown
         }
         @Suppress("DEPRECATION")
-        val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val dir = if (folder == null) downloads else File(downloads, folder)
         dir.mkdirs()
         val f = File(dir, name)
         f.writeBytes(bytes)
         return f.path
+    }
+
+    /// Of the files named [prefix]… in Download/[folder], keeps the [keep] newest and deletes the
+    /// rest, so weekly copies don't pile up. Android 10+ lists only the files this install
+    /// wrote: one left by an earlier install isn't touched. Returns how many were deleted.
+    fun keepNewestInDownloads(folder: String, prefix: String, keep: Int): Int {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val old = ArrayList<android.net.Uri>()
+            resolver.query(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                arrayOf(MediaStore.Downloads._ID),
+                "${MediaStore.Downloads.RELATIVE_PATH} = ? AND ${MediaStore.Downloads.DISPLAY_NAME} LIKE ?",
+                arrayOf("${Environment.DIRECTORY_DOWNLOADS}/$folder/", "$prefix%"),
+                "${MediaStore.Downloads.DATE_ADDED} DESC",
+            )?.use { c ->
+                var seen = 0
+                while (c.moveToNext()) {
+                    if (++seen > keep) old.add(ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, c.getLong(0)))
+                }
+            }
+            return old.count { runCatching { resolver.delete(it, null, null) > 0 }.getOrDefault(false) }
+        }
+        @Suppress("DEPRECATION")
+        val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), folder)
+        val files = dir.listFiles { f -> f.name.startsWith(prefix) }?.sortedByDescending { it.lastModified() } ?: return 0
+        return files.drop(keep).count { it.delete() }
     }
 }

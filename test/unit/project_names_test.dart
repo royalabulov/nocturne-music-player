@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nocturne/data/db/app_database.dart';
 import 'package:nocturne/core/constants.dart';
 import 'package:nocturne/data/services/backup_service.dart';
 
@@ -19,7 +20,8 @@ void main() {
     });
 
     test('the database file', () {
-      expect(File('lib/data/db/app_database.dart').readAsStringSync(), contains("name: 'sonar'"));
+      expect(AppDatabase.fileName, 'sonar');
+      expect(File('lib/data/db/app_database.dart').readAsStringSync(), contains('name: fileName,'));
     });
 
     test('the error log', () {

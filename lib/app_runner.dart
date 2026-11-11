@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:just_audio/just_audio.dart' show AudioSource;
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import 'app.dart';
 import 'core/audio/audio_effects.dart';
@@ -19,6 +21,8 @@ import 'core/diagnostics/crash_log.dart';
 import 'core/di/providers.dart';
 import 'core/ui/toast.dart';
 import 'data/datasources/playback_service_source.dart';
+import 'data/db/app_database.dart';
+import 'data/db/database_rescue.dart';
 import 'domain/entities/track.dart';
 import 'domain/repositories/settings_repository.dart';
 import 'app_router.dart';
@@ -96,6 +100,17 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
       ...overrides,
     ],
   );
+  // A damaged database is set aside before anything reads it: the app starts with a new one
+  // instead of hanging on its start screen for good (DatabaseRescue).
+  var databaseReset = false;
+  if (!kIsWeb) {
+    final file = p.join((await getApplicationDocumentsDirectory()).path, '${AppDatabase.fileName}.sqlite');
+    if (await DatabaseRescue.setAsideIfDamaged(container.read(databaseProvider), file)) {
+      container.invalidate(databaseProvider);
+      databaseReset = true;
+      CrashLog.add('database was damaged: set aside, a new one started');
+    }
+  }
   // Cover paths are needed synchronously (Image.file) → prepare the folder up front.
   if (!kIsWeb) await container.read(coverCacheProvider).warmUp();
   await sessionReady;
@@ -105,6 +120,9 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
   initialLanguage = await container.read(settingsRepositoryProvider).getSetting(SettingsKeys.language);
 
   runApp(UncontrolledProviderScope(container: container, child: const NocturneApp()));
+  if (databaseReset) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => showToast(l10n.databaseReset, error: true));
+  }
 
   // Audio settings (EQ / crossfade / ReplayGain) are loaded from the DB and applied to the player.
   container.read(audioSettingsProvider);
@@ -150,6 +168,10 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
       .init(onResponse: (id, play) => _openFromReminder(container, handler, id, play: play))
       .then((_) => reminder.reschedule()));
   AppLifecycleListener(onPause: reminder.reschedule);
+
+  // Weekly backup copy (Download/Nocturne): when the app goes to the background, so it never
+  // competes with what is on screen
+  AppLifecycleListener(onPause: () => unawaited(container.read(autoBackupProvider).runIfDue()));
 
   // If autoScan is on and permission is granted, scan silently — 1.5 s after the first
   // frame, so the MediaStore/folder walk doesn't compete with Home's first render.

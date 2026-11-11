@@ -53,6 +53,12 @@ class MediaStoreSource implements DeviceFiles {
     return r;
   }
 
+  @override
+  Future<String?> saveBackupCopy(String name, Uint8List bytes, {required String prefix, int keep = 2}) async {
+    if (!Platform.isAndroid) return null;
+    return _ch.invokeMethod<String>('saveBackupCopy', {'name': name, 'bytes': bytes, 'prefix': prefix, 'keep': keep});
+  }
+
   // ── open with / import ──────────────────────────────────
 
   @override

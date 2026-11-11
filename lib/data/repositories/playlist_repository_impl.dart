@@ -15,13 +15,15 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   final CoverCache covers;
 
   static const _aggregateSql = 'SELECT p.*, '
-      'COUNT(pt.track_id) AS track_count, '
+      'COUNT(t.id) AS track_count, '
       'COALESCE(SUM(t.duration_ms), 0) AS total_ms, '
       '(SELECT t2.cover_hash FROM playlist_tracks pt2 JOIN tracks t2 ON t2.id = pt2.track_id '
-      ' WHERE pt2.playlist_id = p.id AND t2.cover_hash IS NOT NULL ORDER BY pt2.position LIMIT 1) AS first_cover '
+      ' WHERE pt2.playlist_id = p.id AND t2.cover_hash IS NOT NULL AND t2.is_missing = 0 ORDER BY pt2.position LIMIT 1) AS first_cover '
       'FROM playlists p '
       'LEFT JOIN playlist_tracks pt ON pt.playlist_id = p.id '
-      'LEFT JOIN tracks t ON t.id = pt.track_id ';
+      // A song whose file is gone stays in the playlist (it comes back with the file) but isn't
+      // shown or counted, like everywhere else
+      'LEFT JOIN tracks t ON t.id = pt.track_id AND t.is_missing = 0 ';
 
   Playlist _fromRow(QueryRow r) => Playlist(
         id: r.read<int>('id'),
@@ -57,7 +59,7 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
     final q = db.select(db.tracks).join([
       innerJoin(db.playlistTracks, db.playlistTracks.trackId.equalsExp(db.tracks.id)),
     ])
-      ..where(db.playlistTracks.playlistId.equals(playlistId))
+      ..where(db.playlistTracks.playlistId.equals(playlistId) & db.tracks.isMissing.equals(false))
       ..orderBy([OrderingTerm.asc(db.playlistTracks.position)]);
     return q.watch().map((rows) => [for (final r in rows) mapper.toDomain(r.readTable(db.tracks))]);
   }
@@ -119,15 +121,29 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
       });
 
   @override
+  /// [oldIndex] and [newIndex] count the songs shown ([watchTracks]); songs whose file is gone
+  /// keep their places in between.
   Future<void> reorder(int playlistId, int oldIndex, int newIndex) => db.transaction(() async {
-        final rows = await (db.select(db.playlistTracks)
-              ..where((pt) => pt.playlistId.equals(playlistId))
-              ..orderBy([(pt) => OrderingTerm.asc(pt.position)]))
+        final rows = await (db.select(db.playlistTracks).join([
+          innerJoin(db.tracks, db.tracks.id.equalsExp(db.playlistTracks.trackId)),
+        ])
+              ..where(db.playlistTracks.playlistId.equals(playlistId))
+              ..orderBy([OrderingTerm.asc(db.playlistTracks.position)]))
             .get();
-        if (oldIndex < 0 || oldIndex >= rows.length) return;
-        final ids = [for (final r in rows) r.trackId];
-        final moved = ids.removeAt(oldIndex);
-        ids.insert(newIndex.clamp(0, ids.length), moved);
+        final all = [for (final r in rows) r.readTable(db.playlistTracks).trackId];
+        final shown = [
+          for (final r in rows)
+            if (!r.readTable(db.tracks).isMissing) r.readTable(db.playlistTracks).trackId,
+        ];
+        if (oldIndex < 0 || oldIndex >= shown.length) return;
+        final moved = shown.removeAt(oldIndex);
+        shown.insert(newIndex.clamp(0, shown.length), moved);
+        final reordered = shown.iterator;
+        final hidden = all.toSet().difference(shown.toSet());
+        final ids = [
+          for (final id in all)
+            if (hidden.contains(id)) id else (reordered..moveNext()).current,
+        ];
         await db.batch((b) {
           for (var i = 0; i < ids.length; i++) {
             b.update(

@@ -434,7 +434,14 @@ class L10nAz extends L10n {
 
   @override
   String get restoreBackupHint =>
-      'Mövcud kitabxanaya əlavə olunur (əvvəlcə mahnıları axtarın)';
+      'Mövcud kitabxanaya əlavə olunur; hələ tapılmayan mahnılar skan onları tapanda əlavə olunur';
+
+  @override
+  String get autoBackup => 'Həftəlik backup';
+
+  @override
+  String get autoBackupHint =>
+      'Həftədə bir dəfə Download/Nocturne qovluğuna, ən son ikisi saxlanılır. Tətbiq silinəndə də qalır.';
 
   @override
   String get open => 'Aç';
@@ -499,6 +506,10 @@ class L10nAz extends L10n {
   @override
   String get eqNotSupported =>
       'Bu telefonda sistem ekvalayzeri yoxdur. Musiqi onsuz çalır.';
+
+  @override
+  String get databaseReset =>
+      'Kitabxana məlumatları zədələnmişdi və kənara qoyuldu. Mahnılar yenidən tapılır; favoritləri və playlist-ləri qaytarmaq üçün Ayarlarda backup-ı bərpa edin.';
 
   @override
   String get bassBoost => 'Bas gücləndirmə';
@@ -1364,7 +1375,7 @@ class L10nAz extends L10n {
 
   @override
   String restoreMissing(int count) {
-    return ' • $count mahnı bu cihazda tapılmadı';
+    return ' • $count mahnı hələ bu cihazda yoxdur: skan onları tapan kimi əlavə olunacaq';
   }
 
   @override

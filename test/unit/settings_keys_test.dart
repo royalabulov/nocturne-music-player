@@ -53,13 +53,13 @@ void main() {
     // that setting. To retire a key, add a new one and migrate.
     test('the stored names stay what they are', () {
       expect(_declaredKeys(), {
-        'audioSettings', 'autoScan', 'language', 'lyricsOnline', 'smartAnalysis',
+        'audioSettings', 'autoScan', 'language', 'lyricsOnline', 'smartAnalysis', 'autoBackup',
         'librarySort', 'groupSort', 'favoritesSort',
         'filterMinBytes', 'filterMaxBytes', 'filterMinMs', 'filterMaxMs',
         'forgottenMinPlays', 'forgottenDays', 'onlineMode',
         'forgottenRemind', 'forgottenRemindDays', 'forgottenRemindTime', 'forgottenRemindPlanned',
-        'resumeTrackId', 'resumePositionMs', 'playQueue', 'listenTrackingSince',
-        'lastScanAt', 'tagReaderVersion', 'skippedFiles2', 'uploaderArtists',
+        'resumeTrackId', 'resumePositionMs', 'playQueue', 'restorePending', 'listenTrackingSince',
+        'lastScanAt', 'lastAutoBackupAt', 'tagReaderVersion', 'skippedFiles2', 'uploaderArtists',
         'artistOverrides',
       });
     });

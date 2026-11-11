@@ -433,7 +433,14 @@ class L10nEn extends L10n {
 
   @override
   String get restoreBackupHint =>
-      'Merges into the current library (scan your music first)';
+      'Merges into the current library; songs not found yet are added as scans find them';
+
+  @override
+  String get autoBackup => 'Weekly backup';
+
+  @override
+  String get autoBackupHint =>
+      'Once a week to Download/Nocturne, the two newest are kept. Stays after the app is removed.';
 
   @override
   String get open => 'Open';
@@ -498,6 +505,10 @@ class L10nEn extends L10n {
   @override
   String get eqNotSupported =>
       'This phone has no system equalizer. Music plays without it.';
+
+  @override
+  String get databaseReset =>
+      'Your library data was damaged and has been set aside. Your songs are being found again; restore a backup in Settings to bring back favorites and playlists.';
 
   @override
   String get bassBoost => 'Bass Boost';
@@ -1369,7 +1380,7 @@ class L10nEn extends L10n {
 
   @override
   String restoreMissing(int count) {
-    return ' • $count tracks not found on this device';
+    return ' • $count tracks not on this device yet: they\'re added as soon as a scan finds them';
   }
 
   @override

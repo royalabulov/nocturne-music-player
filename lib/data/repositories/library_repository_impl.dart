@@ -114,16 +114,18 @@ class LibraryRepositoryImpl implements LibraryRepository {
     });
   }
 
+  /// One transaction: two quick taps used to both find nothing to remove, and the second insert
+  /// hit the primary key.
   @override
-  Future<void> toggleFavorite(int trackId) async {
-    final removed = await (db.delete(db.favorites)..where((f) => f.trackId.equals(trackId))).go();
-    if (removed == 0) {
-      await db.into(db.favorites).insert(FavoritesCompanion.insert(
-            trackId: Value(trackId),
-            addedAt: DateTime.now().millisecondsSinceEpoch,
-          ));
-    }
-  }
+  Future<void> toggleFavorite(int trackId) => db.transaction(() async {
+        final removed = await (db.delete(db.favorites)..where((f) => f.trackId.equals(trackId))).go();
+        if (removed == 0) {
+          await db.into(db.favorites).insert(FavoritesCompanion.insert(
+                trackId: Value(trackId),
+                addedAt: DateTime.now().millisecondsSinceEpoch,
+              ));
+        }
+      });
 
   @override
   Future<Track?> getTrack(int id) async {
@@ -166,14 +168,7 @@ class LibraryRepositoryImpl implements LibraryRepository {
     if (row == null) return true;
     final ok = await mediaStore.delete(row.path);
     if (!ok) return false;
-    // FK cascade: favorites / playlist_tracks / play_history are deleted too.
-    // The file is already gone — hide it from lists even if the DB fails.
-    try {
-      await (db.delete(db.tracks)..where((t) => t.id.equals(id))).go();
-    } catch (e) {
-      debugPrint('delete: DB row $id not removed ($e) — marking missing');
-      await markMissing(id);
-    }
+    await _forget({id});
     return true;
   }
 
@@ -184,15 +179,27 @@ class LibraryRepositoryImpl implements LibraryRepository {
     final deletedPaths = await mediaStore.deleteMany([for (final r in rows) r.path]);
     final deleted = {for (final r in rows) if (deletedPaths.contains(r.path)) r.id};
     if (deleted.isEmpty) return deleted;
+    await _forget(deleted);
+    return deleted;
+  }
+
+  /// The files are gone: the songs leave favorites and playlists and are hidden, but their row
+  /// stays, so the play history and the stats built on it don't change (deleting the row
+  /// cascaded the history away). A file that comes back, or is found moved, picks the row up.
+  Future<void> _forget(Set<int> ids) async {
     try {
-      await (db.delete(db.tracks)..where((t) => t.id.isIn(deleted))).go();
+      await db.transaction(() async {
+        await (db.delete(db.favorites)..where((f) => f.trackId.isIn(ids))).go();
+        await (db.delete(db.playlistTracks)..where((pt) => pt.trackId.isIn(ids))).go();
+        await (db.update(db.tracks)..where((t) => t.id.isIn(ids))).write(const TracksCompanion(isMissing: Value(true)));
+      });
     } catch (e) {
-      debugPrint('delete: DB rows not removed ($e) — marking missing');
-      for (final id in deleted) {
+      // The files are already gone: at least hide them
+      debugPrint('delete: DB not updated ($e) — marking missing');
+      for (final id in ids) {
         await markMissing(id);
       }
     }
-    return deleted;
   }
 
   @override

@@ -9,6 +9,12 @@ abstract final class SettingsKeys {
   static const language = 'language';
   static const lyricsOnline = 'lyricsOnline';
   static const smartAnalysis = 'smartAnalysis';
+
+  /// Weekly backup copy in Download/Nocturne ('false' = off; on by default).
+  static const autoBackup = 'autoBackup';
+
+  /// When the last automatic backup was written (epoch ms).
+  static const lastAutoBackupAt = 'lastAutoBackupAt';
   static const librarySort = 'librarySort';
   static const groupSort = 'groupSort';
   static const favoritesSort = 'favoritesSort';
@@ -27,6 +33,9 @@ abstract final class SettingsKeys {
   static const resumeTrackId = 'resumeTrackId';
   static const resumePositionMs = 'resumePositionMs';
   static const playQueue = 'playQueue';
+
+  /// What a restore couldn't match yet (songs not found), applied as scans find them.
+  static const restorePending = 'restorePending';
   static const listenTrackingSince = 'listenTrackingSince';
   static const lastScanAt = 'lastScanAt';
   static const tagReaderVersion = 'tagReaderVersion';
@@ -43,6 +52,7 @@ abstract final class SettingsKeys {
     language,
     lyricsOnline,
     smartAnalysis,
+    autoBackup,
     librarySort,
     groupSort,
     favoritesSort,
@@ -67,9 +77,11 @@ abstract final class SettingsKeys {
     resumeTrackId,
     resumePositionMs,
     playQueue,
+    restorePending,
     // The history and the scan's own bookkeeping belong to this install.
     listenTrackingSince,
     lastScanAt,
+    lastAutoBackupAt,
     tagReaderVersion,
     skippedFiles,
     uploaderArtists,

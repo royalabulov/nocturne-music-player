@@ -75,6 +75,13 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
                     call.argument<ByteArray>("bytes")!!,
                 )
             }
+            // Weekly automatic backup: Download/Nocturne, the newest few kept
+            "saveBackupCopy" -> background(result) {
+                val name = call.argument<String>("name")!!
+                val path = library.saveToDownloads(name, "application/json", call.argument<ByteArray>("bytes")!!, BACKUP_FOLDER)
+                library.keepNewestInDownloads(BACKUP_FOLDER, call.argument<String>("prefix")!!, call.argument<Int>("keep") ?: 2)
+                path
+            }
             "deleteAudio", "deleteAudioBatch" -> {
                 val window = activity
                 if (window == null) result.fail("no window") else window.onDeleteCall(call, result)
@@ -142,6 +149,9 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
     }
 
     companion object {
+        /// Download/<this>: where the automatic backups go.
+        const val BACKUP_FOLDER = "Nocturne"
+
         /// The engine's channels; null before the engine exists and after it is gone.
         var current: EngineChannels? = null
             private set

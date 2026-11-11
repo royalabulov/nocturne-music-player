@@ -30,6 +30,23 @@ class CoverCache {
     return hash;
   }
 
+  /// Deletes the covers no song uses any more (re-tagged, replaced, deleted songs): the folder
+  /// only ever grew. [keep]: every cover name the library still points at, missing songs too.
+  /// Returns how many went.
+  Future<int> prune(Set<String> keep) async {
+    var removed = 0;
+    await for (final e in (await warmUp()).list(followLinks: false)) {
+      if (e is! File || keep.contains(p.basename(e.path))) continue;
+      try {
+        await e.delete();
+        removed++;
+      } on FileSystemException {
+        // in use or already gone: next time
+      }
+    }
+    return removed;
+  }
+
   /// Synchronous, for Image.file in the UI. [warmUp] is called at app start.
   String? pathFor(String? hash) =>
       (hash == null || _dir == null) ? null : p.join(_dir!.path, hash);
