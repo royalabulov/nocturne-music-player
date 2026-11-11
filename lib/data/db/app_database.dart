@@ -6,11 +6,12 @@ import 'tables.dart';
 part 'app_database.g.dart';
 
 /// Default scan folders. Written to the DB on first launch;
-/// the user can change them in Settings.
+/// the user can change them in Settings. No folder named after a video downloader app (it was
+/// snaptube's): the Play listing and a public repo should not read as pointing users to one.
+/// Phones that already have it keep it until the user removes it.
 const kDefaultScanFolders = <String>[
   '/storage/emulated/0/Music',
   '/storage/emulated/0/Download',
-  '/storage/emulated/0/snaptube/download',
   '/storage/emulated/0/Telegram/Telegram Audio',
 ];
 

@@ -170,7 +170,7 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
       .then((_) => reminder.reschedule()));
   AppLifecycleListener(onPause: reminder.reschedule);
 
-  // Weekly backup copy (Download/Nocturne): when the app goes to the background, so it never
+  // Monthly backup copy (Download/Nocturne): when the app goes to the background, so it never
   // competes with what is on screen
   AppLifecycleListener(onPause: () => unawaited(container.read(autoBackupProvider).runIfDue()));
 

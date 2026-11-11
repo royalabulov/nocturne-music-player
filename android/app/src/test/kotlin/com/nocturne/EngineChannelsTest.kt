@@ -106,6 +106,16 @@ class EngineChannelsTest {
         assertEquals(emptyList<Any>(), answer)
     }
 
+    /// Works with no window too: the share sheet is started from the engine's context
+    @Test
+    fun `share opens the system share sheet with the text`() {
+        EngineChannels.activity = null
+        EngineChannels.attach(context, messenger)
+        assertEquals(true, messenger.call("com.nocturne/media_store", "shareText", mapOf("text" to "log", "title" to "t")))
+        val started = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
+        assertEquals(android.content.Intent.ACTION_CHOOSER, started.action)
+    }
+
     @Test
     fun `the playback service calls answer even before the service exists`() {
         EngineChannels.attach(context, messenger)

@@ -820,13 +820,13 @@ abstract class L10n {
   /// No description provided for @autoBackup.
   ///
   /// In en, this message translates to:
-  /// **'Weekly backup'**
+  /// **'Monthly backup'**
   String get autoBackup;
 
   /// No description provided for @autoBackupHint.
   ///
   /// In en, this message translates to:
-  /// **'Once a week to Download/Nocturne, the two newest are kept. Stays after the app is removed.'**
+  /// **'Once a month to Download/Nocturne, the two newest are kept. Stays after the app is removed.'**
   String get autoBackupHint;
 
   /// No description provided for @open.
@@ -870,6 +870,18 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Copy'**
   String get copy;
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @shareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'No app to share with. The log was copied instead.'**
+  String get shareFailed;
 
   /// No description provided for @clear.
   ///

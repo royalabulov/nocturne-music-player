@@ -79,6 +79,15 @@ dependencies {
     // Same version audio_service already brings, so nothing new goes into the APK.
     implementation("androidx.media:media:1.7.0")
 
+    constraints {
+        // media3 1.4.1 (via just_audio) brings guava 33.0.0, open to GHSA-xxph-c9ww-hj94 (memory
+        // blow-up when reading Java-serialized data; fixed in 33.7.2). The app never reads such
+        // data, so it was not reachable, but the CI dependency scan (ci.yml) flags it.
+        implementation("com.google.guava:guava:33.7.2-android") {
+            because("GHSA-xxph-c9ww-hj94")
+        }
+    }
+
     // Unit tests of the native code (src/test), run on the JVM. Never part of the APK.
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.17")

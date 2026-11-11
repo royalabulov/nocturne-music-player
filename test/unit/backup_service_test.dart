@@ -164,7 +164,7 @@ void main() {
     });
 
     // Older versions took a pasted name of any length; one such playlist made every backup,
-    // the weekly one too, unreadable
+    // the monthly one too, unreadable
     test('a very long name is cut, the rest of the file still restores', () async {
       final r = await svc.restore(backup({
         'favorites': [{'path': song, 'addedAt': 1}],

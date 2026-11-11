@@ -218,7 +218,7 @@ class BackupFile {
 
   /// Names and descriptions the user typed: a longer one is cut to [maxLength], not refused.
   /// Older versions took a pasted name of any length, and one such playlist made the whole
-  /// backup (the weekly one too) unreadable.
+  /// backup (the monthly one too) unreadable.
   static String _cut(Map<String, Object?> m, String key, int maxLength, {String? orElse}) {
     final value = m[key] ?? orElse;
     if (value is! String) throw FormatException('Bad value for $key');

@@ -165,7 +165,7 @@ final playlistIdsContainingProvider = StreamProvider.autoDispose.family<Set<int>
 
 final backupServiceProvider = Provider<BackupService>((ref) => BackupService(ref.watch(databaseProvider)));
 
-/// Weekly copy in Download/Nocturne, written when the app goes to the background.
+/// Monthly copy in Download/Nocturne, written when the app goes to the background.
 final autoBackupProvider = Provider<AutoBackup>(
   (ref) => AutoBackup(
     backup: ref.watch(backupServiceProvider),

@@ -6,7 +6,7 @@ import '../../domain/repositories/device_files.dart';
 import '../../domain/repositories/settings_repository.dart';
 import 'backup_service.dart';
 
-/// Once a week, on its own, a backup file in Download/Nocturne (the two newest are kept).
+/// Once a month (every 30 days), on its own, a backup file in Download/Nocturne (the two newest are kept).
 ///
 /// Google's backup and phone-to-phone transfer are off on purpose (the library and history stay
 /// on this phone), so before this a lost or broken phone, or a reinstall, lost every favorite,
@@ -21,13 +21,13 @@ class AutoBackup {
   final SettingsRepository settings;
   final DateTime Function() _now;
 
-  static const every = Duration(days: 7);
+  static const every = Duration(days: 30);
   static const prefix = 'nocturne-auto-backup-';
   static const keep = 2;
 
   Future<bool>? _running;
 
-  /// Writes a copy if it's on and the last one is a week old (or never made). True when one was
+  /// Writes a copy if it's on and the last one is 30 days old (or never made). True when one was
   /// written. A failure only means the next chance tries again.
   Future<bool> runIfDue() => _running ??= _run().whenComplete(() => _running = null);
 

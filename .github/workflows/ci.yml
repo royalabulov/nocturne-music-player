@@ -61,6 +61,42 @@ jobs:
       - name: Run tests
         working-directory: android
         run: ./gradlew :app:testDebugUnitTest --no-daemon --console=plain
+      # The Android libraries (LiteRT, media3, AndroidX, ...) have no lockfile of their own:
+      # write one for what goes into the release app, then check it for known vulnerabilities.
+      - name: List the release app's Android libraries
+        working-directory: android
+        run: >-
+          ./gradlew --init-script ../.github/gradle/lock-release.init.gradle.kts
+          :app:dependencies --configuration releaseRuntimeClasspath --write-locks
+          --no-daemon --console=plain -q
+      - name: Scan Android libraries for known vulnerabilities
+        run: docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:v2.7.0 scan -L /src/android/app/gradle.lockfile
+
+  release:
+    name: Release build (R8)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # R8 shrinking, resource shrinking and the native libraries' packaging run only in a release
+    # build: a missing keep rule would otherwise first show up while preparing a Play upload.
+    # Signed with the debug key (no secrets here); the Gradle guard allows that only with this.
+    env:
+      ALLOW_DEBUG_SIGNING: 'true'
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+      - uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e # v2.21.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter build appbundle --release
 
   security:
     name: Secret and dependency scan

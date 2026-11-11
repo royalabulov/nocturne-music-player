@@ -10,7 +10,7 @@ abstract final class SettingsKeys {
   static const lyricsOnline = 'lyricsOnline';
   static const smartAnalysis = 'smartAnalysis';
 
-  /// Weekly backup copy in Download/Nocturne ('false' = off; on by default).
+  /// Monthly backup copy in Download/Nocturne ('false' = off; on by default).
   static const autoBackup = 'autoBackup';
 
   /// When the last automatic backup was written (epoch ms).

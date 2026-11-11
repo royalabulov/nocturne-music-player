@@ -24,6 +24,10 @@ abstract interface class DeviceFiles {
   /// there is no such folder to write to (not Android).
   Future<String?> saveBackupCopy(String name, Uint8List bytes, {required String prefix, int keep = 2});
 
+  /// Opens the system share sheet with [text] (mail, messenger: the user picks the app).
+  /// False where there is no share sheet (not Android) or no app took it.
+  Future<bool> shareText(String text, {required String title});
+
   /// Events from native code (while the app is open):
   /// - "Open with Nocturne" / Share brings a new file → [onOpened]
   /// - audio changes in MediaStore (a new song was downloaded) → [onMediaChanged]

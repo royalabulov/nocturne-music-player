@@ -436,11 +436,11 @@ class L10nEn extends L10n {
       'Merges into the current library; songs not found yet are added as scans find them';
 
   @override
-  String get autoBackup => 'Weekly backup';
+  String get autoBackup => 'Monthly backup';
 
   @override
   String get autoBackupHint =>
-      'Once a week to Download/Nocturne, the two newest are kept. Stays after the app is removed.';
+      'Once a month to Download/Nocturne, the two newest are kept. Stays after the app is removed.';
 
   @override
   String get open => 'Open';
@@ -464,6 +464,12 @@ class L10nEn extends L10n {
 
   @override
   String get copy => 'Copy';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get shareFailed => 'No app to share with. The log was copied instead.';
 
   @override
   String get clear => 'Clear';

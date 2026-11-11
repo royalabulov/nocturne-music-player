@@ -101,7 +101,10 @@ user turns Online mode on (default: off), and then only for a connectivity check
 (an empty `generate_204` request to Cloudflare, falling back to Google) and, when the user
 opens lyrics that aren't in the file, a lyrics lookup on lrclib.net with the song's title
 and artist (can be turned off). Songs, play history and AI analysis never
-leave the phone.
+leave the phone. Once a month a backup file (favorites, playlists, history, settings, mood and
+genre corrections) is written to `Download/Nocturne`, the two newest kept; it outlives an uninstall
+and can be turned off in Settings. The error log leaves the phone only when the user copies or
+shares it.
 
 ## Credits
 

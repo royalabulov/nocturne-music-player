@@ -59,6 +59,16 @@ class MediaStoreSource implements DeviceFiles {
     return _ch.invokeMethod<String>('saveBackupCopy', {'name': name, 'bytes': bytes, 'prefix': prefix, 'keep': keep});
   }
 
+  @override
+  Future<bool> shareText(String text, {required String title}) async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _ch.invokeMethod<bool>('shareText', {'text': text, 'title': title}) ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   // ── open with / import ──────────────────────────────────
 
   @override

@@ -75,12 +75,21 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
                     call.argument<ByteArray>("bytes")!!,
                 )
             }
-            // Weekly automatic backup: Download/Nocturne, the newest few kept
+            // Monthly automatic backup: Download/Nocturne, the newest few kept
             "saveBackupCopy" -> background(result) {
                 val name = call.argument<String>("name")!!
                 val path = library.saveToDownloads(name, "application/json", call.argument<ByteArray>("bytes")!!, BACKUP_FOLDER)
                 library.keepNewestInDownloads(BACKUP_FOLDER, call.argument<String>("prefix")!!, call.argument<Int>("keep") ?: 2)
                 path
+            }
+            "shareText" -> try {
+                context.startActivity(
+                    ShareText.chooser(call.argument<String>("text") ?: "", call.argument<String>("title") ?: ""),
+                )
+                result.success(true)
+            } catch (e: RuntimeException) {
+                // No app can take text, or the system refused to open the sheet
+                result.success(false)
             }
             "deleteAudio", "deleteAudioBatch" -> {
                 val window = activity

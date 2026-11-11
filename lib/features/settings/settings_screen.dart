@@ -443,7 +443,7 @@ class _ToggleRow extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
 
-  // One TalkBack node: "Weekly backup, …, switch, on" — alone the switch had no name
+  // One TalkBack node: "Monthly backup, …, switch, on" — alone the switch had no name
   @override
   Widget build(BuildContext context) {
     return MergeSemantics(
@@ -737,12 +737,12 @@ class _DataGroup extends ConsumerWidget {
       _InfoRow(
         title: l10n.errorLog,
         subtitle: l10n.errorLogHint,
-        trailing: _SmallButton(label: l10n.view, icon: Icons.bug_report_outlined, onTap: () => _showLog(context)),
+        trailing: _SmallButton(label: l10n.view, icon: Icons.bug_report_outlined, onTap: () => _showLog(context, ref)),
       ),
     ]);
   }
 
-  static Future<void> _showLog(BuildContext context) async {
+  static Future<void> _showLog(BuildContext context, WidgetRef ref) async {
     final text = await CrashLog.read();
     if (!context.mounted) return;
     await showModalBottomSheet<void>(
@@ -761,6 +761,22 @@ class _DataGroup extends ConsumerWidget {
                 child: Row(
                   children: [
                     Expanded(child: Text(l10n.errorLog, style: AppTypography.headlineMd)),
+                    // The only way a Dart error reaches the developer: Play's crash reports see
+                    // native crashes only. Sent by the app the user picks, never on its own.
+                    IconButton(
+                      tooltip: l10n.share,
+                      icon: const Icon(Icons.share_rounded, color: AppColors.textPrimary),
+                      onPressed: () async {
+                        final shared = await ref
+                            .read(deviceFilesProvider)
+                            .shareText(text, title: 'Nocturne v$kAppVersion — ${l10n.errorLog}');
+                        if (!shared) {
+                          await Clipboard.setData(ClipboardData(text: text));
+                          showToast(l10n.shareFailed);
+                        }
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      },
+                    ),
                     IconButton(
                       tooltip: l10n.copy,
                       icon: const Icon(Icons.copy_rounded, color: AppColors.textPrimary),

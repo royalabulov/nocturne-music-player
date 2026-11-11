@@ -220,6 +220,15 @@ void main() {
       expect(folders.map((f) => f.path), unorderedEquals(kDefaultScanFolders));
     });
 
+    // A video downloader's folder among the defaults read as pointing users to it
+    test('the default folders name no downloader app', () {
+      expect(kDefaultScanFolders, [
+        '/storage/emulated/0/Music',
+        '/storage/emulated/0/Download',
+        '/storage/emulated/0/Telegram/Telegram Audio',
+      ]);
+    });
+
     test('is healthy', () => _expectHealthy(db));
   });
 

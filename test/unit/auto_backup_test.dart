@@ -63,9 +63,9 @@ void main() {
     expect(files.saved.values.single, contains('/m/a.mp3'));
   });
 
-  test('then not again for a week', () async {
+  test('then not again for 30 days', () async {
     await auto.runIfDue();
-    now = now.add(const Duration(days: 6, hours: 23));
+    now = now.add(const Duration(days: 29, hours: 23));
     expect(await auto.runIfDue(), isFalse);
     now = now.add(const Duration(hours: 1));
     expect(await auto.runIfDue(), isTrue);
@@ -74,7 +74,7 @@ void main() {
 
   test('a clock set back still gets a copy', () async {
     await auto.runIfDue();
-    now = now.subtract(const Duration(days: 30));
+    now = now.subtract(const Duration(days: 60));
     expect(await auto.runIfDue(), isTrue);
   });
 

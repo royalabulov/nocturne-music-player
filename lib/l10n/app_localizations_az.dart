@@ -437,11 +437,11 @@ class L10nAz extends L10n {
       'Mövcud kitabxanaya əlavə olunur; hələ tapılmayan mahnılar skan onları tapanda əlavə olunur';
 
   @override
-  String get autoBackup => 'Həftəlik backup';
+  String get autoBackup => 'Aylıq backup';
 
   @override
   String get autoBackupHint =>
-      'Həftədə bir dəfə Download/Nocturne qovluğuna, ən son ikisi saxlanılır. Tətbiq silinəndə də qalır.';
+      'Ayda bir dəfə Download/Nocturne qovluğuna, ən son ikisi saxlanılır. Tətbiq silinəndə də qalır.';
 
   @override
   String get open => 'Aç';
@@ -465,6 +465,13 @@ class L10nAz extends L10n {
 
   @override
   String get copy => 'Kopyala';
+
+  @override
+  String get share => 'Paylaş';
+
+  @override
+  String get shareFailed =>
+      'Paylaşmaq üçün tətbiq tapılmadı. Jurnal kopyalandı.';
 
   @override
   String get clear => 'Təmizlə';
