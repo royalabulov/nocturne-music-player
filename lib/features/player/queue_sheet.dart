@@ -106,7 +106,11 @@ class _QueueSheetState extends ConsumerState<_QueueSheet> {
                 ),
               ),
               Expanded(
-                child: ListView.builder(
+                // The tap ripple is drawn on the nearest Material: without this one it was the
+                // sheet's, under the coloured Container above, and never showed
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: ListView.builder(
                   controller: controller,
                   itemExtent: _rowHeight,
                   // So the last row isn't hidden under the system navigation bar
@@ -151,6 +155,7 @@ class _QueueSheetState extends ConsumerState<_QueueSheet> {
                     );
                     return played ? Opacity(opacity: .45, child: tile) : tile;
                   },
+                  ),
                 ),
               ),
             ],

@@ -25,7 +25,7 @@ abstract final class CrashLog {
     try {
       final dir = Directory(p.join((await getApplicationSupportDirectory()).path, 'logs'));
       await dir.create(recursive: true);
-      _file = File(p.join(dir.path, 'sonar.log'));
+      useFolder(dir.path);
     } catch (_) {
       return;
     }
@@ -47,6 +47,10 @@ abstract final class CrashLog {
     };
     add('--- app start ---');
   }
+
+  /// Where the log lives (`<filesDir>/logs` in the app, a temporary folder in tests).
+  @visibleForTesting
+  static void useFolder(String dir) => _file = File(p.join(dir, 'sonar.log'));
 
   static void add(String line) {
     if (_file == null) return;
@@ -96,7 +100,9 @@ abstract final class CrashLog {
     for (final f in _files()) {
       if (await f.exists()) {
         final name = p.basename(f.path);
-        parts.add('===== $name =====\n${await f.readAsString()}');
+        // native_crash.log is written by Kotlin, which doesn't strip folders: a Java error
+        // names the whole path of the file it failed on. Cleaned here, before anyone shares it.
+        parts.add('===== $name =====\n${withoutFolders(await f.readAsString())}');
       }
     }
     return parts.isEmpty ? l10n.noErrorsLogged : parts.join('\n');

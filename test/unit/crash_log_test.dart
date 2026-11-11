@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nocturne/core/diagnostics/crash_log.dart';
+import 'package:path/path.dart' as p;
 
 /// The log can be copied out of the app: it keeps what a crash needs, not where the person
 /// keeps their files.
@@ -39,5 +42,63 @@ void main() {
     expect(clean('--- app start ---'), '--- app start ---');
     expect(clean('open with: 3 file(s)'), 'open with: 3 file(s)');
     expect(clean('lyrics: /api/search → 503 (try 1)'), 'lyrics: /api/search → 503 (try 1)');
+  });
+
+  group('the files', () {
+    late Directory dir;
+    File file(String name) => File(p.join(dir.path, name));
+
+    setUp(() {
+      dir = Directory.systemTemp.createTempSync('crash_log_');
+      CrashLog.useFolder(dir.path);
+    });
+    tearDown(() async {
+      await CrashLog.clear();
+      dir.deleteSync(recursive: true);
+    });
+
+    test('a native crash (written by Kotlin) loses its folders too before it is shown or shared', () async {
+      file('native_crash.log').writeAsStringSync(
+          "2026-11-11 10:00:00  CRASH in thread 'main'\n"
+          'java.io.FileNotFoundException: /storage/emulated/0/Music/Private Folder/song.mp3: open failed\n');
+
+      final log = await CrashLog.read();
+
+      expect(log, contains('FileNotFoundException: …/song.mp3: open failed'));
+      expect(log, isNot(contains('Private Folder')));
+      expect(log, isNot(contains('/storage/')));
+    });
+
+    test('native crashes first, then the older log, then the newest lines', () async {
+      file('native_crash.log').writeAsStringSync('NATIVE\n');
+      file('sonar.log.1').writeAsStringSync('OLDER\n');
+      CrashLog.add('NEWEST');
+
+      final log = await CrashLog.read();
+
+      final at = [for (final s in ['NATIVE', 'OLDER', 'NEWEST']) log.indexOf(s)];
+      expect(at.every((i) => i >= 0), isTrue, reason: log);
+      expect(at, orderedEquals([...at]..sort()));
+    });
+
+    test('a log past 256 KB moves aside, so it never grows without end', () async {
+      file('sonar.log').writeAsStringSync('A' * (257 * 1024));
+      CrashLog.add('after the limit');
+      await CrashLog.read();
+
+      expect(file('sonar.log.1').lengthSync(), 257 * 1024);
+      expect(file('sonar.log').readAsStringSync(), contains('after the limit'));
+      expect(file('sonar.log').lengthSync(), lessThan(1024));
+    });
+
+    test('clear removes all three files', () async {
+      for (final n in ['native_crash.log', 'sonar.log.1', 'sonar.log']) {
+        file(n).writeAsStringSync('x');
+      }
+      await CrashLog.clear();
+      for (final n in ['native_crash.log', 'sonar.log.1', 'sonar.log']) {
+        expect(file(n).existsSync(), isFalse, reason: n);
+      }
+    });
   });
 }
