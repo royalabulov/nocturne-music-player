@@ -18,3 +18,6 @@ const kVibeAnalysisVersion = 2;
 
 /// Version shown in Settings (keep in sync with pubspec.yaml).
 const kAppVersion = '1.0.1';
+
+/// Android notification channel of the playback notification (audio_service creates it).
+const kPlaybackChannelId = 'com.nocturne.playback';

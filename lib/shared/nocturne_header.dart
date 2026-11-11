@@ -8,6 +8,7 @@ import '../core/theme/app_spacing.dart';
 import '../core/theme/app_typography.dart';
 import '../l10n/l10n.dart';
 import 'nocturne_mark.dart';
+import 'tap_target.dart';
 
 /// The "◎ Nocturne ........ ● Offline" row at the top of every screen.
 class NocturneHeader extends StatelessWidget {
@@ -17,7 +18,7 @@ class NocturneHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.screenH, AppSpacing.md, AppSpacing.screenH, AppSpacing.lg,
+        AppSpacing.screenH, AppSpacing.md - 6, AppSpacing.screenH, AppSpacing.lg - 6,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -38,9 +39,10 @@ class _MenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
+    // 36 px high: the touch area is 48 (the header padding above gives the 12 back)
+    return TapTarget(
       label: l10n.openMenu,
+      onTap: openSideMenu,
       child: Material(
         type: MaterialType.transparency,
         shape: const StadiumBorder(),
@@ -84,9 +86,10 @@ class OnlineModePill extends ConsumerWidget {
       OnlineStatus.noInternet => (l10n.netNoInternet, AppColors.warning),
     };
 
-    return Semantics(
-      button: true,
+    // 28 px high: the touch area is 48
+    return TapTarget(
       label: l10n.netModeSemantics(label),
+      onTap: () => toggleOnlineMode(ref),
       child: Material(
         color: AppColors.surfaceHigh,
         shape: const StadiumBorder(),

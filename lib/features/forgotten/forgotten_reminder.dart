@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../core/constants.dart';
 import '../../core/di/providers.dart';
 import '../../l10n/l10n.dart';
 import '../../core/utils/display_names.dart';
@@ -57,7 +58,7 @@ final forgottenReminderProvider = Provider<ForgottenReminder>(ForgottenReminder.
 /// and schedules the next few reminders, each naming a different forgotten song.
 class ForgottenReminder {
   ForgottenReminder(this.ref) {
-    // The rule changed → the reminders may name other songs
+    // The rule changed â the reminders may name other songs
     ref.listen(forgottenSettingsProvider, (previous, next) {
       if (previous != next) unawaited(reschedule());
     });
@@ -67,7 +68,7 @@ class ForgottenReminder {
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
 
-  /// Notification ids 4100…4113 (one per planned reminder).
+  /// Notification ids 4100â¦4113 (one per planned reminder).
   static const _baseId = 4100;
   static const _maxPlanned = 14;
   static const _channelId = 'com.nocturne.forgotten';
@@ -106,10 +107,31 @@ class ForgottenReminder {
   Future<void> reschedule() async {
     if (!_ready) return;
     try {
+      await renameChannels();
       await _reschedule();
     } catch (e) {
       debugPrint('ForgottenReminder: reschedule failed: $e');
     }
+  }
+
+  /// The names Android shows in Settings → Notifications, in the app's language. The playback
+  /// channel is made before the app's language is read (in the phone's), and a language picked
+  /// later changed neither. Creating an existing channel again only renames it.
+  @visibleForTesting
+  Future<void> renameChannels() async {
+    final android = _android;
+    if (android == null) return;
+    await android.createNotificationChannel(AndroidNotificationChannel(
+      kPlaybackChannelId,
+      l10n.notificationChannel,
+      importance: Importance.low,
+      showBadge: false,
+    ));
+    await android.createNotificationChannel(AndroidNotificationChannel(
+      _channelId,
+      l10n.menuForgotten,
+      description: l10n.reminderChannelHint,
+    ));
   }
 
   /// The settings the plan is made from, once they are read from the database. At the start
@@ -129,7 +151,7 @@ class ForgottenReminder {
     final repo = ref.read(settingsRepositoryProvider);
     final now = DateTime.now();
 
-    // Reminders whose time has passed went off → don't name those songs again for
+    // Reminders whose time has passed went off â don't name those songs again for
     // 4 weeks. Future ones were just cancelled and get planned again below.
     final shown = <int, DateTime>{};
     try {
@@ -145,7 +167,7 @@ class ForgottenReminder {
     final planned = {...shown};
     if (s.enabled) {
       final times = nextReminderTimes(now, s, count: _maxPlanned);
-      // Every song with enough plays (or ❤) — the "not played for N days" part is
+      // Every song with enough plays (or â¤) â the "not played for N days" part is
       // checked per reminder time in pickReminderSongs.
       final candidates =
           await ref.read(historyRepositoryProvider).watchForgotten(minPlays: rule.minPlays, days: 0).first;

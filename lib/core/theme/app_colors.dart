@@ -26,6 +26,10 @@ abstract final class AppColors {
   static const Color cyan = Color(0xFF60A5FA); // secondary highlight / halo
   static const Color marine = Color(0xFF2E5C9A); // borders, dividers
 
+  /// Fill behind white text (primary buttons, the chosen tab or chip). White on [electric] is
+  /// 3.7:1, under the 4.5:1 small text needs; on this it is 5.2:1.
+  static const Color accentFill = electricDeep;
+
   // Text
   static const Color textPrimary = Color(0xFFF8FAFC);
   static const Color textSecondary = Color(0xFF94A3B8);

@@ -18,6 +18,7 @@ import 'core/audio/nocturne_audio_handler.dart';
 import 'core/audio/playback_memory.dart';
 import 'core/audio/service_release.dart';
 import 'core/diagnostics/crash_log.dart';
+import 'core/constants.dart';
 import 'core/di/providers.dart';
 import 'core/ui/toast.dart';
 import 'data/datasources/playback_service_source.dart';
@@ -79,7 +80,7 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
       savedQueue: () => memory.load(evenClosed: true),
     ),
     config: AudioServiceConfig(
-      androidNotificationChannelId: 'com.nocturne.playback',
+      androidNotificationChannelId: kPlaybackChannelId,
       androidNotificationChannelName: l10n.notificationChannel,
       // Stay in foreground while paused too: otherwise some phones kill the process in the
       // background, and startForeground again from the background crashes on Android 12+

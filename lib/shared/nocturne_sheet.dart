@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
@@ -192,6 +193,10 @@ class SheetAction extends StatelessWidget {
   }
 }
 
+/// Longest name the name dialog takes (a playlist, an artist). Longer ones, pasted in, made the
+/// whole backup file unreadable (BackupFile takes up to 1000).
+const kMaxNameLength = 200;
+
 /// Name input dialog (create / rename playlist).
 Future<String?> showNameDialog(
   BuildContext context, {
@@ -213,6 +218,7 @@ Future<String?> showNameDialog(
           style: AppTypography.bodyMd,
           cursorColor: AppColors.cyan,
           textCapitalization: TextCapitalization.sentences,
+          inputFormatters: [LengthLimitingTextInputFormatter(kMaxNameLength)],
           decoration: InputDecoration(
             hintText: hint ?? l10n.name,
             hintStyle: AppTypography.bodyMd.copyWith(color: AppColors.textMuted),
@@ -226,11 +232,38 @@ Future<String?> showNameDialog(
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.electric),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.accentFill),
             child: Text(l10n.save),
           ),
         ],
       ),
     ),
   ).then((v) => (v == null || v.isEmpty) ? null : v);
+}
+
+/// "Are you sure?" dialog: [title], [message], Cancel and [action]. True = confirmed.
+Future<bool> showConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String action,
+}) async {
+  final yes = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: AppColors.surfaceLow,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
+      title: Text(title, style: AppTypography.headlineMd),
+      content: Text(message, style: AppTypography.bodyMd.copyWith(color: AppColors.textSecondary)),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.accentFill),
+          child: Text(action),
+        ),
+      ],
+    ),
+  );
+  return yes == true;
 }

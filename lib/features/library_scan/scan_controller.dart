@@ -38,9 +38,14 @@ class ScanController extends Notifier<LibraryScanState> {
     });
 
     // Check the permission status in the background
-    unawaited(PermissionGate.check().then((p) => state = state.copyWith(permission: p)));
+    // (a failed check counts as "not allowed": the card offers to ask)
+    unawaited(PermissionGate.check()
+        .catchError((Object _) => MediaPermission.denied)
+        .then((p) => state = state.copyWith(permission: p)));
 
-    return LibraryScanState(permission: MediaPermission.denied, progress: scanner.last);
+    // Unknown until the check answers: "denied" showed the "Allow access" card for a moment on
+    // every start
+    return LibraryScanState(permission: MediaPermission.unknown, progress: scanner.last);
   }
 
   /// Ask for permission → scan if granted. Settings "Rescan" and app launch go through here.

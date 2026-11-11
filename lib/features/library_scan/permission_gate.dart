@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-enum MediaPermission { granted, denied, permanentlyDenied }
+/// [unknown]: not asked yet (the first moments after start).
+enum MediaPermission { unknown, granted, denied, permanentlyDenied }
 
 /// READ_MEDIA_AUDIO (Android 13+) / READ_EXTERNAL_STORAGE (12-).
 /// On iOS files are imported into the app sandbox → no permission needed.

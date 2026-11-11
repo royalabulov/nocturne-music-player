@@ -26,7 +26,8 @@ class PlaylistsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playlists = ref.watch(playlistsProvider).value ?? const <Playlist>[];
+    final playlistsAsync = ref.watch(playlistsProvider);
+    final playlists = playlistsAsync.value ?? const <Playlist>[];
     final repo = ref.read(playlistRepositoryProvider);
 
     return SafeArea(
@@ -53,7 +54,7 @@ class PlaylistsScreen extends ConsumerWidget {
               child: Container(
                 height: 52,
                 decoration: BoxDecoration(
-                  color: AppColors.electric,
+                  color: AppColors.accentFill,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   boxShadow: Glow.accent,
                 ),
@@ -71,10 +72,14 @@ class PlaylistsScreen extends ConsumerWidget {
           // Rescan lives in Settings; the page title already says what this is
           const SizedBox(height: AppSpacing.lg),
           if (playlists.isEmpty)
-            EmptyState(
-              icon: Icons.queue_music_rounded,
-              title: l10n.noPlaylists,
-              message: l10n.noPlaylistsHint,
+            ListStatus(
+              value: playlistsAsync,
+              onRetry: () => ref.invalidate(playlistsProvider),
+              empty: EmptyState(
+                icon: Icons.queue_music_rounded,
+                title: l10n.noPlaylists,
+                message: l10n.noPlaylistsHint,
+              ),
             )
           else
             Padding(

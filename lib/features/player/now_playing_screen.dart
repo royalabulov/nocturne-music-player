@@ -20,6 +20,7 @@ import '../../shared/favorite_button.dart';
 import '../../shared/glow_play_button.dart';
 import '../tracks/track_actions_sheet.dart';
 import '../../shared/locate_track.dart';
+import '../../shared/tap_target.dart';
 import 'lyrics_controller.dart';
 import 'lyrics_view.dart';
 import '../../core/audio/player_providers.dart';
@@ -131,109 +132,124 @@ class NowPlayingScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const Spacer(flex: 2),
-                  _SwipeToSkip(child: _ArtOrLyrics(track: t)),
-                  const SizedBox(height: AppSpacing.xxl),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              t.title,
-                              style: AppTypography.headlineMd,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            // Tap the artist → their page (Now Playing closes)
-                            GestureDetector(
-                              onTap: () =>
-                                  GoRouter.of(context)
-                                      .go(artistRoute(artistKeyOf(t))),
-                              child: Text(
-                                t.artistLabel,
-                                style: AppTypography.bodyMd.copyWith(
-                                  color: AppColors.textSecondary,
+                  // The cover takes what the screen has left: a full-width square used to push the
+                  // controls off short screens and off a turned phone (_PlayerLayout)
+                  Expanded(
+                    child: _PlayerLayout(
+                      art: (size) => _SwipeToSkip(child: _ArtOrLyrics(track: t, size: size)),
+                      info: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Title and artist are one 48+ px target → the artist's page
+                                    // (Now Playing closes). The artist line alone was 22 px high.
+                                    TapTarget(
+                                      label: '${t.title}, ${t.artistLabel}',
+                                      hint: l10n.openArtist,
+                                      alignment: AlignmentDirectional.centerStart,
+                                      onTap: () => GoRouter.of(context).go(artistRoute(artistKeyOf(t))),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            t.title,
+                                            style: AppTypography.headlineMd,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            t.artistLabel,
+                                            style: AppTypography.bodyMd.copyWith(
+                                              color: AppColors.textSecondary,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.xxs),
+                                    // Quality as one quiet line — two bordered pills were the
+                                    // loudest thing under the title (design review, 2026-11-02)
+                                    Text(
+                                      [
+                                        t.qualityLabel,
+                                        if (t.sampleRateHz != null) '${t.sampleRateHz! ~/ 1000}kHz',
+                                      ].join('  ·  '),
+                                      style: AppTypography.monoSm.copyWith(color: AppColors.textMuted),
+                                    ),
+                                  ],
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            const SizedBox(height: AppSpacing.xxs),
-                            // Quality as one quiet line — two bordered pills were the
-                            // loudest thing under the title (design review, 2026-11-02)
-                            Text(
-                              [
-                                t.qualityLabel,
-                                if (t.sampleRateHz != null) '${t.sampleRateHz! ~/ 1000}kHz',
-                              ].join('  ·  '),
-                              style: AppTypography.monoSm.copyWith(color: AppColors.textMuted),
-                            ),
-                          ],
-                        ),
+                              const _LyricsButton(),
+                              FavoriteButton(trackId: t.id, size: 24),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          const _Scrubber(),
+                          const SizedBox(height: AppSpacing.sm),
+                          // Transport. Tooltips double as TalkBack labels; shuffle/repeat
+                          // say their state, since only the colour shows it on screen.
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              IconButton(
+                                tooltip: shuffle ? l10n.shuffleOn : l10n.shuffleOff,
+                                onPressed: handler.toggleShuffle,
+                                iconSize: 22,
+                                icon: const Icon(Icons.shuffle_rounded),
+                                color: shuffle
+                                    ? AppColors.cyan
+                                    : AppColors.textSecondary,
+                              ),
+                              IconButton(
+                                tooltip: l10n.previousSong,
+                                onPressed: handler.skipToPrevious,
+                                iconSize: 34,
+                                icon: const Icon(Icons.skip_previous_rounded),
+                                color: AppColors.textPrimary,
+                              ),
+                              GlowPlayButton(
+                                size: 64,
+                                playing: playing,
+                                onTap: playing ? handler.pause : handler.play,
+                              ),
+                              IconButton(
+                                tooltip: l10n.nextSong,
+                                onPressed: handler.skipToNext,
+                                iconSize: 34,
+                                icon: const Icon(Icons.skip_next_rounded),
+                                color: AppColors.textPrimary,
+                              ),
+                              IconButton(
+                                tooltip: switch (repeat) {
+                                  AudioServiceRepeatMode.one => l10n.repeatOne,
+                                  AudioServiceRepeatMode.none => l10n.repeatOff,
+                                  _ => l10n.repeatAll,
+                                },
+                                onPressed: handler.cycleRepeat,
+                                iconSize: 22,
+                                icon: Icon(
+                                  repeat == AudioServiceRepeatMode.one
+                                      ? Icons.repeat_one_rounded
+                                      : Icons.repeat_rounded,
+                                ),
+                                color: repeat == AudioServiceRepeatMode.none
+                                    ? AppColors.textSecondary
+                                    : AppColors.cyan,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      const _LyricsButton(),
-                      FavoriteButton(trackId: t.id, size: 24),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  const _Scrubber(),
-                  const SizedBox(height: AppSpacing.sm),
-                  // Transport. Tooltips double as TalkBack labels; shuffle/repeat
-                  // say their state, since only the colour shows it on screen.
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      IconButton(
-                        tooltip: shuffle ? l10n.shuffleOn : l10n.shuffleOff,
-                        onPressed: handler.toggleShuffle,
-                        iconSize: 22,
-                        icon: const Icon(Icons.shuffle_rounded),
-                        color: shuffle
-                            ? AppColors.cyan
-                            : AppColors.textSecondary,
-                      ),
-                      IconButton(
-                        tooltip: l10n.previousSong,
-                        onPressed: handler.skipToPrevious,
-                        iconSize: 34,
-                        icon: const Icon(Icons.skip_previous_rounded),
-                        color: AppColors.textPrimary,
-                      ),
-                      GlowPlayButton(
-                        size: 64,
-                        playing: playing,
-                        onTap: playing ? handler.pause : handler.play,
-                      ),
-                      IconButton(
-                        tooltip: l10n.nextSong,
-                        onPressed: handler.skipToNext,
-                        iconSize: 34,
-                        icon: const Icon(Icons.skip_next_rounded),
-                        color: AppColors.textPrimary,
-                      ),
-                      IconButton(
-                        tooltip: switch (repeat) {
-                          AudioServiceRepeatMode.one => l10n.repeatOne,
-                          AudioServiceRepeatMode.none => l10n.repeatOff,
-                          _ => l10n.repeatAll,
-                        },
-                        onPressed: handler.cycleRepeat,
-                        iconSize: 22,
-                        icon: Icon(
-                          repeat == AudioServiceRepeatMode.one
-                              ? Icons.repeat_one_rounded
-                              : Icons.repeat_rounded,
-                        ),
-                        color: repeat == AudioServiceRepeatMode.none
-                            ? AppColors.textSecondary
-                            : AppColors.cyan,
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
                 ],
               ),
             ),
@@ -381,33 +397,35 @@ class _BottomBar extends ConsumerWidget {
         Expanded(
           child: next == null
               ? const SizedBox.shrink()
+              // The row is 48 high (the sleep timer's area): "Up next" gets all of it, not 32
               : InkWell(
                   onTap: () => showQueueSheet(context),
                   borderRadius: BorderRadius.circular(AppRadius.md),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.xs,
-                    ),
-                    child: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: l10n.upNext,
-                            style: AppTypography.labelSm.copyWith(
-                              color: AppColors.cyan,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: kMinTapTarget),
+                    child: Center(
+                      heightFactor: 1,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: l10n.upNext,
+                              style: AppTypography.labelSm.copyWith(
+                                color: AppColors.cyan,
+                              ),
                             ),
-                          ),
-                          TextSpan(
-                            text: next.title,
-                            style: AppTypography.labelSm.copyWith(
-                              color: AppColors.textPrimary,
+                            TextSpan(
+                              text: next.title,
+                              style: AppTypography.labelSm.copyWith(
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
@@ -419,27 +437,88 @@ class _BottomBar extends ConsumerWidget {
   }
 }
 
-/// Cover side of the art square.
-double _artSize(BuildContext context) => (MediaQuery.sizeOf(context).width - AppSpacing.xl * 2).clamp(
-      200.0,
-      340.0,
-    );
+/// Largest cover side.
+const _maxArt = 340.0;
+
+/// Cover above the title and controls; on a turned phone, beside them.
+///
+/// Upright, the cover is the full width (up to [_maxArt]) as before when the screen has room,
+/// and the space left over goes two thirds above the cover, one third below the controls. On
+/// a short screen the cover shrinks instead of pushing the controls off the bottom (a 360×640
+/// phone lost 20 px of them, a turned phone the play button).
+class _PlayerLayout extends StatelessWidget {
+  const _PlayerLayout({required this.art, required this.info});
+
+  /// The cover, drawn at the given side.
+  final Widget Function(double size) art;
+
+  /// Title, scrubber and controls.
+  final Widget info;
+
+  /// Gap between the cover and the title.
+  static const gap = AppSpacing.xxl;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, c) {
+      if (c.maxWidth > c.maxHeight * 1.2) {
+        final size = max(0.0, min(min(c.maxHeight - AppSpacing.md, c.maxWidth * .42), _maxArt));
+        return Row(
+          children: [
+            SizedBox.square(dimension: size, child: art(size)),
+            const SizedBox(width: AppSpacing.xl),
+            // Very little height (a large font on a turned phone): the controls scroll
+            Expanded(child: Center(child: SingleChildScrollView(child: info))),
+          ],
+        );
+      }
+      return CustomMultiChildLayout(
+        delegate: _UprightLayout(),
+        children: [
+          LayoutId(id: #art, child: LayoutBuilder(builder: (_, a) => art(a.maxWidth))),
+          LayoutId(id: #info, child: info),
+        ],
+      );
+    });
+  }
+}
+
+class _UprightLayout extends MultiChildLayoutDelegate {
+  @override
+  void performLayout(Size size) {
+    final info = layoutChild(#info, BoxConstraints(minWidth: size.width, maxWidth: size.width, maxHeight: size.height));
+    final room = size.height - info.height - _PlayerLayout.gap;
+    final side = max(0.0, min(min(size.width, _maxArt), room));
+    layoutChild(#art, BoxConstraints.tight(Size.square(side)));
+    final top = max(0.0, room - side) * 2 / 3;
+    positionChild(#art, Offset((size.width - side) / 2, top));
+    positionChild(#info, Offset(0, top + side + _PlayerLayout.gap));
+  }
+
+  @override
+  bool shouldRelayout(_UprightLayout oldDelegate) => false;
+}
 
 /// Tap the cover → lyrics in its place; tap again → the cover.
 class _ArtOrLyrics extends ConsumerWidget {
-  const _ArtOrLyrics({required this.track});
+  const _ArtOrLyrics({required this.track, required this.size});
   final Track track;
+  final double size;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final show = ref.watch(showLyricsProvider);
-    return GestureDetector(
-      onTap: ref.read(showLyricsProvider.notifier).toggle,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        child: show
-            ? LyricsPanel(key: const ValueKey('lyrics'), size: _artSize(context))
-            : _Art(key: const ValueKey('art'), track: track),
+    // The cover had no name for TalkBack: say what it is and what swiping and tapping do
+    return Semantics(
+      label: show ? null : l10n.coverHint,
+      child: GestureDetector(
+        onTap: ref.read(showLyricsProvider.notifier).toggle,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: show
+              ? LyricsPanel(key: const ValueKey('lyrics'), size: size)
+              : _Art(key: const ValueKey('art'), track: track, size: size),
+        ),
       ),
     );
   }
@@ -462,12 +541,12 @@ class _LyricsButton extends ConsumerWidget {
 }
 
 class _Art extends ConsumerWidget {
-  const _Art({super.key, required this.track});
+  const _Art({super.key, required this.track, required this.size});
   final Track track;
+  final double size;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final size = _artSize(context);
     final playing = ref.watch(isPlayingProvider);
     final glow = ref.watch(currentCoverColorProvider);
     // While paused the cover shrinks a little and the glow fades; it grows back when playing.

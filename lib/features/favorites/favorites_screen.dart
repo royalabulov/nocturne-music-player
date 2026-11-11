@@ -18,6 +18,8 @@ import '../../shared/empty_state.dart';
 import '../../shared/album_art.dart';
 import '../../shared/glow_play_button.dart';
 import '../../shared/sort_sheet.dart';
+import '../../shared/segmented_tabs.dart';
+import '../../shared/tap_target.dart';
 import '../tracks/track_sliver_list.dart';
 import '../../l10n/l10n.dart';
 import '../../core/utils/display_names.dart';
@@ -49,7 +51,8 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loved = ref.watch(favoritesProvider).value ?? const <Track>[];
+    final lovedAsync = ref.watch(favoritesProvider);
+    final loved = lovedAsync.value ?? const <Track>[];
     final sort = ref.watch(_favSortProvider);
     final tracks = _sorted(loved, sort);
     return SafeArea(
@@ -69,7 +72,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.screenH,
                 ),
-                child: _SegmentedTabs(
+                child: SegmentedTabs(
                   items: [l10n.tabSongs, l10n.tabAlbums, l10n.tabArtists],
                   selected: _tab,
                   onSelected: (i) => setState(() => _tab = i),
@@ -96,13 +99,16 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                                   .playTracks(tracks, shuffle: true),
                       ),
                     ),
-                    // Albums / Artists are A–Z groups → sorting is for Songs
+                    /// Artists are A–Z groups → sorting is for Songs
                     if (_tab == 0 && tracks.isNotEmpty) ...[
                       const SizedBox(width: AppSpacing.sm),
-                      _Pill(
-                        icon: Icons.swap_vert_rounded,
-                        label: '${sort.label}  ▾',
-                        onTap: _pickSort,
+                      // Flexible too: at a large font on a narrow phone the two didn't fit
+                      Flexible(
+                        child: _Pill(
+                          icon: Icons.swap_vert_rounded,
+                          label: '${sort.label}  ▾',
+                          onTap: _pickSort,
+                        ),
                       ),
                     ],
                   ],
@@ -110,10 +116,14 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
               if (tracks.isEmpty)
-                EmptyState(
-                  icon: Icons.favorite_border_rounded,
-                  title: l10n.noFavorites,
-                  message: l10n.noFavoritesHint,
+                ListStatus(
+                  value: lovedAsync,
+                  onRetry: () => ref.invalidate(favoritesProvider),
+                  empty: EmptyState(
+                    icon: Icons.favorite_border_rounded,
+                    title: l10n.noFavorites,
+                    message: l10n.noFavoritesHint,
+                  ),
                 ),
             ],
           ),
@@ -200,89 +210,41 @@ class _Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fg = primary ? Colors.white : AppColors.textPrimary;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        boxShadow: primary ? Glow.accent : null,
-      ),
-      child: Material(
-        color: primary ? AppColors.electric : AppColors.surfaceHigh,
-        shape: const StadiumBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: primary ? 18 : 14, vertical: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: primary ? fg : AppColors.textSecondary, size: 18),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.labelMd.copyWith(color: fg),
+    // 42 px pill, 48 px touch area
+    return TapTarget(
+      label: label,
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          boxShadow: primary ? Glow.accent : null,
+        ),
+        child: Material(
+          color: primary ? AppColors.accentFill : AppColors.surfaceHigh,
+          shape: const StadiumBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: primary ? 18 : 14, vertical: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: primary ? fg : AppColors.textSecondary, size: 18),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.labelMd.copyWith(color: fg),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Songs | Albums | Artists — full-width segmented pill.
-class _SegmentedTabs extends StatelessWidget {
-  const _SegmentedTabs({
-    required this.items,
-    required this.selected,
-    required this.onSelected,
-  });
-  final List<String> items;
-  final int selected;
-  final ValueChanged<int> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: AppColors.borderLevel1),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < items.length; i++)
-            Expanded(
-              child: GestureDetector(
-                onTap: () => onSelected(i),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: i == selected
-                        ? AppColors.electric
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    items[i],
-                    style: AppTypography.labelMd.copyWith(
-                      color: i == selected
-                          ? Colors.white
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }

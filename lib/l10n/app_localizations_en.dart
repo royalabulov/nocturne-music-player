@@ -1563,4 +1563,38 @@ class L10nEn extends L10n {
 
   @override
   String get stopsWhenTrackEnds => 'Stops when this track ends';
+
+  @override
+  String get search => 'Search';
+
+  @override
+  String get coverHint =>
+      'Cover. Swipe left or right for another song, tap for lyrics';
+
+  @override
+  String get openArtist => 'Open the artist';
+
+  @override
+  String get alphabetRail => 'Jump to letter';
+
+  @override
+  String get removeFolder => 'Remove folder';
+
+  @override
+  String get removeFolderQ => 'Remove this folder?';
+
+  @override
+  String removeFolderWarning(String folder) {
+    return 'Songs in $folder leave the library at the next scan. The files stay on the phone.';
+  }
+
+  @override
+  String get loadFailed => 'Couldn’t load this. Your data is still there.';
+
+  @override
+  String get scanFailedHint =>
+      'Something went wrong while reading your music. Try again.';
+
+  @override
+  String get lastScanFailed => 'The last scan failed. Try again.';
 }

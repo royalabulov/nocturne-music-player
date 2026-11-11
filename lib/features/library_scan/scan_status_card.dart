@@ -25,6 +25,7 @@ class ScanStatusCard extends ConsumerWidget {
     // The big card only for the first scan (empty library). While new songs are
     // added to an existing library, the thin line under the greeting is enough.
     if (s.isRunning) return libraryEmpty ? _Card(child: _Progress(s.progress)) : const SizedBox.shrink();
+    if (s.permission == MediaPermission.unknown) return const SizedBox.shrink();
 
     if (s.permission == MediaPermission.permanentlyDenied) {
       return _Card(
@@ -56,7 +57,8 @@ class ScanStatusCard extends ConsumerWidget {
         child: _Action(
           icon: Icons.radar_rounded,
           title: err == null ? l10n.noTracksYet : l10n.scanFailed,
-          subtitle: err ?? l10n.noTracksHint,
+          // The exception itself is in the log; it was shown here raw ("PlatformException(…)")
+          subtitle: err == null ? l10n.noTracksHint : l10n.scanFailedHint,
           button: l10n.scanNow,
           onTap: ctrl.requestAndScan,
         ),
@@ -166,7 +168,7 @@ class _Action extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.electric,
+              color: AppColors.accentFill,
               borderRadius: BorderRadius.circular(AppRadius.md),
               boxShadow: Glow.accent,
             ),

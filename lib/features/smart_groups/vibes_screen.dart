@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +13,7 @@ import '../../domain/repositories/analysis_repository.dart';
 import 'smart_groups.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/screen_back_button.dart';
+import '../../shared/tap_target.dart';
 
 /// Side menu → "Your Vibes": mood cards + genre chips. Used to be a section
 /// on Home; moved to its own screen because Home was too crowded.
@@ -67,13 +70,19 @@ class VibesScreen extends ConsumerWidget {
             if (groups != null && groups.moods.isNotEmpty)
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
-                sliver: SliverGrid.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: AppSpacing.sm,
-                  crossAxisSpacing: AppSpacing.sm,
-                  childAspectRatio: 1.35,
-                  children: [for (final g in groups.moods) _MoodCard(group: g)],
-                ),
+                // As wide as before (1.35:1), but never shorter than the text: emoji, a two-line
+                // title and the count. At a large font the fixed ratio cut the count off.
+                sliver: SliverLayoutBuilder(builder: (context, c) {
+                  final tileW = (c.crossAxisExtent - AppSpacing.sm) / 2;
+                  final text = MediaQuery.textScalerOf(context).scale(38 + 16 * 1.15 * 2 + 16);
+                  return SliverGrid.count(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: AppSpacing.sm,
+                    crossAxisSpacing: AppSpacing.sm,
+                    childAspectRatio: tileW / max(tileW / 1.35, AppSpacing.sm * 2 + 4 + text),
+                    children: [for (final g in groups.moods) _MoodCard(group: g)],
+                  );
+                }),
               ),
             SliverList.list(
               children: [
@@ -82,9 +91,9 @@ class VibesScreen extends ConsumerWidget {
                   _Label(l10n.genres),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
+                    // The chips' 48 px touch areas keep the rows apart
                     child: Wrap(
                       spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
                       children: [for (final g in groups.genres) _GenreChip(group: g)],
                     ),
                   ),
@@ -269,7 +278,10 @@ class _GenreChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    return TapTarget(
+      label: '${group.title}, ${l10n.trackCount(group.tracks.length)}',
+      onTap: () => context.push(smartGroupRoute(group.key)),
+      child: Material(
       color: AppColors.surfaceContainer,
       shape: const StadiumBorder(side: BorderSide(color: AppColors.borderLevel1)),
       clipBehavior: Clip.antiAlias,
@@ -290,6 +302,7 @@ class _GenreChip extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

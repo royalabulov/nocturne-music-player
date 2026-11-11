@@ -22,6 +22,7 @@ import '../../core/audio/player_providers.dart';
 import 'forgotten.dart';
 import 'forgotten_reminder.dart';
 import '../../shared/screen_back_button.dart';
+import '../../shared/tap_target.dart';
 import '../../shared/with_text_controller.dart';
 
 /// Menu → Forgotten favorites: songs played a lot (or favorites) that haven't been
@@ -43,7 +44,8 @@ class _ForgottenScreenState extends ConsumerState<ForgottenScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(forgottenSettingsProvider);
-    final loaded = ref.watch(forgottenProvider).value;
+    final source = ref.watch(forgottenProvider);
+    final loaded = source.value;
     final items = loaded ?? const <PlayedTrack>[];
     final meta = {for (final p in items) p.track.id: p};
     final tracks = [for (final p in items) p.track];
@@ -97,21 +99,30 @@ class _ForgottenScreenState extends ConsumerState<ForgottenScreen> {
                       const _ReminderCard(),
                       if (tracks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.lg),
+                        // A Wrap: at a large font on a narrow phone the second pill goes to a
+                        // new line instead of running off the screen
                         Row(
                           children: [
-                            ActionPill(
-                              icon: Icons.play_arrow_rounded,
-                              label: l10n.playAll,
-                              primary: true,
-                              onTap: () => handler.playTracks(tracks),
+                            Expanded(
+                              child: Wrap(
+                                spacing: AppSpacing.sm,
+                                runSpacing: AppSpacing.sm,
+                                children: [
+                                  ActionPill(
+                                    icon: Icons.play_arrow_rounded,
+                                    label: l10n.playAll,
+                                    primary: true,
+                                    onTap: () => handler.playTracks(tracks),
+                                  ),
+                                  ActionPill(
+                                    icon: Icons.shuffle_rounded,
+                                    label: l10n.shuffle,
+                                    onTap: () => handler.playTracks(tracks, shuffle: true),
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(width: AppSpacing.sm),
-                            ActionPill(
-                              icon: Icons.shuffle_rounded,
-                              label: l10n.shuffle,
-                              onTap: () => handler.playTracks(tracks, shuffle: true),
-                            ),
-                            const Spacer(),
                             Text(l10n.trackCount(tracks.length), style: AppTypography.labelSm),
                           ],
                         ),
@@ -122,6 +133,8 @@ class _ForgottenScreenState extends ConsumerState<ForgottenScreen> {
                 ),
               ],
             ),
+            if (loaded == null && source.hasError)
+              SliverToBoxAdapter(child: LoadFailed(onRetry: () => ref.invalidate(forgottenProvider))),
             if (loaded != null && tracks.isEmpty)
               // Empty: say why (the rule is right above)
               SliverToBoxAdapter(
@@ -214,10 +227,10 @@ class _RuleCard extends ConsumerWidget {
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Text(l10n.forgottenDays, style: AppTypography.bodyMd),
-                        const SizedBox(height: AppSpacing.sm),
+                        const SizedBox(height: AppSpacing.sm - 4),
                         Wrap(
                           spacing: AppSpacing.xs,
-                          runSpacing: AppSpacing.xs,
+                          runSpacing: 0, // the chips' 48 px touch areas already keep them 8 px apart
                           children: [
                             for (final d in ForgottenSettings.quickDays)
                               _QuickChip(
@@ -347,10 +360,10 @@ class _ReminderCard extends ConsumerWidget {
                     children: [
                       const SizedBox(height: AppSpacing.md),
                       Text(l10n.reminderDays, style: AppTypography.bodyMd),
-                      const SizedBox(height: AppSpacing.sm),
+                      const SizedBox(height: AppSpacing.sm - 4),
                       Wrap(
                         spacing: AppSpacing.xs,
-                        runSpacing: AppSpacing.xs,
+                        runSpacing: 0, // the chips' 48 px touch areas already keep them 8 px apart
                         children: [
                           for (var d = DateTime.monday; d <= DateTime.sunday; d++)
                             _QuickChip(
@@ -444,7 +457,7 @@ Future<int?> _askDays(BuildContext context, int current) {
             TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, parse()),
-              style: FilledButton.styleFrom(backgroundColor: AppColors.electric),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.accentFill),
               child: Text(l10n.save),
             ),
           ],
@@ -537,18 +550,17 @@ class _QuickChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fg = selected ? Colors.white : AppColors.textSecondary;
-    return Semantics(
-      button: true,
+    // 40 px chip, 48 px touch area (the Wrap's run spacing is the 8 px difference)
+    return TapTarget(
+      label: label,
       selected: selected,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
+      onTap: onTap,
+      child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          // 40 dp tall + the Wrap's spacing ≈ the 48 dp touch target
           constraints: const BoxConstraints(minHeight: 40),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? AppColors.electric : AppColors.surfaceHigh,
+            color: selected ? AppColors.accentFill : AppColors.surfaceHigh,
             borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
           child: Row(
@@ -562,7 +574,6 @@ class _QuickChip extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }

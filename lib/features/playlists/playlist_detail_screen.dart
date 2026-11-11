@@ -14,6 +14,7 @@ import 'playlist_reorder_list.dart';
 import 'playlists_screen.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/action_pill.dart';
+import '../../shared/empty_state.dart';
 import '../../shared/screen_back_button.dart';
 
 class PlaylistDetailScreen extends ConsumerStatefulWidget {
@@ -34,13 +35,29 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
   Widget build(BuildContext context) {
     final playlistAsync = ref.watch(playlistProvider(id));
     final playlist = playlistAsync.value;
-    final tracks = ref.watch(playlistTracksProvider(id)).value ?? const <Track>[];
+    final tracksAsync = ref.watch(playlistTracksProvider(id));
+    final tracks = tracksAsync.value ?? const <Track>[];
     final handler = ref.read(audioHandlerProvider);
     final repo = ref.read(playlistRepositoryProvider);
 
     // On the first frame the stream is still loading (value == null) — that doesn't
     // mean "deleted". It used to pop right away here → the playlist never opened.
     if (!playlistAsync.hasValue) {
+      // A failed load used to leave an empty black screen with no way back but the system back
+      if (playlistAsync.hasError) {
+        return Scaffold(
+          backgroundColor: AppColors.void_,
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const ScreenBackButton(),
+                Expanded(child: Center(child: LoadFailed(onRetry: () => ref.invalidate(playlistProvider(id))))),
+              ],
+            ),
+          ),
+        );
+      }
       return const Scaffold(backgroundColor: AppColors.void_);
     }
     if (playlist == null) {
@@ -78,6 +95,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                               color: AppColors.textPrimary,
                             ),
                     IconButton(
+                      tooltip: l10n.more,
                       onPressed: () => showPlaylistActions(context, ref, playlist),
                       icon: const Icon(Icons.more_horiz_rounded),
                       color: AppColors.textPrimary,
@@ -144,6 +162,8 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                 emptyIcon: Icons.playlist_add_rounded,
                 emptyTitle: l10n.playlistEmpty,
                 emptyText: l10n.playlistEmptyHint,
+                status: tracksAsync,
+                onRetry: () => ref.invalidate(playlistTracksProvider(id)),
                 onRemove: (t) => repo.removeTrack(id, t.id),
               ),
             const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight)),

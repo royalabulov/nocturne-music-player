@@ -2681,6 +2681,66 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Stops when this track ends'**
   String get stopsWhenTrackEnds;
+
+  /// No description provided for @search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get search;
+
+  /// No description provided for @coverHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover. Swipe left or right for another song, tap for lyrics'**
+  String get coverHint;
+
+  /// No description provided for @openArtist.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the artist'**
+  String get openArtist;
+
+  /// No description provided for @alphabetRail.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to letter'**
+  String get alphabetRail;
+
+  /// No description provided for @removeFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove folder'**
+  String get removeFolder;
+
+  /// No description provided for @removeFolderQ.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this folder?'**
+  String get removeFolderQ;
+
+  /// No description provided for @removeFolderWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Songs in {folder} leave the library at the next scan. The files stay on the phone.'**
+  String removeFolderWarning(String folder);
+
+  /// No description provided for @loadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load this. Your data is still there.'**
+  String get loadFailed;
+
+  /// No description provided for @scanFailedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while reading your music. Try again.'**
+  String get scanFailedHint;
+
+  /// No description provided for @lastScanFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The last scan failed. Try again.'**
+  String get lastScanFailed;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

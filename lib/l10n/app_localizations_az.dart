@@ -1558,4 +1558,38 @@ class L10nAz extends L10n {
 
   @override
   String get stopsWhenTrackEnds => 'Bu mahnı bitəndə dayanır';
+
+  @override
+  String get search => 'Axtarış';
+
+  @override
+  String get coverHint =>
+      'Örtük. Başqa mahnı üçün sola və ya sağa sürüşdür, sözlər üçün toxun';
+
+  @override
+  String get openArtist => 'İfaçının səhifəsini aç';
+
+  @override
+  String get alphabetRail => 'Hərfə keç';
+
+  @override
+  String get removeFolder => 'Qovluğu sil';
+
+  @override
+  String get removeFolderQ => 'Bu qovluq silinsin?';
+
+  @override
+  String removeFolderWarning(String folder) {
+    return '$folder qovluğundakı mahnılar növbəti axtarışda kitabxanadan çıxacaq. Fayllar telefonda qalır.';
+  }
+
+  @override
+  String get loadFailed => 'Yükləmək alınmadı. Məlumatlarınız yerindədir.';
+
+  @override
+  String get scanFailedHint =>
+      'Musiqini oxuyarkən xəta baş verdi. Yenidən cəhd edin.';
+
+  @override
+  String get lastScanFailed => 'Son axtarış alınmadı. Yenidən cəhd edin.';
 }

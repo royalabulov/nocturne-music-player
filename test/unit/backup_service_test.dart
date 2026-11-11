@@ -110,7 +110,6 @@ void main() {
       'a favorite date past what a date can be': {'favorites': [{'path': song, 'addedAt': tooLate}]},
       'a playlist is not an object': {'playlists': ['x']},
       'a playlist name is not text': {'playlists': [{...validPlaylist, 'name': 1}]},
-      'a playlist name is absurdly long': {'playlists': [{...validPlaylist, 'name': 'x' * 100000}]},
       'a playlist name is empty': {'playlists': [{...validPlaylist, 'name': ''}]},
       'a playlist name is blank': {'playlists': [{...validPlaylist, 'name': '   '}]},
       'a playlist created past what a date can be': {'playlists': [{...validPlaylist, 'createdAt': tooLate}]},
@@ -139,7 +138,6 @@ void main() {
       'an edited artist is not an object': {'artistOverrides': ['X']},
       'an edited artist name is not text': {'artistOverrides': [{'path': song, 'artist': 5}]},
       'an edited artist name is empty': {'artistOverrides': [{'path': song, 'artist': '  '}]},
-      'an edited artist name is absurdly long': {'artistOverrides': [{'path': song, 'artist': 'x' * 100000}]},
       'an edited artist has no path': {'artistOverrides': [{'artist': 'X'}]},
     };
     for (final MapEntry(key: what, value: fields) in malformed.entries) {
@@ -163,6 +161,22 @@ void main() {
     test('a file saved with a BOM by a text editor is still the same backup', () async {
       final r = await svc.restore('\uFEFF${backup({'favorites': [{'path': song, 'addedAt': 1}]})}');
       expect(r.favorites, 1);
+    });
+
+    // Older versions took a pasted name of any length; one such playlist made every backup,
+    // the weekly one too, unreadable
+    test('a very long name is cut, the rest of the file still restores', () async {
+      final r = await svc.restore(backup({
+        'favorites': [{'path': song, 'addedAt': 1}],
+        // 'x' + emoji: the 1000th code unit is the first half of an emoji, which is dropped too
+        'playlists': [{...validPlaylist, 'name': 'x${'😀' * 600}', 'description': 'd' * 20000}],
+        'artistOverrides': [{'path': song, 'artist': 'y' * 100000}],
+      }));
+      expect(r.favorites, 1);
+      final playlist = await db.select(db.playlists).getSingle();
+      expect(playlist.name, 'x${'😀' * 499}');
+      expect(playlist.description, 'd' * 10000);
+      expect((await ArtistOverrides.load(db))[song], 'y' * 1000);
     });
 
     test('one bad value refuses the whole file: nothing is half-written', () async {

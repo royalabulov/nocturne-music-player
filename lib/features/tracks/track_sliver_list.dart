@@ -25,6 +25,8 @@ class TrackSliverList extends ConsumerWidget {
     this.onRemove,
     this.emptyIcon = Icons.music_off_rounded,
     this.emptyTitle,
+    this.status,
+    this.onRetry,
   });
 
   final List<Track> tracks;
@@ -40,8 +42,19 @@ class TrackSliverList extends ConsumerWidget {
   /// Playlist detail: "Remove from playlist" in the long-press menu.
   final void Function(Track)? onRemove;
 
+  /// Where [tracks] came from: while it hasn't answered yet the empty text isn't shown, and
+  /// when it failed, Retry runs [onRetry]. Null: [tracks] is final.
+  final AsyncValue<Object?>? status;
+  final VoidCallback? onRetry;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final status = this.status;
+    if (tracks.isEmpty && status != null && !status.hasValue) {
+      return SliverToBoxAdapter(
+        child: status.hasError ? LoadFailed(onRetry: onRetry ?? () {}) : const SizedBox.shrink(),
+      );
+    }
     if (tracks.isEmpty) {
       final text = emptyText;
       if (text == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -75,7 +88,6 @@ class TrackSliverList extends ConsumerWidget {
                       IconButton(
                         tooltip: l10n.more,
                         onPressed: onLongPress,
-                        visualDensity: VisualDensity.compact,
                         iconSize: 20,
                         color: AppColors.textSecondary,
                         icon: const Icon(Icons.more_vert_rounded),

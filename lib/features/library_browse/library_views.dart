@@ -8,6 +8,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
 import '../../shared/album_art.dart';
 import '../../shared/empty_state.dart';
+import '../../shared/segmented_tabs.dart';
 import 'library_groups.dart';
 import '../../l10n/l10n.dart';
 import '../../core/utils/display_names.dart';
@@ -25,38 +26,13 @@ class LibraryViewSwitcher extends StatelessWidget {
     final labels = {LibraryView.songs: l10n.tabSongs, LibraryView.albums: l10n.tabAlbums, LibraryView.artists: l10n.tabArtists};
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainer,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: Border.all(color: AppColors.borderLevel1),
-        ),
-        child: Row(
-          children: [
-            for (final v in LibraryView.values)
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => onChanged(v),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: v == value ? AppColors.electric : Colors.transparent,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      boxShadow: v == value ? Glow.accent : null,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      labels[v]!,
-                      style: AppTypography.labelMd.copyWith(color: v == value ? Colors.white : AppColors.textSecondary),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
+      // The same 42 px bar; its tabs are 48 px to touch (they were 32)
+      child: SegmentedTabs(
+        items: [for (final v in LibraryView.values) labels[v]!],
+        selected: value.index,
+        onSelected: (i) => onChanged(LibraryView.values[i]),
+        height: 42,
+        glow: true,
       ),
     );
   }

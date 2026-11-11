@@ -429,5 +429,15 @@
   "reminderTimesAWeek": "{count, plural, =1{Həftədə bir dəfə} other{Həftədə {count} dəfə}}",
   "reminderEveryDay": "Hər gün",
   "reminderSummary": "{when} · saat {time}",
-  "stopsWhenTrackEnds": "Bu mahnı bitəndə dayanır"
+  "stopsWhenTrackEnds": "Bu mahnı bitəndə dayanır",
+  "search": "Axtarış",
+  "coverHint": "Örtük. Başqa mahnı üçün sola və ya sağa sürüşdür, sözlər üçün toxun",
+  "openArtist": "İfaçının səhifəsini aç",
+  "alphabetRail": "Hərfə keç",
+  "removeFolder": "Qovluğu sil",
+  "removeFolderQ": "Bu qovluq silinsin?",
+  "removeFolderWarning": "{folder} qovluğundakı mahnılar növbəti axtarışda kitabxanadan çıxacaq. Fayllar telefonda qalır.",
+  "loadFailed": "Yükləmək alınmadı. Məlumatlarınız yerindədir.",
+  "scanFailedHint": "Musiqini oxuyarkən xəta baş verdi. Yenidən cəhd edin.",
+  "lastScanFailed": "Son axtarış alınmadı. Yenidən cəhd edin."
 }

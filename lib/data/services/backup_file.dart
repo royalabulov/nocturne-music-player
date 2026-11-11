@@ -145,7 +145,7 @@ class BackupFile {
 
   static BackupPlaylist _playlist(Map<String, Object?> m) => (
         name: _name(m),
-        description: _text(m, 'description', _maxDescription, orElse: ''),
+        description: _cut(m, 'description', _maxDescription, orElse: ''),
         createdAt: _date(m, 'createdAt'),
         updatedAt: _date(m, 'updatedAt'),
         tracks: [
@@ -174,14 +174,14 @@ class BackupFile {
       );
 
   static BackupArtist _artist(Map<String, Object?> m) {
-    final artist = _text(m, 'artist', _maxName);
+    final artist = _cut(m, 'artist', _maxName);
     if (artist.trim().isEmpty) throw const FormatException('Bad value for artist');
     return (path: _text(m, 'path', _maxPath), artist: artist);
   }
 
   /// The app never lets a playlist have a blank name, and nobody could pick one from a list.
   static String _name(Map<String, Object?> m) {
-    final name = _text(m, 'name', _maxName);
+    final name = _cut(m, 'name', _maxName);
     if (name.trim().isEmpty) throw const FormatException('Bad value for name');
     return name;
   }
@@ -214,6 +214,18 @@ class BackupFile {
     final value = m[key] ?? orElse;
     if (value is String && value.length <= maxLength) return value;
     throw FormatException('Bad value for $key');
+  }
+
+  /// Names and descriptions the user typed: a longer one is cut to [maxLength], not refused.
+  /// Older versions took a pasted name of any length, and one such playlist made the whole
+  /// backup (the weekly one too) unreadable.
+  static String _cut(Map<String, Object?> m, String key, int maxLength, {String? orElse}) {
+    final value = m[key] ?? orElse;
+    if (value is! String) throw FormatException('Bad value for $key');
+    if (value.length <= maxLength) return value;
+    // Not between the two halves of an emoji
+    final end = (value.codeUnitAt(maxLength - 1) & 0xFC00) == 0xD800 ? maxLength - 1 : maxLength;
+    return value.substring(0, end);
   }
 
   static int _date(Map<String, Object?> m, String key) => _count(m, key, _maxDate);

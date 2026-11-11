@@ -21,6 +21,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
 import '../../core/ui/toast.dart';
 import 'data_transfer.dart';
+import '../../domain/entities/scan_progress.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../../shared/page_title.dart';
@@ -31,7 +32,9 @@ import '../library_scan/scan_controller.dart';
 import '../smart_groups/smart_groups.dart';
 import '../smart_groups/vibe_classifier.dart';
 import '../smart_groups/vibe_review.dart';
+import '../../shared/nocturne_sheet.dart';
 import '../../shared/sort_sheet.dart';
+import '../../shared/tap_target.dart';
 import 'library_filter_section.dart';
 import 'settings_controller.dart';
 import '../../l10n/l10n.dart';
@@ -86,6 +89,14 @@ class SettingsScreen extends StatelessWidget {
 
 // ───────────────────────── storage group (real) ─────────────────────────
 
+/// Settings → Scan folders → ×: asks first. True = remove it.
+Future<bool> confirmRemoveFolder(BuildContext context, String folder) => showConfirmDialog(
+      context,
+      title: l10n.removeFolderQ,
+      message: l10n.removeFolderWarning(folder),
+      action: l10n.remove,
+    );
+
 class _StorageGroup extends ConsumerWidget {
   const _StorageGroup();
 
@@ -113,7 +124,10 @@ class _StorageGroup extends ConsumerWidget {
     final p = scan.progress;
     final scanSubtitle = scan.isRunning
         ? (p.total == 0 ? l10n.scanning : l10n.readingTags(p.done, p.total))
-        : l10n.lastScan(_fmt(stats.lastScanAt), l10n.trackCount(stats.trackCount));
+        // A failed scan with songs already there said nothing anywhere
+        : p.phase == ScanPhase.error
+            ? l10n.lastScanFailed
+            : l10n.lastScan(_fmt(stats.lastScanAt), l10n.trackCount(stats.trackCount));
 
     return _Group(children: [
       // Scan folders — each row: toggle + remove
@@ -141,23 +155,35 @@ class _StorageGroup extends ConsumerWidget {
           padding: const EdgeInsets.only(left: AppSpacing.md, right: AppSpacing.xxs),
           child: Row(
             children: [
-              Icon(Icons.folder_outlined, size: 18,
-                  color: f.enabled ? AppColors.cyan : AppColors.textMuted),
-              const SizedBox(width: AppSpacing.xs),
+              // The folder name and its switch are one TalkBack node ("Music, switch, on")
               Expanded(
-                child: Text(_short(f.path),
-                    style: AppTypography.labelMd.copyWith(
-                        color: f.enabled ? AppColors.textPrimary : AppColors.textMuted),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                child: MergeSemantics(
+                  child: Row(
+                    children: [
+                      Icon(Icons.folder_outlined, size: 18,
+                          color: f.enabled ? AppColors.cyan : AppColors.textMuted),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(_short(f.path),
+                            style: AppTypography.labelMd.copyWith(
+                                color: f.enabled ? AppColors.textPrimary : AppColors.textMuted),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                      Switch(
+                        value: f.enabled,
+                        onChanged: (v) => repo.setScanFolderEnabled(f.id, v),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              Switch(
-                value: f.enabled,
-                onChanged: (v) => repo.setScanFolderEnabled(f.id, v),
-              ),
+              // Asks first: a stray tap used to drop the folder (and its songs at the next scan)
               IconButton(
-                onPressed: () => repo.removeScanFolder(f.id),
+                tooltip: l10n.removeFolder,
+                onPressed: () async {
+                  if (await confirmRemoveFolder(context, _short(f.path))) await repo.removeScanFolder(f.id);
+                },
                 icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
-                visualDensity: VisualDensity.compact,
               ),
             ],
           ),
@@ -167,6 +193,7 @@ class _StorageGroup extends ConsumerWidget {
         title: l10n.rescanLibrary,
         subtitle: scanSubtitle,
         subtitleAccent: scan.isRunning,
+        subtitleError: !scan.isRunning && p.phase == ScanPhase.error,
         trailing: _SmallButton(
           label: scan.isRunning ? l10n.scanningShort : l10n.rescan,
           icon: Icons.radar_rounded,
@@ -373,11 +400,12 @@ class _Group extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.title, required this.subtitle, this.trailing, this.subtitleAccent = false});
+  const _InfoRow({required this.title, required this.subtitle, this.trailing, this.subtitleAccent = false, this.subtitleError = false});
   final String title;
   final String subtitle;
   final Widget? trailing;
   final bool subtitleAccent;
+  final bool subtitleError;
 
   @override
   Widget build(BuildContext context) {
@@ -393,7 +421,11 @@ class _InfoRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(subtitle,
                     style: AppTypography.labelSm.copyWith(
-                        color: subtitleAccent ? AppColors.cyan : AppColors.textSecondary)),
+                        color: subtitleError
+                            ? AppColors.error
+                            : subtitleAccent
+                                ? AppColors.cyan
+                                : AppColors.textSecondary)),
               ],
             ),
           ),
@@ -411,12 +443,15 @@ class _ToggleRow extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
 
+  // One TalkBack node: "Weekly backup, …, switch, on" — alone the switch had no name
   @override
   Widget build(BuildContext context) {
-    return _InfoRow(
-      title: title,
-      subtitle: subtitle,
-      trailing: Switch(value: value, onChanged: onChanged),
+    return MergeSemantics(
+      child: _InfoRow(
+        title: title,
+        subtitle: subtitle,
+        trailing: Switch(value: value, onChanged: onChanged),
+      ),
     );
   }
 }
@@ -465,35 +500,30 @@ class _SmallButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fg = primary ? Colors.white : AppColors.textPrimary;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    // One TalkBack node the size of the 48 px area (it was two: an unnamed area and the pill)
+    return TapTarget(
+      label: label,
       onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 48),
-        child: Center(
-          widthFactor: 1,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              boxShadow: primary ? Glow.accent : null,
-            ),
-            child: Material(
-              color: primary ? AppColors.electric : AppColors.surfaceHigh,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: onTap,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, size: 16, color: fg),
-                      const SizedBox(width: 6),
-                      Text(label, style: AppTypography.labelMd.copyWith(color: fg)),
-                    ],
-                  ),
-                ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          boxShadow: primary ? Glow.accent : null,
+        ),
+        child: Material(
+          color: primary ? AppColors.accentFill : AppColors.surfaceHigh,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 16, color: fg),
+                  const SizedBox(width: 6),
+                  Text(label, style: AppTypography.labelMd.copyWith(color: fg)),
+                ],
               ),
             ),
           ),

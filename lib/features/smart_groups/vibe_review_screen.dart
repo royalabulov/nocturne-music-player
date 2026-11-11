@@ -20,6 +20,7 @@ import 'vibe_review.dart';
 import '../../l10n/l10n.dart';
 import '../../core/utils/display_names.dart';
 import '../../shared/screen_back_button.dart';
+import '../../shared/tap_target.dart';
 
 const _sampleSize = 40;
 const _all = (sort: TrackSort.recentlyAdded, query: '');
@@ -274,27 +275,25 @@ class _ReviewCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         Text(l10n.whatMood, style: AppTypography.titleSm),
-        const SizedBox(height: AppSpacing.xs),
         Wrap(
           spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
+          runSpacing: _chipRunSpacing,
           children: [
             for (final k in [...Mood.values.map((m) => m.name), kNone])
               _Chip(label: moodTitle(k), selected: mood == k, onTap: () => onMood(k)),
           ],
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.lg - 8),
         Text(l10n.andGenre, style: AppTypography.titleSm),
-        const SizedBox(height: AppSpacing.xs),
         Wrap(
           spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
+          runSpacing: _chipRunSpacing,
           children: [
             for (final k in [...Genre.values.map((g) => g.name), kNone])
               _Chip(label: genreTitle(k), selected: genre == k, onTap: () => onGenre(k)),
           ],
         ),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.xl - 8),
         // Too narrow side by side → stacked, the main button full width
         FilledButton.icon(
           onPressed: onSave,
@@ -362,7 +361,7 @@ class _Results extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         FilledButton.icon(
           onPressed: onMore,
-          style: FilledButton.styleFrom(backgroundColor: AppColors.electric, foregroundColor: Colors.white),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.accentFill, foregroundColor: Colors.white),
           icon: const Icon(Icons.refresh_rounded, size: 18),
           label: Text(l10n.checkMoreSongs),
         ),
@@ -426,6 +425,10 @@ class _Errors extends StatelessWidget {
   }
 }
 
+/// Review chips are 32 px high in 48 px touch areas: the rows overlap those areas by 8 px so
+/// the chips stay 8 px apart, as before.
+const _chipRunSpacing = AppSpacing.xs - (kMinTapTarget - 32);
+
 class _Chip extends StatelessWidget {
   const _Chip({required this.label, required this.selected, required this.onTap, this.icon});
   final String label;
@@ -435,9 +438,13 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.electric : AppColors.surfaceContainer,
-      shape: StadiumBorder(side: BorderSide(color: selected ? AppColors.electric : AppColors.borderLevel1)),
+    return TapTarget(
+      label: label,
+      selected: selected,
+      onTap: onTap,
+      child: Material(
+      color: selected ? AppColors.accentFill : AppColors.surfaceContainer,
+      shape: StadiumBorder(side: BorderSide(color: selected ? AppColors.accentFill : AppColors.borderLevel1)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -454,6 +461,7 @@ class _Chip extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -1027,5 +1027,22 @@
       }
     }
   },
-  "stopsWhenTrackEnds": "Stops when this track ends"
+  "stopsWhenTrackEnds": "Stops when this track ends",
+  "search": "Search",
+  "coverHint": "Cover. Swipe left or right for another song, tap for lyrics",
+  "openArtist": "Open the artist",
+  "alphabetRail": "Jump to letter",
+  "removeFolder": "Remove folder",
+  "removeFolderQ": "Remove this folder?",
+  "removeFolderWarning": "Songs in {folder} leave the library at the next scan. The files stay on the phone.",
+  "@removeFolderWarning": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "loadFailed": "Couldn’t load this. Your data is still there.",
+  "scanFailedHint": "Something went wrong while reading your music. Try again.",
+  "lastScanFailed": "The last scan failed. Try again."
 }

@@ -102,12 +102,17 @@ class BottomNavBar extends StatelessWidget {
             SizedBox(
               width: _barHeight,
               child: _Capsule(
-                child: InkWell(
-                  onTap: onSearch,
-                  customBorder: const CircleBorder(),
-                  splashColor: AppColors.inkSplash,
-                  highlightColor: AppColors.inkHighlight,
-                  child: const Center(child: Icon(Icons.search_rounded, color: AppColors.textPrimary, size: 26)),
+                // An icon alone has no name for TalkBack
+                child: Semantics(
+                  button: true,
+                  label: l10n.search,
+                  child: InkWell(
+                    onTap: onSearch,
+                    customBorder: const CircleBorder(),
+                    splashColor: AppColors.inkSplash,
+                    highlightColor: AppColors.inkHighlight,
+                    child: const Center(child: Icon(Icons.search_rounded, color: AppColors.textPrimary, size: 26)),
+                  ),
                 ),
               ),
             ),
@@ -150,7 +155,11 @@ class _NavButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = active ? AppColors.electric : AppColors.textSecondary;
     // The press effect is clipped to the pill shape — a soft glow, not a white square.
-    return InkWell(
+    // TalkBack: a button, and the open tab is "selected" (only its colour showed it)
+    return Semantics(
+      button: true,
+      selected: active,
+      child: InkWell(
       onTap: onTap,
       customBorder: const StadiumBorder(),
       splashColor: AppColors.inkSplash,
@@ -173,6 +182,7 @@ class _NavButton extends StatelessWidget {
             style: AppTypography.labelSm.copyWith(color: color, fontSize: 10),
           ),
         ],
+      ),
       ),
     );
   }

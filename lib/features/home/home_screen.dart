@@ -151,14 +151,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final stats = ref.watch(libraryStatsProvider).value ?? LibraryStats.empty;
+    final statsAsync = ref.watch(libraryStatsProvider);
+    final stats = statsAsync.value ?? LibraryStats.empty;
     final recommended = ref.watch(recommendedProvider).value ?? const <PlayedTrack>[];
     final sort = ref.watch(_librarySortProvider);
     final groupSort = ref.watch(_groupSortProvider);
     // Every new query is a new provider and is empty on its first frame → while
     // typing the list jumped to "Nothing matches" and back. The previous result
     // is shown until the new one loads.
-    final fresh = ref.watch(tracksProvider((sort: sort, query: _query))).value;
+    final tracksAsync = ref.watch(tracksProvider((sort: sort, query: _query)));
+    final fresh = tracksAsync.value;
+    void retryTracks() => ref.invalidate(tracksProvider((sort: sort, query: _query)));
     if (fresh != null) _lastLibrary = fresh;
     final library = fresh ?? _lastLibrary;
     final searching = _query.trim().isNotEmpty;
@@ -229,7 +232,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 },
               ),
               const SizedBox(height: AppSpacing.lg),
-              ScanStatusCard(libraryEmpty: stats.trackCount == 0),
+              // Only once the count is known: before, every start showed "No songs yet" for a moment
+              ScanStatusCard(libraryEmpty: statsAsync.hasValue && stats.trackCount == 0),
             ],
           ),
 
@@ -249,6 +253,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               emptyIcon: Icons.search_off_rounded,
               emptyTitle: l10n.nothingMatches(_query),
               emptyText: l10n.searchTryHint,
+              status: tracksAsync,
+              onRetry: retryTracks,
             ),
           ] else ...[
             SliverList.list(
@@ -282,7 +288,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
             switch (_view) {
-              LibraryView.songs => TrackSliverList(key: _libraryKey, tracks: library),
+              LibraryView.songs => TrackSliverList(key: _libraryKey, tracks: library, status: tracksAsync, onRetry: retryTracks),
               LibraryView.albums => AlbumGridSliver(albums: albums ?? const []),
               LibraryView.artists => ArtistListSliver(artists: artists ?? const []),
             },

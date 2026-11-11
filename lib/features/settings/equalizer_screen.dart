@@ -14,6 +14,7 @@ import '../../core/audio/player_providers.dart';
 import 'settings_controller.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/screen_back_button.dart';
+import '../../shared/tap_target.dart';
 
 /// System EQ (Android Equalizer). The number of bands depends on the device (usually 5).
 class EqualizerScreen extends ConsumerStatefulWidget {
@@ -76,19 +77,23 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                 children: [
                   Icon(_outputIcon(output), size: 18, color: AppColors.cyan),
                   const SizedBox(width: 6),
-                  Text(output.label, style: AppTypography.labelMd),
+                  // Flexible: at a large font on a narrow phone the line didn't fit
+                  Flexible(child: Text(output.label, style: AppTypography.labelMd, maxLines: 1, overflow: TextOverflow.ellipsis)),
                   const SizedBox(width: 8),
                   if (s.autoPreset) const CodecChip('AUTO'),
                   const Spacer(),
-                  Text(preset.label, style: AppTypography.labelMd.copyWith(color: AppColors.cyan)),
+                  Flexible(
+                    child: Text(preset.label,
+                        style: AppTypography.labelMd.copyWith(color: AppColors.cyan), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md - 4),
 
-            // Preset chips
+            // Preset chips: 40 px, with 48 px touch areas (4 px of the gaps around)
             SizedBox(
-              height: 40,
+              height: kMinTapTarget,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
@@ -97,14 +102,17 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                 itemBuilder: (_, i) {
                   final p = EqPreset.all[i];
                   final active = p.name == preset.name;
-                  return GestureDetector(
+                  return TapTarget(
+                    label: p.label,
+                    selected: active,
                     onTap: () => ctrl.setPreset(p.name),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
+                      height: 40,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: active ? AppColors.electric : AppColors.surfaceHigh,
+                        color: active ? AppColors.accentFill : AppColors.surfaceHigh,
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                         boxShadow: active ? Glow.accent : null,
                       ),
@@ -116,7 +124,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                 },
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.xl - 4),
 
             // Bands
             Padding(
