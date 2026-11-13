@@ -2753,6 +2753,30 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'The last scan failed. Try again.'**
   String get lastScanFailed;
+
+  /// No description provided for @startupFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nocturne couldn’t start'**
+  String get startupFailedTitle;
+
+  /// No description provided for @startupFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone’s storage may be full. Free up some space and open the app again. Your data has not been deleted.'**
+  String get startupFailedBody;
+
+  /// No description provided for @shareErrorLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Share error log'**
+  String get shareErrorLog;
+
+  /// No description provided for @closeApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get closeApp;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

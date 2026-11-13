@@ -1603,4 +1603,17 @@ class L10nEn extends L10n {
 
   @override
   String get lastScanFailed => 'The last scan failed. Try again.';
+
+  @override
+  String get startupFailedTitle => 'Nocturne couldn’t start';
+
+  @override
+  String get startupFailedBody =>
+      'Your phone’s storage may be full. Free up some space and open the app again. Your data has not been deleted.';
+
+  @override
+  String get shareErrorLog => 'Share error log';
+
+  @override
+  String get closeApp => 'Close';
 }

@@ -1046,5 +1046,9 @@
   },
   "loadFailed": "Couldn’t load this. Your data is still there.",
   "scanFailedHint": "Something went wrong while reading your music. Try again.",
-  "lastScanFailed": "The last scan failed. Try again."
+  "lastScanFailed": "The last scan failed. Try again.",
+  "startupFailedTitle": "Nocturne couldn’t start",
+  "startupFailedBody": "Your phone’s storage may be full. Free up some space and open the app again. Your data has not been deleted.",
+  "shareErrorLog": "Share error log",
+  "closeApp": "Close"
 }

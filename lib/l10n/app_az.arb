@@ -441,5 +441,9 @@
   "removeFolderWarning": "{folder} qovluğundakı mahnılar növbəti axtarışda kitabxanadan çıxacaq. Fayllar telefonda qalır.",
   "loadFailed": "Yükləmək alınmadı. Məlumatlarınız yerindədir.",
   "scanFailedHint": "Musiqini oxuyarkən xəta baş verdi. Yenidən cəhd edin.",
-  "lastScanFailed": "Son axtarış alınmadı. Yenidən cəhd edin."
+  "lastScanFailed": "Son axtarış alınmadı. Yenidən cəhd edin.",
+  "startupFailedTitle": "Nocturne başlaya bilmədi",
+  "startupFailedBody": "Telefonun yaddaşı dolu ola bilər. Bir az yer boşaldıb tətbiqi yenidən açın. Məlumatlarınız silinməyib.",
+  "shareErrorLog": "Xəta jurnalını paylaş",
+  "closeApp": "Bağla"
 }

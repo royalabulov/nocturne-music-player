@@ -1599,4 +1599,17 @@ class L10nAz extends L10n {
 
   @override
   String get lastScanFailed => 'Son axtarış alınmadı. Yenidən cəhd edin.';
+
+  @override
+  String get startupFailedTitle => 'Nocturne başlaya bilmədi';
+
+  @override
+  String get startupFailedBody =>
+      'Telefonun yaddaşı dolu ola bilər. Bir az yer boşaldıb tətbiqi yenidən açın. Məlumatlarınız silinməyib.';
+
+  @override
+  String get shareErrorLog => 'Xəta jurnalını paylaş';
+
+  @override
+  String get closeApp => 'Bağla';
 }

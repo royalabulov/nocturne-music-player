@@ -21,6 +21,7 @@ import 'core/diagnostics/crash_log.dart';
 import 'core/constants.dart';
 import 'core/di/providers.dart';
 import 'core/ui/toast.dart';
+import 'data/datasources/media_store_source.dart';
 import 'data/datasources/playback_service_source.dart';
 import 'data/db/app_database.dart';
 import 'data/db/database_rescue.dart';
@@ -36,6 +37,7 @@ import 'features/library_scan/unplayable_track.dart';
 import 'core/audio/player_providers.dart';
 import 'features/settings/settings_controller.dart';
 import 'features/smart_groups/smart_groups.dart';
+import 'features/startup/startup_error_screen.dart';
 import 'l10n/l10n.dart';
 
 /// Starts the app. The real app needs no arguments: [sourceBuilder] and [overrides] are how
@@ -64,61 +66,72 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
 
   late final ProviderContainer container;
   late final PlaybackMemory memory;
-  // Before the players exist: on a phone that can't make a system equalizer they are built
-  // without one (just_audio would fail every song).
-  final equalizer = await PlaybackServiceSource().equalizerWorks();
-  if (!equalizer) CrashLog.add('no system equalizer on this phone: players built without one');
-
-  final handler = await AudioService.init(
-    builder: () => NocturneAudioHandler(
-      effects: NocturneEffects(equalizer: equalizer),
-      // Records the play and measures how long it's really heard
-      onTrackStarted: (t) => container.read(listenTrackerProvider).trackStarted(t.id),
-      onTrackUnavailable: (t) => unawaited(_reportUnplayable(container, t)),
-      sourceBuilder: sourceBuilder,
-      // Play with nothing queued (a Bluetooth button after the app was ended): the last queue
-      savedQueue: () => memory.load(evenClosed: true),
-    ),
-    config: AudioServiceConfig(
-      androidNotificationChannelId: kPlaybackChannelId,
-      androidNotificationChannelName: l10n.notificationChannel,
-      // Stay in foreground while paused too: otherwise some phones kill the process in the
-      // background, and startForeground again from the background crashes on Android 12+
-      // (resuming after a call). The wake lock the plugin would keep with it is released by
-      // releaseServiceWhenIdle below.
-      androidNotificationOngoing: false,
-      androidStopForegroundOnPause: false,
-      androidNotificationIcon: 'drawable/ic_stat_sonar',
-      // Without this the plugin decodes a cover at full size just for the notification
-      artDownscaleWidth: 512,
-      artDownscaleHeight: 512,
-    ),
-  );
-
-  container = ProviderContainer(
-    overrides: [
-      audioHandlerProvider.overrideWithValue(handler),
-      ...overrides,
-    ],
-  );
-  // A damaged database is set aside before anything reads it: the app starts with a new one
-  // instead of hanging on its start screen for good (DatabaseRescue).
+  late final NocturneAudioHandler handler;
   var databaseReset = false;
-  if (!kIsWeb) {
-    final file = p.join((await getApplicationDocumentsDirectory()).path, '${AppDatabase.fileName}.sqlite');
-    if (await DatabaseRescue.setAsideIfDamaged(container.read(databaseProvider), file)) {
-      container.invalidate(databaseProvider);
-      databaseReset = true;
-      CrashLog.add('database was damaged: set aside, a new one started');
-    }
-  }
-  // Cover paths are needed synchronously (Image.file) → prepare the folder up front.
-  if (!kIsWeb) await container.read(coverCacheProvider).warmUp();
-  await sessionReady;
+  // Everything before the first frame. A failure here (the database can't be opened or
+  // updated: a full phone during an update, a storage error) used to leave the app on its
+  // start screen for good, and clearing its data, the usual way out, lost the library. Now
+  // it says so and offers the error log.
+  try {
+    // Before the players exist: on a phone that can't make a system equalizer they are built
+    // without one (just_audio would fail every song).
+    final equalizer = await PlaybackServiceSource().equalizerWorks();
+    if (!equalizer) CrashLog.add('no system equalizer on this phone: players built without one');
 
-  // Settings → Language before the first frame: otherwise the app starts in the
-  // phone's language and only then switches
-  initialLanguage = await container.read(settingsRepositoryProvider).getSetting(SettingsKeys.language);
+    handler = await AudioService.init(
+      builder: () => NocturneAudioHandler(
+        effects: NocturneEffects(equalizer: equalizer),
+        // Records the play and measures how long it's really heard
+        onTrackStarted: (t) => container.read(listenTrackerProvider).trackStarted(t.id),
+        onTrackUnavailable: (t) => unawaited(_reportUnplayable(container, t)),
+        sourceBuilder: sourceBuilder,
+        // Play with nothing queued (a Bluetooth button after the app was ended): the last queue
+        savedQueue: () => memory.load(evenClosed: true),
+      ),
+      config: AudioServiceConfig(
+        androidNotificationChannelId: kPlaybackChannelId,
+        androidNotificationChannelName: l10n.notificationChannel,
+        // Stay in foreground while paused too: otherwise some phones kill the process in the
+        // background, and startForeground again from the background crashes on Android 12+
+        // (resuming after a call). The wake lock the plugin would keep with it is released by
+        // releaseServiceWhenIdle below.
+        androidNotificationOngoing: false,
+        androidStopForegroundOnPause: false,
+        androidNotificationIcon: 'drawable/ic_stat_sonar',
+        // Without this the plugin decodes a cover at full size just for the notification
+        artDownscaleWidth: 512,
+        artDownscaleHeight: 512,
+      ),
+    );
+
+    container = ProviderContainer(
+      overrides: [
+        audioHandlerProvider.overrideWithValue(handler),
+        ...overrides,
+      ],
+    );
+    // A damaged database is set aside before anything reads it: the app starts with a new one
+    // instead of hanging on its start screen for good (DatabaseRescue).
+    if (!kIsWeb) {
+      final file = p.join((await getApplicationDocumentsDirectory()).path, '${AppDatabase.fileName}.sqlite');
+      if (await DatabaseRescue.setAsideIfDamaged(container.read(databaseProvider), file)) {
+        container.invalidate(databaseProvider);
+        databaseReset = true;
+        CrashLog.add('database was damaged: set aside, a new one started');
+      }
+    }
+    // Cover paths are needed synchronously (Image.file) → prepare the folder up front.
+    if (!kIsWeb) await container.read(coverCacheProvider).warmUp();
+    await sessionReady;
+
+    // Settings → Language before the first frame: otherwise the app starts in the
+    // phone's language and only then switches
+    initialLanguage = await container.read(settingsRepositoryProvider).getSetting(SettingsKeys.language);
+  } catch (e, st) {
+    CrashLog.add('START FAILED: $e\n$st');
+    runApp(StartupErrorApp(onShare: (text, title) => MediaStoreSource().shareText(text, title: title)));
+    return;
+  }
 
   runApp(UncontrolledProviderScope(container: container, child: const NocturneApp()));
   if (databaseReset) {
