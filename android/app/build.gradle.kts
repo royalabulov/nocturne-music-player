@@ -42,7 +42,10 @@ android {
 
     defaultConfig {
         applicationId = "com.nocturne"
-        minSdk = flutter.minSdkVersion
+        // Android 10+: saving to Download/Music and deleting go through MediaStore with no
+        // permission. Android 9 and older needed WRITE_EXTERNAL_STORAGE, which the app doesn't
+        // have, so backups, deleting and imported songs didn't work there (final audit, Y3).
+        minSdk = 29
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
