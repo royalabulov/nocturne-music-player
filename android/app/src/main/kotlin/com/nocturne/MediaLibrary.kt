@@ -37,6 +37,16 @@ class MediaLibrary(context: Context) {
             }
             return "$volume=${rows.count}/$added/$modified"
         }
+
+        /// Of [copies] (newest first, with their sizes), the ones to delete: all but the [keep]
+        /// newest, except the biggest of the older ones when it is bigger than every one kept.
+        fun <T> olderToDelete(copies: List<Pair<T, Long>>, keep: Int): List<T> {
+            val kept = copies.take(keep)
+            val older = copies.drop(keep)
+            val biggestKept = kept.maxOfOrNull { it.second } ?: 0L
+            val saved = older.maxByOrNull { it.second }?.takeIf { it.second > biggestKept }
+            return older.filter { it !== saved }.map { it.first }
+        }
     }
 
     private val context = context.applicationContext
@@ -156,24 +166,27 @@ class MediaLibrary(context: Context) {
     }
 
     /// Of the files named [prefix]… in Download/[folder], keeps the [keep] newest and deletes the
-    /// rest, so weekly copies don't pile up. Android 10+ lists only the files this install
+    /// rest, so monthly copies don't pile up. Android 10+ lists only the files this install
     /// wrote: one left by an earlier install isn't touched. Returns how many were deleted.
+    ///
+    /// An older copy bigger than every one kept stays too ([olderToDelete]): after a damaged
+    /// database was set aside, the next copies are nearly empty, and pushing out the good ones
+    /// lost the only way back (final audit, Y2).
     fun keepNewestInDownloads(folder: String, prefix: String, keep: Int): Int {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val old = ArrayList<android.net.Uri>()
+            val copies = ArrayList<Pair<android.net.Uri, Long>>()
             resolver.query(
                 MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                arrayOf(MediaStore.Downloads._ID),
+                arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.SIZE),
                 "${MediaStore.Downloads.RELATIVE_PATH} = ? AND ${MediaStore.Downloads.DISPLAY_NAME} LIKE ?",
                 arrayOf("${Environment.DIRECTORY_DOWNLOADS}/$folder/", "$prefix%"),
                 "${MediaStore.Downloads.DATE_ADDED} DESC",
             )?.use { c ->
-                var seen = 0
                 while (c.moveToNext()) {
-                    if (++seen > keep) old.add(ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, c.getLong(0)))
+                    copies.add(ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, c.getLong(0)) to c.getLong(1))
                 }
             }
-            return old.count { runCatching { resolver.delete(it, null, null) > 0 }.getOrDefault(false) }
+            return olderToDelete(copies, keep).count { runCatching { resolver.delete(it, null, null) > 0 }.getOrDefault(false) }
         }
         @Suppress("DEPRECATION")
         val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), folder)

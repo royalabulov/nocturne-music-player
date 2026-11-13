@@ -23,12 +23,16 @@ class FakeDownloads : ContentProvider() {
     companion object {
         /// (id, folder, name), oldest first
         val files = ArrayList<Triple<Long, String, String>>()
+
+        /// id → size in bytes; a file not named here is 100 bytes
+        val sizes = HashMap<Long, Long>()
         val inserted = ArrayList<ContentValues>()
         val deleted = ArrayList<Long>()
         var lastSelectionArgs: List<String> = emptyList()
 
         fun reset() {
             files.clear()
+            sizes.clear()
             inserted.clear()
             deleted.clear()
             lastSelectionArgs = emptyList()
@@ -60,9 +64,9 @@ class FakeDownloads : ContentProvider() {
     ): Cursor {
         lastSelectionArgs = selectionArgs?.toList() ?: emptyList()
         val (folder, like) = lastSelectionArgs
-        return MatrixCursor(arrayOf(MediaStore.Downloads._ID)).apply {
+        return MatrixCursor(arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.SIZE)).apply {
             for ((id, f, name) in files.reversed()) {
-                if (f == folder && name.startsWith(like.removeSuffix("%"))) addRow(arrayOf(id))
+                if (f == folder && name.startsWith(like.removeSuffix("%"))) addRow(arrayOf(id, sizes[id] ?: 100L))
             }
         }
     }
@@ -108,5 +112,53 @@ class BackupCopiesTest {
         assertEquals(1, removed)
         assertEquals(listOf(1L), FakeDownloads.deleted)
         assertEquals(listOf("Download/Nocturne/", "nocturne-auto-backup-%"), FakeDownloads.lastSelectionArgs)
+    }
+
+    private fun backups(vararg sizes: Long) {
+        sizes.forEachIndexed { i, size ->
+            val id = i + 1L
+            FakeDownloads.files += Triple(id, "Download/Nocturne/", "nocturne-auto-backup-$id.json")
+            FakeDownloads.sizes[id] = size
+        }
+    }
+
+    /// A damaged database was set aside: the new copies are nearly empty. The good one stays.
+    @Test
+    fun `an older copy bigger than the kept ones stays`() {
+        backups(200_000, 210_000, 3_000, 3_100) // oldest first
+
+        val removed = MediaLibrary(context).keepNewestInDownloads("Nocturne", "nocturne-auto-backup-", 2)
+
+        assertEquals(1, removed)
+        assertEquals(listOf(1L), FakeDownloads.deleted)
+    }
+
+    /// History only grows: the newest copies are the biggest, and the old ones go as before.
+    @Test
+    fun `when the newest copies are the biggest, only they stay`() {
+        backups(100_000, 110_000, 120_000, 130_000)
+
+        MediaLibrary(context).keepNewestInDownloads("Nocturne", "nocturne-auto-backup-", 2)
+
+        assertEquals(listOf(2L, 1L), FakeDownloads.deleted)
+    }
+
+    @Test
+    fun `copies of the same size leave only the newest`() {
+        backups(500, 500, 500, 500)
+
+        MediaLibrary(context).keepNewestInDownloads("Nocturne", "nocturne-auto-backup-", 2)
+
+        assertEquals(listOf(2L, 1L), FakeDownloads.deleted)
+    }
+
+    @Test
+    fun `never more than one extra copy is kept`() {
+        backups(900, 800, 700, 600, 5, 4)
+
+        MediaLibrary(context).keepNewestInDownloads("Nocturne", "nocturne-auto-backup-", 2)
+
+        // The two newest (6, 5) and the biggest older one (1) stay
+        assertEquals(listOf(4L, 3L, 2L), FakeDownloads.deleted)
     }
 }
