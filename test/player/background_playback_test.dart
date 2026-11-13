@@ -222,4 +222,74 @@ void main() {
       expect(h.playing, isFalse);
     });
   });
+
+  // A song still opening (a slow card, a big file) used to start once it had loaded, whatever
+  // happened meanwhile: pause was forgotten, and the music came out of the speaker after the
+  // headphones were unplugged, or played over a call (final audit, O1).
+  group('while a song is still opening', () {
+    final slow = [
+      for (var i = 1; i <= 3; i++)
+        Track(id: i, path: '/music/slow$i.mp3', title: 'S$i', artist: 'A', album: 'B',
+            duration: const Duration(minutes: 3), format: AudioFormat.mp3),
+    ];
+    final loaded = FakeJustAudio.slowLoad + const Duration(milliseconds: 200);
+    Future<void> whileOpening() => Future<void>.delayed(const Duration(milliseconds: 100));
+
+    test('pause: the song opens but stays paused', () async {
+      unawaited(h.playTracks(slow));
+      await whileOpening();
+      await h.pause();
+      await Future<void>.delayed(loaded);
+      expect(h.playing, isFalse);
+      expect(h.playbackState.value.playing, isFalse);
+      expect(h.currentTrackValue?.id, 1, reason: 'the song is there, ready to play');
+    });
+
+    test('pause, then play: it plays', () async {
+      unawaited(h.playTracks(slow));
+      await whileOpening();
+      await h.pause();
+      await h.play();
+      await Future<void>.delayed(loaded);
+      expect(h.playing, isTrue);
+    });
+
+    test('headphones unplugged: nothing comes out of the speaker', () async {
+      unawaited(h.playTracks(slow));
+      await whileOpening();
+      noisy.add(null);
+      await Future<void>.delayed(loaded);
+      expect(h.playing, isFalse);
+    });
+
+    test('a call: silent during it, the music comes back after', () async {
+      unawaited(h.playTracks(slow));
+      await whileOpening();
+      interruptions.add(AudioInterruptionEvent(true, AudioInterruptionType.pause));
+      await Future<void>.delayed(loaded);
+      expect(h.playing, isFalse);
+      interruptions.add(AudioInterruptionEvent(false, AudioInterruptionType.pause));
+      await settle();
+      expect(h.playing, isTrue);
+    });
+
+    test('a song chosen after a pause plays', () async {
+      await h.playTracks(three);
+      await settle();
+      await h.pause();
+      await h.playTracks(slow);
+      await Future<void>.delayed(loaded);
+      expect(h.playing, isTrue);
+    });
+
+    test('next after a pause plays, like before', () async {
+      await h.playTracks(three);
+      await settle();
+      await h.pause();
+      await h.skipToNext();
+      await settle();
+      expect(h.currentTrackValue?.id, 2);
+      expect(h.playing, isTrue);
+    });
+  });
 }

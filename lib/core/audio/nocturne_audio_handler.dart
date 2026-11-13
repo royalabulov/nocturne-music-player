@@ -188,8 +188,11 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   // ── queue API ─────────────────────────────────────────────
 
   /// Queue the list and play from [startIndex]. Every "tap → play" goes through here.
-  Future<void> playTracks(List<Track> tracks, {int startIndex = 0, bool shuffle = false}) =>
-      _serial(() => _playTracks(tracks, startIndex: startIndex, shuffle: shuffle));
+  Future<void> playTracks(List<Track> tracks, {int startIndex = 0, bool shuffle = false}) {
+    // Cleared when asked, not when the queue gets to it: a pause pressed in between wins
+    _holdAfterLoad = false;
+    return _serial(() => _playTracks(tracks, startIndex: startIndex, shuffle: shuffle));
+  }
 
   Future<void> _playTracks(List<Track> tracks, {int startIndex = 0, bool shuffle = false}) async {
     if (tracks.isEmpty) return;
@@ -201,7 +204,10 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   }
 
   /// Right after the current song.
-  Future<void> playNext(Track track) => _serial(() => _playNext(track));
+  Future<void> playNext(Track track) {
+    if (_q.isEmpty) _holdAfterLoad = false; // it starts playing then
+    return _serial(() => _playNext(track));
+  }
 
   Future<void> _playNext(Track track) async {
     if (_q.isEmpty) return _playTracks([track]);
@@ -212,7 +218,10 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   }
 
   /// Append to the end of the queue.
-  Future<void> enqueue(List<Track> tracks) => _serial(() => _enqueue(tracks));
+  Future<void> enqueue(List<Track> tracks) {
+    if (_q.isEmpty) _holdAfterLoad = false; // it starts playing then
+    return _serial(() => _enqueue(tracks));
+  }
 
   Future<void> _enqueue(List<Track> tracks) async {
     if (tracks.isEmpty) return;
@@ -228,7 +237,12 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   Future<void> skipToQueueItem(int index) => playTrackAt(_sysQueueOffset + index);
 
   /// [index] — index in the original order; the queue sheet shows this order.
-  Future<void> playTrackAt(int index) => _serial(() async {
+  Future<void> playTrackAt(int index) {
+    _holdAfterLoad = false;
+    return _playTrackAt(index);
+  }
+
+  Future<void> _playTrackAt(int index) => _serial(() async {
     final p = _q.positionOf(index);
     if (p < 0) return;
     _cancelFade();
@@ -298,9 +312,16 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
 
   // ── transport ─────────────────────────────────────────────
 
+  /// Pause was asked for (by the user, a call, unplugged headphones, the sleep timer). A load
+  /// that finishes after it leaves the song paused: it used to start it anyway, so a song
+  /// tapped on a slow card played on after pause, and out of the speaker after the headphones
+  /// came out mid-change. Play and a song chosen by the user clear it.
+  bool _holdAfterLoad = false;
+
   @override
   Future<void> play() async {
     _resumeAfterInterruption = false;
+    _holdAfterLoad = false;
     if (_holdAtEnd) {
       _holdAtEnd = false;
       return skipToNext();
@@ -345,6 +366,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   @override
   Future<void> pause() async {
     _resumeAfterInterruption = false;
+    _holdAfterLoad = true;
     await _active.pause();
     if (_fading) await _standby.pause();
   }
@@ -374,8 +396,9 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   void _followSession(Stream<AudioInterruptionEvent>? interruptions, Stream<void>? becomingNoisy) {
     interruptions?.listen((e) {
       if (e.begin) {
-        // Ducking: Android lowers a music stream itself, the volume isn't touched here
-        if (e.type == AudioInterruptionType.duck || !playing) return;
+        // Ducking: Android lowers a music stream itself, the volume isn't touched here.
+        // A song that is loading to play counts as playing: it would start during the call.
+        if (e.type == AudioInterruptionType.duck || !(playing || _switching)) return;
         unawaited(pause());
         _resumeAfterInterruption = true; // after pause(), which clears it
       } else {
@@ -389,7 +412,12 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   }
 
   @override
-  Future<void> skipToNext() => _serial(() async {
+  Future<void> skipToNext() {
+    _holdAfterLoad = false;
+    return _skipToNext();
+  }
+
+  Future<void> _skipToNext() => _serial(() async {
     final next = _q.next(manual: true);
     if (next == null) return;
     _cancelFade();
@@ -398,10 +426,16 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   });
 
   @override
-  Future<void> skipToPrevious() => _serial(() => _previous(restartFirst: true));
+  Future<void> skipToPrevious() {
+    _holdAfterLoad = false;
+    return _serial(() => _previous(restartFirst: true));
+  }
 
   /// Swipe right on the cover in Now Playing: always the previous song.
-  Future<void> skipToPreviousTrack() => _serial(() => _previous(restartFirst: false));
+  Future<void> skipToPreviousTrack() {
+    _holdAfterLoad = false;
+    return _serial(() => _previous(restartFirst: false));
+  }
 
   Future<void> _previous({required bool restartFirst}) async {
     // More than 5 seconds in → restart the song; otherwise go to the previous song.
@@ -569,7 +603,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     // just_audio: play()'s future doesn't complete until the song ENDS → it can't
     // be awaited (the transition chain stayed open for the whole song and the
     // next completion event was dropped).
-    if (autoplay) unawaited(_guard('play', () => _active.play()));
+    if (autoplay && !_holdAfterLoad) unawaited(_guard('play', () => _active.play()));
     _switching = false;
     _publishState();
     await _preloadStandby();
