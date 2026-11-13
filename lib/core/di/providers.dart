@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasources/audio_analyzer_source.dart';
 import '../../data/datasources/cover_cache.dart';
 import '../../data/datasources/folder_source.dart';
+import '../../data/datasources/home_widget_source.dart';
 import '../../data/datasources/media_store_source.dart';
 import '../../data/datasources/playback_service_source.dart';
 import '../../data/mappers/track_mapper.dart';
@@ -33,6 +34,9 @@ final deviceFilesProvider = Provider<DeviceFiles>((_) => MediaStoreSource());
 
 /// Lets the playback service release the CPU and its notification while nothing plays.
 final playbackServiceProvider = Provider<PlaybackServiceSource>((_) => PlaybackServiceSource());
+
+/// The home screen widgets (Android).
+final homeWidgetSourceProvider = Provider<HomeWidgetSource>((_) => HomeWidgetSource());
 
 /// Warmed up in main() so cover paths can be resolved synchronously.
 final coverCacheProvider = Provider<CoverCache>((_) => CoverCache());

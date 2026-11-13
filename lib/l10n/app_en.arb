@@ -1052,5 +1052,6 @@
   "shareErrorLog": "Share error log",
   "closeApp": "Close",
   "licenses": "Licenses",
-  "licensesHint": "Fonts, the smart groups model and open-source libraries"
+  "licensesHint": "Fonts, the smart groups model and open-source libraries",
+  "widgetEmptyHint": "Pick a song to play"
 }

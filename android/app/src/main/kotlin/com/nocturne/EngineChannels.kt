@@ -20,6 +20,10 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
     private val analyzer = AudioAnalyzer(context)
     private val media = MethodChannel(messenger, "com.nocturne/media_store")
 
+    /// Home screen widgets: the app sends what they show, they send back shuffle / repeat /
+    /// favorite presses (HomeWidgets).
+    private val widgets = MethodChannel(messenger, "com.nocturne/home_widget")
+
     /// Tells Dart when a new song lands on the phone (download, copy). The Dart side collects
     /// the events (debounce) and runs one scan.
     private val audioObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -36,7 +40,18 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
         setUpAnalysisChannel(messenger)
         setUpKnockChannel(messenger)
         setUpServiceChannel(messenger)
+        widgets.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "update" -> {
+                    HomeWidgets.update(context, call.arguments as String)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
+
+    fun widgetAction(name: String) = widgets.invokeMethod("action", name)
 
     fun close() {
         context.contentResolver.unregisterContentObserver(audioObserver)

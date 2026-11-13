@@ -2789,6 +2789,12 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Fonts, the smart groups model and open-source libraries'**
   String get licensesHint;
+
+  /// No description provided for @widgetEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a song to play'**
+  String get widgetEmptyHint;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

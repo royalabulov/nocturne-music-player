@@ -32,6 +32,7 @@ import 'app_router.dart';
 import 'core/router/routes.dart';
 import 'features/forgotten/forgotten.dart';
 import 'features/forgotten/forgotten_reminder.dart';
+import 'features/home_widget/home_widget_sync.dart';
 import 'features/import/audio_import.dart';
 import 'features/library_scan/scan_controller.dart';
 import 'features/library_scan/unplayable_track.dart';
@@ -153,6 +154,12 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
   unawaited(memory.load().then((saved) async {
     if (saved != null) await handler.restoreQueue(saved);
   }).catchError((Object e) => debugPrint('queue not restored: $e')));
+
+  // Home screen widgets follow the song; going to the background also catches a language change
+  if (!kIsWeb) {
+    final widgets = container.read(homeWidgetSyncProvider);
+    AppLifecycleListener(onPause: widgets.refresh);
+  }
 
   // Nothing heard: the playback service lets the CPU sleep (and drops its notification once stopped)
   final service = container.read(playbackServiceProvider);

@@ -23,6 +23,10 @@ object PlaybackServiceControl {
     /// Stopped: out of the foreground, notification gone, wake lock released.
     fun stopped(): Boolean = stopped(AudioService.instance)
 
+    /// The service exists in this process. Not after the app was ended or the phone restarted:
+    /// a home screen widget then shows play, whatever it was last told (HomeWidgets).
+    fun running(): Boolean = AudioService.instance != null
+
     internal fun paused(service: AudioService?): Boolean {
         if (service == null || service.isPlaying) return false
         return releaseWakeLock(service)

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home screen widgets: names and descriptions in the widget picker (phone's language).
+         What a widget shows comes from the app in its own language (HomeWidgetSync). -->
+    <string name="widget_small_label">Now playing · small</string>
+    <string name="widget_small_description">Cover and play/pause</string>
+    <string name="widget_wide_label">Now playing</string>
+    <string name="widget_wide_description">Song with previous, play and next</string>
+    <string name="widget_large_label">Now playing · large</string>
+    <string name="widget_large_description">Cover, progress, shuffle, repeat and favorite</string>
+    <!-- Before the app has said anything (just installed) -->
+    <string name="widget_empty_title">Nocturne</string>
+    <string name="widget_empty_hint">Pick a song to play</string>
+    <!-- The previews in the widget picker -->
+    <string name="widget_preview_title">Midnight Drive</string>
+    <string name="widget_preview_artist">Nocturne</string>
+</resources>

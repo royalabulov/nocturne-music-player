@@ -1619,4 +1619,7 @@ class L10nAz extends L10n {
   @override
   String get licensesHint =>
       'Şriftlər, ağıllı qruplar modeli və açıq mənbəli kitabxanalar';
+
+  @override
+  String get widgetEmptyHint => 'Oxutmaq üçün mahnı seç';
 }

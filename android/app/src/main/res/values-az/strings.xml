@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_small_label">İndi oxunur · kiçik</string>
+    <string name="widget_small_description">Örtük və oxut/fasilə</string>
+    <string name="widget_wide_label">İndi oxunur</string>
+    <string name="widget_wide_description">Mahnı, əvvəlki, oxut və növbəti</string>
+    <string name="widget_large_label">İndi oxunur · böyük</string>
+    <string name="widget_large_description">Örtük, irəliləyiş, qarışdır, təkrar və sevimli</string>
+    <string name="widget_empty_title">Nocturne</string>
+    <string name="widget_empty_hint">Oxutmaq üçün mahnı seç</string>
+    <string name="widget_preview_title">Gecə yolu</string>
+    <string name="widget_preview_artist">Nocturne</string>
+</resources>

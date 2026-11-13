@@ -1623,4 +1623,7 @@ class L10nEn extends L10n {
   @override
   String get licensesHint =>
       'Fonts, the smart groups model and open-source libraries';
+
+  @override
+  String get widgetEmptyHint => 'Pick a song to play';
 }

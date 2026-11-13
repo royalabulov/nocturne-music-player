@@ -447,5 +447,6 @@
   "shareErrorLog": "Xəta jurnalını paylaş",
   "closeApp": "Bağla",
   "licenses": "Lisenziyalar",
-  "licensesHint": "Şriftlər, ağıllı qruplar modeli və açıq mənbəli kitabxanalar"
+  "licensesHint": "Şriftlər, ağıllı qruplar modeli və açıq mənbəli kitabxanalar",
+  "widgetEmptyHint": "Oxutmaq üçün mahnı seç"
 }
