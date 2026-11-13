@@ -1,16 +1,18 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../home/locate_track.dart';
+import '../../core/router/routes.dart';
+import '../../shared/locate_track.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../player/player_providers.dart';
-import '../selection/selection_bar.dart';
-import '../selection/track_selection.dart';
+import '../../core/audio/player_providers.dart';
+import '../tracks/selection_bar.dart';
+import '../tracks/track_selection.dart';
 import 'bottom_nav_bar.dart';
 import 'mini_player.dart';
-import 'scroll_to_top.dart';
+import '../../shared/scroll_to_top.dart';
 import 'side_menu.dart';
 
 /// Main scaffold with tabs. Each tab keeps its own navigation stack
@@ -43,13 +45,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         if (mounted) ref.read(trackSelectionProvider.notifier).clear();
       });
     }
-  }
-
-  void _openNowPlaying() {
-    // Search kept its focus → when Now Playing closed, Flutter
-    // restored focus and the keyboard popped up
-    FocusManager.instance.primaryFocus?.unfocus();
-    context.push('/now-playing');
   }
 
   @override
@@ -111,12 +106,12 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                           // a new song → a fresh (not slid-off) mini player
                           key: ValueKey(track.id),
                           onDismissed: handler.closePlayer,
-                          onSwipeUp: _openNowPlaying,
+                          onSwipeUp: openNowPlaying,
                           child: MiniPlayer(
                             track: track,
                             progressBar: const _MiniProgress(),
                             playing: playing,
-                            onTap: _openNowPlaying,
+                            onTap: openNowPlaying,
                             onPlayPause: playing ? handler.pause : handler.play,
                             onNext: handler.skipToNext,
                           ),

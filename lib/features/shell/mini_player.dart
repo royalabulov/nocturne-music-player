@@ -9,10 +9,7 @@ import '../../domain/entities/track.dart';
 import '../../shared/album_art.dart';
 import '../../shared/cover_color.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
-
-/// Hero tag for the cover between the mini player and Now Playing.
-const kNowPlayingArtHero = 'now-playing-art';
+import '../../core/utils/display_names.dart';
 
 /// Mini-player floating 12px above the bottom nav (Level 2 glass).
 /// Listens to the player through the shell (track, playing state, progress).

@@ -3,7 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/datasources/tag_reader.dart';
+import 'package:nocturne/data/datasources/cover_cache.dart';
+import 'package:nocturne/data/datasources/tag_reader.dart';
 
 /// ID3v2.4 tag: the given frames + header.
 Uint8List _id3(Map<String, List<int>> frames) {
@@ -32,7 +33,7 @@ List<int> _doubleBom(String s) => [
 
 void main() {
   test('double-BOM title keeps Ü (was "?ç Kalp")', () {
-    // Faylda olan baytlar: 01 FE FF FE FF 00 DC 00 E7 00 20 ...
+    // The bytes in the file: 01 FE FF FE FF 00 DC 00 E7 00 20 ...
     final tag = _id3({'TIT2': _doubleBom('Üç Kalp'), 'TPE1': _doubleBom('Hepsi'), 'TALB': _doubleBom('Hepsi Bir')});
     expect(TagReader.parseId3TextFrames(tag), {'TIT2': 'Üç Kalp', 'TPE1': 'Hepsi', 'TALB': 'Hepsi Bir'});
   });
@@ -68,13 +69,113 @@ void main() {
 
   test('read() repairs the title end-to-end from a real file', () {
     // audio_metadata_reader returns "\uFFFE\uFFFE\uFFFDç Kalp" here
-    final dir = Directory.systemTemp.createTempSync('sonar_tag');
+    final dir = Directory.systemTemp.createTempSync('nocturne_tag');
     addTearDown(() => dir.deleteSync(recursive: true));
     final file = File('${dir.path}/kalp.mp3')
       ..writeAsBytesSync([..._id3({'TIT2': _doubleBom('Üç Kalp'), 'TPE1': _doubleBom('Hepsi')}), ...List.filled(2048, 0)]);
     final tag = TagReader.read(file.path)!;
     expect(tag.title, 'Üç Kalp');
     expect(tag.artist, 'Hepsi');
+  });
+
+  group('tags are other people\'s data', () {
+    TagInfo readFile(Map<String, List<int>> frames) {
+      final dir = Directory.systemTemp.createTempSync('nocturne_tag');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final file = File('${dir.path}/song.mp3')..writeAsBytesSync([..._id3(frames), ...List.filled(2048, 0)]);
+      return TagReader.read(file.path)!;
+    }
+
+    List<int> text(String s) => [3, ...utf8.encode(s)];
+
+    /// A JPEG of side × side as far as its header goes, [size] bytes in all.
+    List<int> jpeg(int size, int side) => [0xFF, 0xD8, 0xFF, 0xC0, 0, 17, 8, side >> 8, side & 255, side >> 8, side & 255, ...List.filled(size - 11, 7)];
+
+    /// APIC: encoding, MIME type, picture type (3 = front cover), empty description, image.
+    List<int> picture(List<int> image) => [0, ...'image/jpeg'.codeUnits, 0, 3, 0, ...image];
+    List<int> cover(int size, {int side = 500}) => picture(jpeg(size, side));
+
+    test('control characters can\'t reach the UI or the notification', () {
+      final tag = readFile({'TIT2': text('Bad\u0007Title'), 'TPE1': text('Ar\ntist'), 'TALB': text('Al\u001Bbum')});
+      expect(tag.title, 'Bad Title');
+      expect(tag.artist, 'Ar tist');
+      expect(tag.album, 'Al bum');
+    });
+
+    test('an absurdly long tag is cut', () {
+      final long = 'x' * 100000;
+      final tag = readFile({'TIT2': text(long), 'TPE1': text(long), 'TALB': text(long), 'TCON': text(long)});
+      expect(tag.title.length, TagReader.maxTextChars);
+      expect(tag.artist.length, TagReader.maxTextChars);
+      expect(tag.album.length, TagReader.maxTextChars);
+      expect(tag.genre!.length, TagReader.maxTextChars);
+    });
+
+    test('a cut never lands between the two halves of an emoji', () {
+      final tag = readFile({'TIT2': text('${'x' * (TagReader.maxTextChars - 1)}😀tail')});
+      expect(tag.title, 'x' * (TagReader.maxTextChars - 1));
+    });
+
+    test('an emoji that fits stays whole', () {
+      final tag = readFile({'TIT2': text('${'x' * (TagReader.maxTextChars - 2)}😀tail')});
+      expect(tag.title, '${'x' * (TagReader.maxTextChars - 2)}😀');
+    });
+
+    test('half a character in a corrupt tag does not reach the screen', () {
+      // UTF-16 with a first half and no second half, read through our own fallback too
+      final broken = [1, 0xFF, 0xFE, 0x41, 0x00, 0x3D, 0xD8, 0x42, 0x00];
+      final tag = readFile({'TIT2': broken});
+      expect(tag.title.codeUnits.where((c) => c >= 0xD800 && c <= 0xDFFF), isEmpty);
+    });
+
+    test('normal tags are untouched', () {
+      final tag = readFile({'TIT2': text('Üç Kalp - Canlı'), 'TPE1': text('Müslüm & Şəki'), 'TCON': text('Rock')});
+      expect(tag.title, 'Üç Kalp - Canlı');
+      expect(tag.artist, 'Müslüm & Şəki');
+      expect(tag.genre, 'Rock');
+    });
+
+    test('readMany brings tags and cover back from its isolate; a missing file is null', () async {
+      final dir = Directory.systemTemp.createTempSync('nocturne_tag');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final file = File('${dir.path}/song.mp3')
+        ..writeAsBytesSync([..._id3({'TIT2': text('Song'), 'APIC': cover(100)}), ...List.filled(2048, 0)]);
+      final missing = '${dir.path}/missing.mp3';
+
+      final tags = await TagReader.readMany([file.path, missing]);
+
+      expect(tags[file.path]!.title, 'Song');
+      expect(tags[file.path]!.cover, hasLength(100));
+      expect(tags[missing], isNull);
+    });
+
+    // Hashing a few MB of cover on the UI isolate stuttered the first scan
+    test('the cover\'s cache name is worked out with the tags, off the UI isolate', () {
+      final tags = readFile({'TIT2': text('a'), 'APIC': cover(1000)});
+      expect(tags.coverHash, coverHashOf(tags.cover!));
+      expect(readFile({'TIT2': text('a')}).coverHash, isNull);
+    });
+
+    test('a normal cover is kept, an absurdly big one is dropped', () {
+      expect(readFile({'TIT2': text('a'), 'APIC': cover(1000)}).cover, hasLength(1000));
+      final tooBig = readFile({'TIT2': text('a'), 'APIC': cover(TagReader.maxCoverBytes + 1)});
+      expect(tooBig.title, 'a');
+      expect(tooBig.cover, isNull);
+    });
+
+    test('a small file holding an enormous picture is dropped: decoding it would fill the memory', () {
+      final bomb = readFile({'TIT2': text('a'), 'APIC': cover(1000, side: 30000)});
+      expect(bomb.title, 'a');
+      expect(bomb.cover, isNull);
+    });
+
+    test('a large cover that is still a reasonable size is kept', () {
+      expect(readFile({'TIT2': text('a'), 'APIC': cover(1000, side: 4000)}).cover, hasLength(1000));
+    });
+
+    test('something that is no image at all is dropped', () {
+      expect(readFile({'TIT2': text('a'), 'APIC': picture(List.filled(1000, 7))}).cover, isNull);
+    });
   });
 
   group('guessArtist', () {

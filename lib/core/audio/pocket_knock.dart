@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import 'sonar_audio_handler.dart';
+import 'nocturne_audio_handler.dart';
 
 /// Pocket knock: knock on the phone 2 times = next song, 3 times = previous song.
 /// Detection is native (KnockDetector.kt, screen off only); here it is switched on only
@@ -19,8 +19,8 @@ class PocketKnock {
   }
 
   static const _ch = MethodChannel('com.nocturne/knock');
-  final SonarAudioHandler _handler;
-  StreamSubscription? _sub;
+  final NocturneAudioHandler _handler;
+  StreamSubscription<bool>? _sub;
   bool _enabled = false, _playing = false;
   int _sensitivity = 1;
 
@@ -31,11 +31,17 @@ class PocketKnock {
     _push();
   }
 
+  /// Saves the detector's permanent log to the Download folder.
+  /// Result: the visible path, or null if nothing has been recorded yet.
+  static Future<String?> exportLog(String name) async {
+    return _ch.invokeMethod<String>('exportLog', {'name': name});
+  }
+
   void _push() {
     if (kIsWeb) return;
-    _ch.invokeMethod('update', {'on': _enabled && _playing, 'sensitivity': _sensitivity}).catchError(
+    unawaited(_ch.invokeMethod<void>('update', {'on': _enabled && _playing, 'sensitivity': _sensitivity}).catchError(
       (Object e) => debugPrint('pocket knock: $e'),
-    );
+    ));
   }
 
   Future<void> _onCall(MethodCall call) async {

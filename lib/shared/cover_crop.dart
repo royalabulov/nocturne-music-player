@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
@@ -30,7 +31,7 @@ CoverCrop? cachedCoverCrop(String path) => _known[path];
 /// Checks a cover once (a 64px copy is enough to see bars).
 Future<CoverCrop?> coverCrop(String path) => _running[path] ??= _detect(path).then((c) {
       _known[path] = c;
-      _running.remove(path);
+      unawaited(_running.remove(path)); // just drops the entry: this future is finishing now
       return c;
     });
 

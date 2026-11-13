@@ -8,8 +8,10 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
+import java.io.BufferedInputStream
 import java.io.File
 import java.io.InputStream
+import java.io.OutputStream
 
 /// "Open with Nocturne", Share and "Import files": brings a file into the library.
 ///
@@ -18,7 +20,33 @@ import java.io.InputStream
 /// * [import]: otherwise (a messenger's FileProvider, file_picker cache) copies the file
 ///   to `Music/Nocturne/` (MediaStore insert — needs no permission) and returns
 ///   the new file's path. If the same name + size already exists, it isn't copied again.
-class AudioImporter(private val context: Context) {
+class AudioImporter(
+    private val context: Context,
+    private val maxBytes: Long = MAX_IMPORT_BYTES,
+    private val freeBytes: () -> Long = { context.getExternalFilesDir(null)?.usableSpace ?: Long.MAX_VALUE },
+) {
+    companion object {
+        /// A long FLAC mix fits; an endless stream from a hostile app doesn't.
+        const val MAX_IMPORT_BYTES = 2L * 1024 * 1024 * 1024
+
+        /// A copy stops short of this. Another app can send one big file after another without
+        /// anyone confirming, and a phone with no space left stops working properly.
+        const val MIN_FREE_BYTES = 200L * 1024 * 1024
+        private const val FREE_CHECK_EVERY_BYTES = 1024L * 1024
+
+        /// File systems allow 255 bytes; this leaves room for " (12)".
+        private const val MAX_NAME_BYTES = 240
+
+        /// The name is another app's word too: separators, and characters that make it look
+        /// like something else (control characters, text-direction marks).
+        private val UNSAFE_NAME_CHARS = Regex("[\\\\/:*?\"<>|\\p{Cntrl}\\u202A-\\u202E\\u2066-\\u2069]")
+
+        private val AUDIO_EXTENSIONS = setOf(
+            "mp3", "flac", "m4a", "m4b", "mp4", "aac", "wav", "ogg", "oga", "opus", "aiff", "aif",
+            "ape", "wma", "amr", "mid", "midi", "mka", "webm", "wv", "ac3", "3gp",
+        )
+    }
+
     private val resolver get() = context.contentResolver
     private val folder = Environment.DIRECTORY_MUSIC + "/Nocturne"
 
@@ -49,21 +77,62 @@ class AudioImporter(private val context: Context) {
                 }
             }
         }
-        val path = data?.takeIf { File(it).canRead() }
-        return Info(path, name, size)
+        return Info(IncomingUriPolicy.trustedPath(data, context.packageName), name, size)
     }
 
     /// Copy the file to Music/Nocturne; path of the new (or already existing identical) file.
     fun import(source: String): String {
         val info = resolve(source)
+        if (info.size > maxBytes) error("file too large")
         val name = safeName(info.name)
         existing(name, info.size)?.let { return it }
-        return openInput(source).use { input -> write(name, mimeOf(source, name), input) }
+        requireSpaceFor(info.size.coerceAtLeast(0))
+        return openInput(source).buffered().use { input ->
+            requireAudio(input)
+            write(name, mimeOf(source, name), input)
+        }
     }
 
     private fun openInput(source: String): InputStream =
         if (source.startsWith("/")) File(source).inputStream()
-        else resolver.openInputStream(Uri.parse(source)) ?: error("cannot open $source")
+        else resolver.openInputStream(Uri.parse(source)) ?: error("cannot open file")
+
+    /// Looks at the start of the stream and leaves it where it was.
+    private fun requireAudio(input: BufferedInputStream) {
+        val head = ByteArray(AudioSniffer.HEAD_BYTES)
+        input.mark(head.size)
+        var size = 0
+        while (size < head.size) {
+            val n = input.read(head, size, head.size - size)
+            if (n < 0) break
+            size += n
+        }
+        input.reset()
+        if (!AudioSniffer.looksLikeAudio(head, size)) error("not an audio file")
+    }
+
+    private fun requireSpaceFor(bytes: Long) {
+        if (freeBytes() - bytes < MIN_FREE_BYTES) error("not enough storage")
+    }
+
+    /// What a provider says about the size means nothing: the real limits are here.
+    private fun copyLimited(input: InputStream, output: OutputStream) {
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0L
+        var sinceCheck = 0L
+        while (true) {
+            val n = input.read(buffer)
+            if (n < 0) return
+            total += n
+            sinceCheck += n
+            if (total > maxBytes) error("file too large")
+            if (sinceCheck >= FREE_CHECK_EVERY_BYTES) {
+                sinceCheck = 0
+                requireSpaceFor(0)
+            }
+            output.write(buffer, 0, n)
+        }
+    }
 
     private fun write(name: String, mime: String, input: InputStream): String {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -72,7 +141,12 @@ class AudioImporter(private val context: Context) {
             // MediaStore enumerate finds it
             val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "Nocturne").apply { mkdirs() }
             val out = uniqueFile(dir, name)
-            out.outputStream().use { input.copyTo(it) }
+            try {
+                out.outputStream().use { copyLimited(input, it) }
+            } catch (e: Exception) {
+                out.delete()
+                throw e
+            }
             return out.absolutePath
         }
         val values = ContentValues().apply {
@@ -84,7 +158,7 @@ class AudioImporter(private val context: Context) {
         val collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
         val item = resolver.insert(collection, values) ?: error("MediaStore insert failed")
         try {
-            resolver.openOutputStream(item)?.use { input.copyTo(it) } ?: error("cannot write")
+            resolver.openOutputStream(item)?.use { copyLimited(input, it) } ?: error("cannot write")
             values.clear()
             values.put(MediaStore.Audio.Media.IS_PENDING, 0)
             resolver.update(item, values, null, null)
@@ -119,9 +193,17 @@ class AudioImporter(private val context: Context) {
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "audio/mpeg"
     }
 
+    /// Stays in the folder ("..", "a/b"), isn't hidden, and always ends in an audio extension.
     private fun safeName(n: String): String {
-        val cleaned = n.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().ifEmpty { "audio" }
-        return if (cleaned.contains('.')) cleaned else "$cleaned.mp3"
+        val cleaned = n.replace(UNSAFE_NAME_CHARS, "_").trim().trim('.').trim().ifEmpty { "audio" }
+        val ext = cleaned.substringAfterLast('.', "")
+        val hasAudioExt = ext.lowercase() in AUDIO_EXTENSIONS
+        // Cut first: the name is another app's word, and it can be megabytes long
+        var base = (if (hasAudioExt) cleaned.substringBeforeLast('.') else cleaned).take(MAX_NAME_BYTES)
+        val suffix = if (hasAudioExt) ".$ext" else ".mp3"
+        while ((base + suffix).toByteArray().size > MAX_NAME_BYTES) base = base.dropLast(1)
+        if (base.lastOrNull()?.isHighSurrogate() == true) base = base.dropLast(1)
+        return base + suffix
     }
 
     private fun uniqueFile(dir: File, name: String): File {

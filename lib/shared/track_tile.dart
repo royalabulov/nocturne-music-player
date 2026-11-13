@@ -6,7 +6,7 @@ import '../core/theme/app_typography.dart';
 import '../domain/entities/track.dart';
 import 'album_art.dart';
 import 'eq_bars.dart';
-import '../shared/display_names.dart';
+import '../core/utils/display_names.dart';
 
 /// Universal track row. [trailing] changes the right side
 /// (heart, play, kebab, "Played 42x" ...).

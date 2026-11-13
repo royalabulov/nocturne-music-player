@@ -1,9 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 
+import '../../core/utils/well_formed.dart';
 import '../../domain/entities/lyrics.dart';
 import 'lrc_parser.dart';
 import 'tag_reader.dart';
@@ -15,6 +19,9 @@ import 'tag_reader.dart';
 ///    If that text is LRC, it is shown synced.
 class LyricsFileSource {
   const LyricsFileSource();
+
+  /// Lyrics are kilobytes. A bigger file next to a song isn't worth reading into memory.
+  static const maxLrcBytes = 1024 * 1024;
 
   Future<Lyrics?> read(String path) => Isolate.run(() => readSync(path));
 
@@ -37,7 +44,7 @@ class LyricsFileSource {
     for (final ext in const ['.lrc', '.LRC']) {
       try {
         final f = File('$base$ext');
-        if (f.existsSync()) return f.readAsStringSync();
+        if (f.existsSync() && f.lengthSync() <= maxLrcBytes) return decodeLrc(f.readAsBytesSync());
       } catch (_) {
         // no access (scoped storage) — not an error
       }
@@ -45,7 +52,26 @@ class LyricsFileSource {
     return null;
   }
 
-  static Lyrics? _fromText(String text) {
+  /// Older .lrc files are in the Windows code page, not UTF-8. They used to count as no file at
+  /// all. The code page is the Turkish one (the closest there is to Azerbaijani): Latin-1 but
+  /// for six letters, plus the quotes and dashes that lyrics use.
+  @visibleForTesting
+  static String decodeLrc(Uint8List bytes) {
+    try {
+      return utf8.decode(bytes);
+    } on FormatException {
+      return String.fromCharCodes([for (final b in bytes) _windows1254[b] ?? b]);
+    }
+  }
+
+  static const _windows1254 = {
+    0x85: 0x2026, 0x91: 0x2018, 0x92: 0x2019, 0x93: 0x201C, 0x94: 0x201D, 0x96: 0x2013, 0x97: 0x2014,
+    0xD0: 0x011E, 0xDD: 0x0130, 0xDE: 0x015E, 0xF0: 0x011F, 0xFD: 0x0131, 0xFE: 0x015F,
+  };
+
+  static Lyrics? _fromText(String raw) {
+    // Shown as it is, without passing through the database that would have cleaned it
+    final text = wellFormed(raw);
     final lines = parseLrc(text);
     final plain = text.replaceAll(String.fromCharCode(0), '').replaceAll('\r\n', '\n').trim();
     final words = lines.isNotEmpty ? lines.map((l) => l.text).toList() : plain.split('\n');

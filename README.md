@@ -50,6 +50,7 @@ lib/
   core/       app-wide services: audio handler, router, DI providers, theme, diagnostics
   data/       drift database, data sources (MediaStore, tag reader), repository implementations
   domain/     entities and repository interfaces
+  demo/       in-memory library for the web preview (main_demo.dart); not part of the app
   features/   one folder per screen/feature (home, player, playlists, smart_groups, settings…)
   shared/     reusable widgets
 android/      Kotlin platform code (MediaStore observer, importer, audio analyzer)
@@ -74,22 +75,36 @@ Run the tests:
 flutter test
 ```
 
+The Android code has its own tests. They need `flutter build apk --config-only` once, then:
+
+```bash
+cd android && ./gradlew :app:testDebugUnitTest
+```
+
+A release build needs your own key in `android/key.properties`, and stops without one so
+nothing signed with the public debug key ships by accident.
+
 A web build runs with an in-memory demo library (no real files) for previewing the UI:
 
 ```bash
-flutter build web
+flutter build web -t lib/main_demo.dart
 ```
 
 ## Privacy
 
 Nocturne collects no data: no account, no analytics, no ads, no crash reporting.
 Permissions: audio files (to build the library), foreground service + wake lock
-(background playback) and network state + internet. The network is used only after the
+(background playback), network state + internet, and, only if the user turns these features
+on, vibration (knock to skip, which also reads the motion sensor) and notifications +
+start after a restart (forgotten favorites reminders). The network is used only after the
 user turns Online mode on (default: off), and then only for a connectivity check
 (an empty `generate_204` request to Cloudflare, falling back to Google) and, when the user
 opens lyrics that aren't in the file, a lyrics lookup on lrclib.net with the song's title
 and artist (can be turned off). Songs, play history and AI analysis never
-leave the phone.
+leave the phone. Once a month a backup file (favorites, playlists, history, settings, mood and
+genre corrections) is written to `Download/Nocturne`, the two newest kept; it outlives an uninstall
+and can be turned off in Settings. The error log leaves the phone only when the user copies or
+shares it.
 
 ## Credits
 

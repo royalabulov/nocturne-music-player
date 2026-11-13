@@ -1,0 +1,21 @@
+name: engine_hook
+description: >-
+  Calls the Nocturne app back for every Flutter engine, so its native channels exist even
+  when audio_service starts the engine with no window. Part of the app, not published.
+publish_to: none
+version: 1.0.0
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.nocturne.enginehook
+        pluginClass: EngineHookPlugin

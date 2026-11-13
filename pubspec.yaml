@@ -1,4 +1,4 @@
-name: sonar
+name: nocturne
 description: "Nocturne — offline music player."
 publish_to: 'none'
 
@@ -15,6 +15,9 @@ dependencies:
   crypto: ^3.0.7
   drift: ^2.35.0
   drift_flutter: ^0.3.1
+  # Sets the app's native channels up on every Flutter engine, also one with no window
+  engine_hook:
+    path: packages/engine_hook
   file_picker: ^12.3.0
   flutter:
     sdk: flutter
@@ -47,6 +50,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+
+  # Licence texts of the fonts and the YAMNet model (Settings → Licenses)
+  assets:
+    - assets/licenses/
 
   # Variable fonts: all weights in one file. The google_fonts package is
   # deliberately not used — the app must be fully offline.

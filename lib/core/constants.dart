@@ -1,12 +1,6 @@
 /// Largest text scale the layout supports.
 const kMaxTextScale = 1.5;
 
-/// Library filter: keep voice notes, notification sounds and half-downloaded
-/// files out. Both must hold (length AND size).
-const kMinTrackDuration = Duration(seconds: 40);
-/// These are defaults — the user can change them in Settings → Library filter (TrackFilter).
-const kMinTrackBytes = 100 * 1024;
-
 /// Bump when TagReader logic changes → the next scan re-reads every file's tags
 /// (unchanged files too). v2: UTF-16 BOM fix. v3: ReplayGain.
 /// v4: Ü/Ø/ß loss (doubled BOM) — frames read straight from bytes; ReplayGain regex fix.
@@ -14,7 +8,8 @@ const kMinTrackBytes = 100 * 1024;
 /// v6: no artist → taken from an "Artist - Title" name (guessArtist), "- Topic" cleaned.
 /// v7: quoted names aren't split, a "01 " track number is dropped.
 /// v8: "- Topic" is cleaned from album names too.
-const kTagReaderVersion = 8;
+/// v9: .m4a told apart (AAC or ALAC by bitrate), AIFF and APE named.
+const kTagReaderVersion = 9;
 
 /// Version of the smart-groups audio analysis (Kotlin AudioAnalyzer + stored
 /// classes). When it goes up, every song is re-analyzed in the background.
@@ -23,3 +18,6 @@ const kVibeAnalysisVersion = 2;
 
 /// Version shown in Settings (keep in sync with pubspec.yaml).
 const kAppVersion = '1.0.1';
+
+/// Android notification channel of the playback notification (audio_service creates it).
+const kPlaybackChannelId = 'com.nocturne.playback';

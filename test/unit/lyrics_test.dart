@@ -1,14 +1,18 @@
-import 'package:drift/drift.dart' hide isNull;
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/datasources/lrc_parser.dart';
-import 'package:sonar/data/datasources/lrclib_source.dart';
-import 'package:sonar/data/datasources/lyrics_file_source.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/repositories/lyrics_repository_impl.dart';
-import 'package:sonar/domain/entities/audio_format.dart';
-import 'package:sonar/domain/entities/lyrics.dart';
-import 'package:sonar/domain/entities/track.dart';
+import 'package:nocturne/data/datasources/lrc_parser.dart';
+import 'package:nocturne/data/datasources/lrclib_source.dart';
+import 'package:nocturne/data/datasources/lyrics_file_source.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/repositories/lyrics_repository_impl.dart';
+import 'package:nocturne/domain/entities/audio_format.dart';
+import 'package:nocturne/domain/entities/lyrics.dart';
+import 'package:nocturne/domain/entities/track.dart';
 
 class _File extends LyricsFileSource {
   const _File([this.lyrics]);
@@ -41,6 +45,111 @@ void main() {
       expect(activeLyricLine(l, const Duration(seconds: 10)), 1);
       expect(activeLyricLine(l, const Duration(seconds: 15)), 1);
       expect(activeLyricLine(l, const Duration(minutes: 3)), 2);
+    });
+  });
+
+  group('old .lrc files', () {
+    test('UTF-8 is read as UTF-8', () {
+      expect(LyricsFileSource.decodeLrc(Uint8List.fromList(utf8.encode('[00:01]Şəhər ğüöç'))), '[00:01]Şəhər ğüöç');
+    });
+
+    test('the Windows code page keeps the letters it has', () {
+      // "Gönül şarkısı, ĞİŞ" and a typographic quote, in Windows-1254
+      final bytes = [0x47, 0xF6, 0x6E, 0xFC, 0x6C, 0x20, 0xFE, 0x61, 0x72, 0x6B, 0xFD, 0x73, 0xFD, 0x2C, 0x20, 0xD0, 0xDD, 0xDE, 0x92];
+      expect(LyricsFileSource.decodeLrc(Uint8List.fromList(bytes)), 'Gönül şarkısı, ĞİŞ’');
+    });
+
+    test('such a file is found and shown, it used to count as no file', () {
+      final dir = Directory.systemTemp.createTempSync('nocturne_lrc');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      File('${dir.path}/song.mp3').writeAsBytesSync(List.filled(16, 0));
+      File('${dir.path}/song.lrc').writeAsBytesSync([...'[00:01.00]'.codeUnits, 0xFE, 0x61, 0x72, 0x6B, 0xFD]);
+      expect(LyricsFileSource.readSync('${dir.path}/song.mp3')?.lines.single.text, 'şarkı');
+    });
+  });
+
+  group('half a character in lyrics, which go to the screen without passing the database', () {
+    const broken = [1, 0xFF, 0xFE, 0x41, 0x00, 0x3D, 0xD8, 0x42, 0x00, 0, 0];
+
+    bool isClean(String s) => s.codeUnits.every((c) => c < 0xD800 || c > 0xDFFF);
+
+    test('from a tag', () {
+      final dir = Directory.systemTemp.createTempSync('nocturne_lrc');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      // USLT: encoding, language, an empty description, then the text; here in ID3v2.4
+      final data = [1, ...'eng'.codeUnits, 0xFF, 0xFE, 0, 0, ...broken.sublist(1)];
+      final n = data.length;
+      final frame = [...'USLT'.codeUnits, (n >> 21) & 0x7F, (n >> 14) & 0x7F, (n >> 7) & 0x7F, n & 0x7F, 0, 0, ...data];
+      final s = frame.length;
+      File('${dir.path}/song.mp3').writeAsBytesSync([
+        ...'ID3'.codeUnits, 4, 0, 0, (s >> 21) & 0x7F, (s >> 14) & 0x7F, (s >> 7) & 0x7F, s & 0x7F,
+        ...frame, ...List.filled(256, 0),
+      ]);
+      final lyrics = LyricsFileSource.readSync('${dir.path}/song.mp3');
+      expect(lyrics?.plain, isNotNull);
+      expect(isClean(lyrics!.plain!), isTrue);
+    });
+
+    test('from the server', () async {
+      final source = LrclibSource(get: (_) async => (200, [
+            {'duration': 180, 'plainLyrics': 'abc\uD83Ddef'},
+          ]));
+      final answer = await source.find(title: 't', artist: 'a', duration: const Duration(seconds: 180));
+      expect((answer as LrclibFound).plain, 'abc�def');
+    });
+  });
+
+  group('hostile lyrics', () {
+    test('a line of endless time stamps takes linear time', () {
+      final sw = Stopwatch()..start();
+      final lines = parseLrc('${'[00:01]' * 200000}x');
+      expect(lines, hasLength(200000));
+      expect(sw.elapsed, lessThan(const Duration(seconds: 3)));
+    });
+
+    test('spaces between stamps still work', () {
+      final lines = parseLrc('[00:01] [00:02]  word');
+      expect(lines.map((l) => l.text), ['word', 'word']);
+      expect(lines.map((l) => l.time.inSeconds), [1, 2]);
+    });
+
+    test('a huge .lrc next to a song is not read', () {
+      final dir = Directory.systemTemp.createTempSync('nocturne_lrc');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final song = '${dir.path}/song.mp3';
+
+      File('${dir.path}/song.lrc').writeAsStringSync('[00:01]small');
+      expect(LyricsFileSource.readSync(song)?.lines.single.text, 'small');
+
+      File('${dir.path}/song.lrc').writeAsStringSync('[00:01]big\n' * 200000);
+      expect(LyricsFileSource.readSync(song), isNull);
+    });
+
+    group('a response over the limit', () {
+      Stream<List<int>> chunks(int count, {void Function()? onCancel}) {
+        final c = StreamController<List<int>>(onCancel: onCancel);
+        c.onListen = () async {
+          for (var i = 0; i < count && !c.isClosed; i++) {
+            c.add(List.filled(1024, 65));
+            await Future<void>.delayed(Duration.zero);
+          }
+          await c.close();
+        };
+        return c.stream;
+      }
+
+      test('within the limit it arrives whole', () async {
+        expect(await LrclibSource.readBounded(chunks(3), maxBytes: 4096), hasLength(3072));
+      });
+
+      test('is refused, and the download stops', () async {
+        var stopped = false;
+        await expectLater(
+          LrclibSource.readBounded(chunks(1000000, onCancel: () => stopped = true), maxBytes: 4096),
+          throwsFormatException,
+        );
+        expect(stopped, isTrue);
+      });
     });
   });
 

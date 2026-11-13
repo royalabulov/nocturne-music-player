@@ -27,11 +27,13 @@
 
 <section id="en" lang="en">
 <h1>Nocturne — Privacy Policy</h1>
-<p class="muted">Last updated: 3 November 2026</p>
+<p class="muted">Last updated: 11 November 2026</p>
 
 <p>Nocturne is an offline music player for Android. It plays the audio files that are already
-on your phone. This policy explains what the app does with your data: in short, nothing leaves
-your phone.</p>
+on your phone. This policy explains what the app does with your data. In short: your music, your
+listening history and everything the app works out about them stay on your phone. The only thing
+that can leave it is the title and artist of a song whose lyrics you open, and only if you turned
+on Online mode.</p>
 
 <h2>Data we collect</h2>
 <p>None. Nocturne has no account, no analytics, no advertising, no crash reporting and no
@@ -43,11 +45,25 @@ tracking of any kind. We do not collect, store, sell or share personal data.</p>
   <li>your music library (file paths and the song information read from the files);</li>
   <li>favorites, playlists, play history and settings;</li>
   <li>the results of the mood and genre analysis. This analysis runs entirely on the phone
-      with a built-in model; your songs are never uploaded.</li>
+      with a built-in model; your songs are never uploaded;</li>
+  <li>an error log, so you can see what went wrong (Settings → Error log). It can contain the
+      names of song files. It leaves the phone only if you copy or share it yourself;</li>
+  <li>if you turn on Knock to skip: a log of the motion sensor readings around each knock, up to
+      about 8 MB, used to improve how knocks are recognized.</li>
 </ul>
-<p>This data is deleted when you uninstall the app. Android's automatic cloud backup is turned
-off for Nocturne. You can make a backup file yourself in Settings; it is saved where you choose
-and is not sent anywhere.</p>
+<p>This data is deleted when you uninstall the app, except the monthly backup described below.
+Android's automatic cloud backup and phone-to-phone transfer are turned off for Nocturne.</p>
+<h2>Backups</h2>
+<p>So that a reinstall or a new phone does not lose them, once a month the app saves a backup
+file of your favorites, playlists, play history, settings and your corrections to the mood and
+genre groups in the <code>Download/Nocturne</code> folder. Only the two newest are kept. It is not sent
+anywhere, but it stays after you uninstall the app, and other apps with storage access can read
+it. You can turn it off in Settings → Monthly backup, and delete the files
+yourself. You can also make a backup file at any time in Settings; it is saved where you choose.</p>
+<p>Some files are outside the app's private storage, because you asked for them to be, and they
+stay until you delete them: songs imported into the Music/Nocturne folder, and what you export to
+the Download folder (the smart group data and the knock log). Other apps with storage access can
+read these files.</p>
 
 <h2>Permissions</h2>
 <ul>
@@ -64,6 +80,12 @@ and is not sent anywhere.</p>
       This request contains the song's title and artist — nothing about you.
       Found lyrics are saved on the phone so the request is not repeated. You can turn this off in
       Settings → Network.</li>
+  <li><b>Motion sensor, vibration</b> — used only if you turn on Knock to skip (it is off by
+      default). The sensor is read only while music is playing and the screen is off; its readings
+      are processed on the phone. A short vibration confirms that the song changed.</li>
+  <li><b>Notifications, start after a restart</b> — used only if you turn on Forgotten favorites
+      reminders (they are off by default): to show the reminder, and to plan it again after the phone
+      restarts.</li>
 </ul>
 
 <h2>Children</h2>
@@ -73,17 +95,19 @@ and is not sent anywhere.</p>
 <p>If this policy changes, the new version will be published on this page with a new date.</p>
 
 <h2>Contact</h2>
-<p>Questions: <a href="mailto:CONTACT_EMAIL">CONTACT_EMAIL</a></p>
+<p>Questions: <a href="mailto:nocturne.musicplayer@gmail.com">nocturne.musicplayer@gmail.com</a></p>
 </section>
 
 <hr>
 
 <section id="az" lang="az">
 <h1>Nocturne — Məxfilik siyasəti</h1>
-<p class="muted">Son yenilənmə: 3 noyabr 2026</p>
+<p class="muted">Son yenilənmə: 11 noyabr 2026</p>
 
 <p>Nocturne Android üçün oflayn musiqi pleyeridir. Telefonunuzda olan mahnıları oxudur. Bu
-sənəd tətbiqin məlumatlarınızla nə etdiyini izah edir: qısaca, heç nə telefondan çıxmır.</p>
+sənəd tətbiqin məlumatlarınızla nə etdiyini izah edir. Qısaca: musiqiniz, dinləmə tarixçəniz və
+tətbiqin onlar haqqında çıxardığı nəticələr telefonunuzda qalır. Telefondan çıxa bilən yeganə şey
+sözlərini açdığınız mahnının adı və ifaçısıdır, o da yalnız Onlayn rejimi açmısınızsa.</p>
 
 <h2>Topladığımız məlumatlar</h2>
 <p>Heç biri. Nocturne-da hesab, analitika, reklam, xəta hesabatı və heç bir izləmə yoxdur.
@@ -95,11 +119,26 @@ sənəd tətbiqin məlumatlarınızla nə etdiyini izah edir: qısaca, heç nə 
   <li>musiqi kitabxananız (fayl yolları və fayllardan oxunan mahnı məlumatları);</li>
   <li>bəyənilənlər, pleylistlər, dinləmə tarixçəsi və ayarlar;</li>
   <li>əhval və janr analizinin nəticələri. Analiz tamamilə telefonda, tətbiqin içindəki modellə
-      aparılır; mahnılarınız heç yerə yüklənmir.</li>
+      aparılır; mahnılarınız heç yerə yüklənmir;</li>
+  <li>xəta jurnalı, nəyin səhv getdiyini görə bilməniz üçün (Ayarlar → Xəta jurnalı). Orada mahnı
+      fayllarının adları ola bilər. Yalnız özünüz kopyalasanız və ya paylaşsanız telefondan çıxır;</li>
+  <li>"Vuraraq mahnı dəyiş" açıqdırsa: hər vurma ətrafındakı hərəkət sensoru göstəricilərinin
+      qeydi, ən çox təxminən 8 MB, vurmaların tanınmasını yaxşılaşdırmaq üçün.</li>
 </ul>
-<p>Tətbiqi silsəniz, bu məlumatlar da silinir. Android-in avtomatik bulud ehtiyat nüsxəsi
-Nocturne üçün söndürülüb. Ayarlarda özünüz ehtiyat nüsxə faylı yarada bilərsiniz; o sizin
-seçdiyiniz yerdə saxlanılır və heç yerə göndərilmir.</p>
+<p>Tətbiqi silsəniz, aşağıda yazılan aylıq ehtiyat nüsxədən başqa bu məlumatlar da silinir.
+Android-in avtomatik bulud ehtiyat nüsxəsi və telefondan telefona köçürmə Nocturne üçün söndürülüb.</p>
+<h2>Ehtiyat nüsxələr</h2>
+<p>Tətbiqi yenidən quranda və ya yeni telefona keçəndə itməsinlər deyə, ayda bir dəfə tətbiq
+bəyənilənlərin, pleylistlərin, dinləmə tarixçəsinin, ayarların və əhval-janr qruplarına
+etdiyiniz düzəlişlərin ehtiyat nüsxəsini <code>Download/Nocturne</code> qovluğuna yazır. Yalnız ən son
+ikisi saxlanılır. Heç yerə göndərilmir, amma tətbiq silinəndən sonra da qalır və yaddaşa çıxışı
+olan başqa tətbiqlər onu oxuya bilər. Bunu Ayarlar → Aylıq backup bölməsində söndürə və faylları
+özünüz silə bilərsiniz. Ayarlarda istənilən vaxt ehtiyat nüsxə faylını özünüz də yarada
+bilərsiniz; o sizin seçdiyiniz yerdə saxlanılır.</p>
+<p>Bəzi fayllar, siz istədiyiniz üçün, tətbiqin öz yaddaşından kənardadır və siz silənə qədər
+qalır: Music/Nocturne qovluğuna gətirilən mahnılar və Download qovluğuna ixrac etdikləriniz
+(ağıllı qrupların məlumatları və vurma qeydləri). Yaddaşa çıxışı olan başqa tətbiqlər bu faylları
+oxuya bilər.</p>
 
 <h2>İcazələr</h2>
 <ul>
@@ -116,6 +155,12 @@ seçdiyiniz yerdə saxlanılır və heç yerə göndərilmir.</p>
       mahnının adı və ifaçısı olur — sizin haqqınızda heç nə. Tapılan sözlər
       telefonda saxlanılır ki, sorğu təkrarlanmasın. Bunu Ayarlar → Şəbəkə bölməsində söndürə
       bilərsiniz.</li>
+  <li><b>Hərəkət sensoru, vibrasiya</b> — yalnız "Vuraraq mahnı dəyiş" funksiyasını açsanız istifadə
+      olunur (standart olaraq söndürülüb). Sensor yalnız musiqi çalanda və ekran sönülü olanda
+      oxunur, göstəricilər telefonda emal olunur. Qısa vibrasiya mahnının dəyişdiyini bildirir.</li>
+  <li><b>Bildirişlər, yenidən başladıqdan sonra işə düşmə</b> — yalnız unudulmuş sevimlilər
+      xatırlatmalarını açsanız istifadə olunur (standart olaraq söndürülüb): xatırlatmanı göstərmək
+      və telefon yenidən başlayandan sonra onu təkrar planlaşdırmaq üçün.</li>
 </ul>
 
 <h2>Uşaqlar</h2>
@@ -125,7 +170,7 @@ seçdiyiniz yerdə saxlanılır və heç yerə göndərilmir.</p>
 <p>Bu siyasət dəyişsə, yeni variant yeni tarixlə bu səhifədə dərc olunacaq.</p>
 
 <h2>Əlaqə</h2>
-<p>Suallar üçün: <a href="mailto:CONTACT_EMAIL">CONTACT_EMAIL</a></p>
+<p>Suallar üçün: <a href="mailto:nocturne.musicplayer@gmail.com">nocturne.musicplayer@gmail.com</a></p>
 </section>
 </main>
 </body>

@@ -77,6 +77,15 @@
       }
     }
   },
+  "toastTrackUnreadable": "\"{title}\" couldn’t be played",
+  "@toastTrackUnreadable": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "toastNoMusicPermission": "No permission to read music files",
   "notificationChannel": "Nocturne playback",
   "groupSmartGroups": "Smart groups",
   "groupPlayback": "Playback",
@@ -255,6 +264,17 @@
   "knockLow": "Low",
   "knockMedium": "Medium",
   "knockHigh": "High",
+  "knockLogExport": "Save knock log",
+  "knockLogExportHint": "Knock detection records, saved to the Download folder. They stay on this phone otherwise",
+  "knockLogEmpty": "Nothing recorded yet",
+  "knockLogSaved": "Saved → {path}",
+  "@knockLogSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "saveBackupDialog": "Save Nocturne backup",
   "backupSaved": "Backup saved",
   "backupFailed": "Couldn’t create the backup",
@@ -274,7 +294,9 @@
   "backUpDataHint": "Favorites, playlists, play history and audio settings → JSON file",
   "save": "Save",
   "restoreBackup": "Restore from backup",
-  "restoreBackupHint": "Merges into the current library (scan your music first)",
+  "restoreBackupHint": "Merges into the current library; songs not found yet are added as scans find them",
+  "autoBackup": "Monthly backup",
+  "autoBackupHint": "Once a month to Download/Nocturne, the two newest are kept. Stays after the app is removed.",
   "open": "Open",
   "exportSmartData": "Export smart-group data",
   "exportSmartDataHint": "AI scores, guesses and your answers for every song → CSV file",
@@ -282,6 +304,8 @@
   "errorLogHint": "Crashes and playback errors recorded on this device",
   "view": "View",
   "copy": "Copy",
+  "share": "Share",
+  "shareFailed": "No app to share with. The log was copied instead.",
   "clear": "Clear",
   "noLimit": "No limit",
   "libraryFilter": "Library filter",
@@ -300,6 +324,8 @@
   "zeroSec": "0 sec",
   "fiveMinPlus": "5 min+",
   "eqUnavailable": "Play any track first — the system equalizer becomes available once audio is initialised.",
+  "eqNotSupported": "This phone has no system equalizer. Music plays without it.",
+  "databaseReset": "Your library data was damaged and has been set aside. Your songs are being found again; restore a backup in Settings to bring back favorites and playlists.",
   "bassBoost": "Bass Boost",
   "autoPresetOn": "Auto preset is on: the preset you pick here is remembered for \"{output}\" and switches when you change output.",
   "@autoPresetOn": {
@@ -579,7 +605,6 @@
       }
     }
   },
-  "stopsWhenTrackEnds": "Stops when this track ends",
   "stopsIn": "Stops in {time}",
   "@stopsIn": {
     "placeholders": {
@@ -740,7 +765,7 @@
       }
     }
   },
-  "savedToMusicSonar": "Saved to Music/Nocturne",
+  "savedToMusicFolder": "Saved to Music/Nocturne",
   "skippedCount": "{count} skipped",
   "@skippedCount": {
     "placeholders": {
@@ -891,7 +916,7 @@
       }
     }
   },
-  "restoreMissing": " • {count} tracks not found on this device",
+  "restoreMissing": " • {count} tracks not on this device yet: they're added as soon as a scan finds them",
   "@restoreMissing": {
     "placeholders": {
       "count": {
@@ -1003,5 +1028,30 @@
         "type": "String"
       }
     }
-  }
+  },
+  "stopsWhenTrackEnds": "Stops when this track ends",
+  "search": "Search",
+  "coverHint": "Cover. Swipe left or right for another song, tap for lyrics",
+  "openArtist": "Open the artist",
+  "alphabetRail": "Jump to letter",
+  "removeFolder": "Remove folder",
+  "removeFolderQ": "Remove this folder?",
+  "removeFolderWarning": "Songs in {folder} leave the library at the next scan. The files stay on the phone.",
+  "@removeFolderWarning": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "loadFailed": "Couldn’t load this. Your data is still there.",
+  "scanFailedHint": "Something went wrong while reading your music. Try again.",
+  "lastScanFailed": "The last scan failed. Try again.",
+  "startupFailedTitle": "Nocturne couldn’t start",
+  "startupFailedBody": "Your phone’s storage may be full. Free up some space and open the app again. Your data has not been deleted.",
+  "shareErrorLog": "Share error log",
+  "closeApp": "Close",
+  "licenses": "Licenses",
+  "licensesHint": "Fonts, the smart groups model and open-source libraries",
+  "widgetEmptyHint": "Pick a song to play"
 }

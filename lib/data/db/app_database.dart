@@ -6,11 +6,12 @@ import 'tables.dart';
 part 'app_database.g.dart';
 
 /// Default scan folders. Written to the DB on first launch;
-/// the user can change them in Settings.
+/// the user can change them in Settings. No folder named after a video downloader app (it was
+/// snaptube's): the Play listing and a public repo should not read as pointing users to one.
+/// Phones that already have it keep it until the user removes it.
 const kDefaultScanFolders = <String>[
   '/storage/emulated/0/Music',
   '/storage/emulated/0/Download',
-  '/storage/emulated/0/snaptube/download',
   '/storage/emulated/0/Telegram/Telegram Audio',
 ];
 
@@ -21,8 +22,12 @@ const kDefaultScanFolders = <String>[
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
 
+  /// The file is `<app documents>/<fileName>.sqlite`, drift_flutter's default place.
+  static const fileName = 'sonar';
+
   static QueryExecutor _open() => driftDatabase(
-        name: 'sonar',
+        // The app's old name, on every installed phone: renaming the file loses the library
+        name: fileName,
         native: const DriftNativeOptions(shareAcrossIsolates: true),
       );
 

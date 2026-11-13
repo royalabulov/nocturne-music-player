@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/core/theme/app_colors.dart';
-import 'package:sonar/core/ui/toast.dart';
+import 'package:nocturne/core/theme/app_colors.dart';
+import 'package:nocturne/core/ui/toast.dart';
 
 void main() {
   Future<void> pumpApp(WidgetTester tester, {Widget? bottom}) async {

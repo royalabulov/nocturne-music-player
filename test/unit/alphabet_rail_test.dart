@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/shared/alphabet_rail.dart';
+import 'package:nocturne/shared/alphabet_rail.dart';
 
 void main() {
   test('Latin letters map to themselves, case-insensitive', () {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -5,29 +6,30 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../core/constants.dart';
 import '../../core/di/providers.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
+import '../../domain/repositories/settings_repository.dart';
 import 'forgotten.dart';
 import 'reminder_plan.dart';
 
 /// Reminder settings, stored in scan_state. Changing them re-plans the notifications.
 class ReminderSettingsController extends Notifier<ReminderSettings> {
-  static const _enabledKey = 'forgottenRemind';
-  static const _daysKey = 'forgottenRemindDays';
-  static const _timeKey = 'forgottenRemindTime';
+  /// Done once the stored settings are in [state]; until then it holds the defaults.
+  Future<void> ready = Future.value();
 
   @override
   ReminderSettings build() {
-    _load();
+    ready = _load();
     return const ReminderSettings();
   }
 
   Future<void> _load() async {
-    final repo = ref.read(libraryRepositoryProvider);
-    final enabled = await repo.getSetting(_enabledKey);
-    final days = await repo.getSetting(_daysKey);
-    final time = (await repo.getSetting(_timeKey))?.split(':');
+    final repo = ref.read(settingsRepositoryProvider);
+    final enabled = await repo.getSetting(SettingsKeys.forgottenRemind);
+    final days = await repo.getSetting(SettingsKeys.forgottenRemindDays);
+    final time = (await repo.getSetting(SettingsKeys.forgottenRemindTime))?.split(':');
     state = state.copyWith(
       enabled: enabled == 'true',
       weekdays: days == null ? null : ReminderSettings.parseWeekdays(days),
@@ -38,10 +40,10 @@ class ReminderSettingsController extends Notifier<ReminderSettings> {
 
   Future<void> set(ReminderSettings s) async {
     state = s;
-    final repo = ref.read(libraryRepositoryProvider);
-    await repo.setSetting(_enabledKey, '${s.enabled}');
-    await repo.setSetting(_daysKey, s.weekdaysText);
-    await repo.setSetting(_timeKey, '${s.hour}:${s.minute}');
+    final repo = ref.read(settingsRepositoryProvider);
+    await repo.setSetting(SettingsKeys.forgottenRemind, '${s.enabled}');
+    await repo.setSetting(SettingsKeys.forgottenRemindDays, s.weekdaysText);
+    await repo.setSetting(SettingsKeys.forgottenRemindTime, '${s.hour}:${s.minute}');
     await ref.read(forgottenReminderProvider).reschedule();
   }
 }
@@ -55,19 +57,21 @@ final forgottenReminderProvider = Provider<ForgottenReminder>(ForgottenReminder.
 /// background: every open / close (and every settings change) cancels the old plan
 /// and schedules the next few reminders, each naming a different forgotten song.
 class ForgottenReminder {
-  ForgottenReminder(this.ref);
+  ForgottenReminder(this.ref) {
+    // The rule changed â the reminders may name other songs
+    ref.listen(forgottenSettingsProvider, (previous, next) {
+      if (previous != next) unawaited(reschedule());
+    });
+  }
   final Ref ref;
 
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
 
-  /// Notification ids 4100…4113 (one per planned reminder).
+  /// Notification ids 4100â¦4113 (one per planned reminder).
   static const _baseId = 4100;
   static const _maxPlanned = 14;
   static const _channelId = 'com.nocturne.forgotten';
-
-  /// scan_state: {trackId: when its reminder goes / went off}.
-  static const _plannedKey = 'forgottenRemindPlanned';
 
   AndroidFlutterLocalNotificationsPlugin? get _android =>
       _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -103,36 +107,67 @@ class ForgottenReminder {
   Future<void> reschedule() async {
     if (!_ready) return;
     try {
+      await renameChannels();
       await _reschedule();
     } catch (e) {
       debugPrint('ForgottenReminder: reschedule failed: $e');
     }
   }
 
+  /// The names Android shows in Settings → Notifications, in the app's language. The playback
+  /// channel is made before the app's language is read (in the phone's), and a language picked
+  /// later changed neither. Creating an existing channel again only renames it.
+  @visibleForTesting
+  Future<void> renameChannels() async {
+    final android = _android;
+    if (android == null) return;
+    await android.createNotificationChannel(AndroidNotificationChannel(
+      kPlaybackChannelId,
+      l10n.notificationChannel,
+      importance: Importance.low,
+      showBadge: false,
+    ));
+    await android.createNotificationChannel(AndroidNotificationChannel(
+      _channelId,
+      l10n.menuForgotten,
+      description: l10n.reminderChannelHint,
+    ));
+  }
+
+  /// The settings the plan is made from, once they are read from the database. At the start
+  /// the providers still held their defaults (reminders off), so the first plan of every
+  /// start cancelled all reminders until the app was next sent to the background.
+  @visibleForTesting
+  Future<(ReminderSettings, ForgottenSettings)> settingsForPlan() async {
+    await ref.read(reminderSettingsProvider.notifier).ready;
+    await ref.read(forgottenSettingsProvider.notifier).ready;
+    return (ref.read(reminderSettingsProvider), ref.read(forgottenSettingsProvider));
+  }
+
   Future<void> _reschedule() async {
     for (var i = 0; i < _maxPlanned; i++) {
       await _plugin.cancel(id: _baseId + i);
     }
-    final repo = ref.read(libraryRepositoryProvider);
+    final repo = ref.read(settingsRepositoryProvider);
     final now = DateTime.now();
 
-    // Reminders whose time has passed went off → don't name those songs again for
+    // Reminders whose time has passed went off â don't name those songs again for
     // 4 weeks. Future ones were just cancelled and get planned again below.
     final shown = <int, DateTime>{};
     try {
-      final raw = jsonDecode(await repo.getSetting(_plannedKey) ?? '{}') as Map<String, dynamic>;
+      // {trackId: when its reminder goes / went off}
+      final raw = jsonDecode(await repo.getSetting(SettingsKeys.forgottenRemindPlanned) ?? '{}') as Map<String, dynamic>;
       for (final MapEntry(:key, :value) in raw.entries) {
         final at = DateTime.fromMillisecondsSinceEpoch(value as int);
         if (!at.isAfter(now) && now.difference(at).inDays < 60) shown[int.parse(key)] = at;
       }
     } catch (_) {}
 
-    final s = ref.read(reminderSettingsProvider);
+    final (s, rule) = await settingsForPlan();
     final planned = {...shown};
     if (s.enabled) {
       final times = nextReminderTimes(now, s, count: _maxPlanned);
-      final rule = ref.read(forgottenSettingsProvider);
-      // Every song with enough plays (or ❤) — the "not played for N days" part is
+      // Every song with enough plays (or â¤) â the "not played for N days" part is
       // checked per reminder time in pickReminderSongs.
       final candidates =
           await ref.read(historyRepositoryProvider).watchForgotten(minPlays: rule.minPlays, days: 0).first;
@@ -173,7 +208,7 @@ class ForgottenReminder {
       debugPrint('ForgottenReminder: $count of ${times.length} reminders planned, first ${times.firstOrNull}');
     }
     await repo.setSetting(
-      _plannedKey,
+      SettingsKeys.forgottenRemindPlanned,
       jsonEncode({for (final MapEntry(:key, :value) in planned.entries) '$key': value.millisecondsSinceEpoch}),
     );
   }

@@ -1,3 +1,4 @@
+import 'track_filter_sql.dart';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -13,7 +14,7 @@ class AnalysisRepositoryImpl implements AnalysisRepository {
 
   /// Tracks visible in lists (Settings → Library filter).
   final TrackFilter filter;
-  String get _visibleSql => filter.sql;
+  String get _visibleSql => filter.sqlOn('t');
 
   /// While analysis runs the stream fires again after every song — trackId →
   /// (raw, parsed) so unchanged JSON isn't parsed again.
@@ -28,10 +29,6 @@ class AnalysisRepositoryImpl implements AnalysisRepository {
         predictedGenre: l.predictedGenre,
         labeledAt: l.labeledAt.millisecondsSinceEpoch,
       ));
-
-  @override
-  Future<void> deleteLabel(int trackId) =>
-      (db.delete(db.vibeLabels)..where((l) => l.trackId.equals(trackId))).go();
 
   @override
   Stream<List<VibeLabel>> watchLabels() => (db.select(db.vibeLabels)

@@ -50,7 +50,6 @@ class VibeLabel {
 
 abstract interface class AnalysisRepository {
   Future<void> saveLabel(VibeLabel label);
-  Future<void> deleteLabel(int trackId);
   Stream<List<VibeLabel>> watchLabels();
 
   /// Songs not analyzed yet (or analyzed with an older [version]), newest first.

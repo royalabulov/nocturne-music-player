@@ -39,6 +39,13 @@ String buildVibeCsv({
 
 String _cell(Object? v) {
   if (v == null) return '';
-  final s = '$v';
+  final s = _neutralized('$v');
   return s.contains(RegExp(r'[",\r\n]')) ? '"${s.replaceAll('"', '""')}"' : s;
+}
+
+/// Spreadsheets run a cell that starts with one of these as a formula, and titles and tags
+/// are written by whoever made the file. A leading ' makes it plain text. Numbers stay numbers.
+String _neutralized(String s) {
+  if (s.isEmpty || !'=+-@\t\r'.contains(s[0]) || num.tryParse(s) != null) return s;
+  return "'$s";
 }

@@ -1,3 +1,4 @@
+import '../../l10n/domain_labels.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -13,21 +14,22 @@ import '../../core/utils/duration_format.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/history_repository.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../../shared/album_art.dart';
 import '../../shared/alphabet_rail.dart';
-import '../../shared/track_sliver_list.dart';
+import '../tracks/track_sliver_list.dart';
 import '../../shared/section_header.dart';
-import '../../shared/sonar_header.dart';
+import '../../shared/nocturne_header.dart';
 import '../../shared/sort_sheet.dart';
 import '../library_scan/scan_controller.dart';
-import 'locate_track.dart';
+import '../../shared/locate_track.dart';
 import '../library_browse/library_groups.dart';
 import '../library_browse/library_views.dart';
 import '../library_scan/scan_status_card.dart';
-import '../player/player_providers.dart';
-import '../shell/scroll_to_top.dart';
+import '../../core/audio/player_providers.dart';
+import '../../shared/scroll_to_top.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
 
 /// Home: greeting, search, Recommended (from play history) and the Library
 /// (Songs / Albums / Artists) — all from the local database.
@@ -50,42 +52,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Library section: Songs | Albums | Artists.
   LibraryView _view = LibraryView.songs;
 
-  /// Order of the Songs list — persisted ("librarySort").
-  TrackSort _sort = TrackSort.recentlyAdded;
-
-  /// Order of Albums / Artists — persisted ("groupSort").
-  GroupSort _groupSort = GroupSort.name;
-
   @override
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
-    final repo = ref.read(libraryRepositoryProvider);
-    repo.getSetting('librarySort').then((v) {
-      final s = TrackSort.values.where((x) => x.name == v).firstOrNull;
-      if (s != null && mounted) setState(() => _sort = s);
-    });
-    repo.getSetting('groupSort').then((v) {
-      final s = GroupSort.values.where((x) => x.name == v).firstOrNull;
-      if (s != null && mounted) setState(() => _groupSort = s);
-    });
   }
 
   Future<void> _pickSort() async {
     final picked = await showSortSheet(context,
-        title: l10n.sortSongsBy, values: TrackSort.values, current: _sort, label: (s) => s.label);
-    if (picked == null || picked == _sort || !mounted) return;
-    setState(() => _sort = picked);
-    ref.read(libraryRepositoryProvider).setSetting('librarySort', picked.name);
+        title: l10n.sortSongsBy,
+        values: TrackSort.values,
+        current: ref.read(_librarySortProvider),
+        label: (s) => s.label);
+    if (picked == null || !mounted) return;
+    unawaited(ref.read(_librarySortProvider.notifier).set(picked));
   }
 
   Future<void> _pickGroupSort() async {
     final title = _view == LibraryView.albums ? l10n.sortAlbumsBy : l10n.sortArtistsBy;
     final picked = await showSortSheet(context,
-        title: title, values: GroupSort.values, current: _groupSort, label: (s) => s.label);
-    if (picked == null || picked == _groupSort || !mounted) return;
-    setState(() => _groupSort = picked);
-    ref.read(libraryRepositoryProvider).setSetting('groupSort', picked.name);
+        title: title, values: GroupSort.values, current: ref.read(_groupSortProvider), label: (s) => s.label);
+    if (picked == null || !mounted) return;
+    unawaited(ref.read(_groupSortProvider.notifier).set(picked));
   }
 
 
@@ -102,7 +90,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final library = ref
-              .read(tracksProvider((sort: _sort, query: '')))
+              .read(tracksProvider((sort: ref.read(_librarySortProvider), query: '')))
               .value ??
           const <Track>[];
       final i = library.indexWhere((t) => t.id == trackId);
@@ -163,20 +151,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final stats = ref.watch(libraryStatsProvider).value ?? LibraryStats.empty;
+    final statsAsync = ref.watch(libraryStatsProvider);
+    final stats = statsAsync.value ?? LibraryStats.empty;
     final recommended = ref.watch(recommendedProvider).value ?? const <PlayedTrack>[];
+    final sort = ref.watch(_librarySortProvider);
+    final groupSort = ref.watch(_groupSortProvider);
     // Every new query is a new provider and is empty on its first frame → while
     // typing the list jumped to "Nothing matches" and back. The previous result
     // is shown until the new one loads.
-    final fresh = ref.watch(tracksProvider((sort: _sort, query: _query))).value;
+    final tracksAsync = ref.watch(tracksProvider((sort: sort, query: _query)));
+    final fresh = tracksAsync.value;
+    void retryTracks() => ref.invalidate(tracksProvider((sort: sort, query: _query)));
     if (fresh != null) _lastLibrary = fresh;
     final library = fresh ?? _lastLibrary;
     final searching = _query.trim().isNotEmpty;
     // Grouping is computed only while that view is open
     final albumsRaw = _view == LibraryView.albums ? ref.watch(albumsProvider) : null;
-    final albums = albumsRaw == null ? null : sortGroups(albumsRaw, _groupSort, (a) => a.tracks);
+    final albums = albumsRaw == null ? null : sortGroups(albumsRaw, groupSort, (a) => a.tracks);
     final artistsRaw = _view == LibraryView.artists ? ref.watch(artistsProvider) : null;
-    final artists = artistsRaw == null ? null : sortGroups(artistsRaw, _groupSort, (a) => a.tracks);
+    final artists = artistsRaw == null ? null : sortGroups(artistsRaw, groupSort, (a) => a.tracks);
     ref.listen(locateTrackProvider, (_, id) {
       if (id == null) return;
       ref.read(locateTrackProvider.notifier).clear();
@@ -190,14 +183,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // When the keyboard is closed with back, focus stays in the field → requestFocus
       // does nothing. In that case we open the keyboard directly.
       if (_searchFocus.hasFocus) {
-        SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+        unawaited(SystemChannels.textInput.invokeMethod<void>('TextInput.show'));
       } else {
         _searchFocus.requestFocus();
       }
     });
 
     // Sorted by title/artist → the A–Z rail; any other order → the draggable thumb
-    final alphaKey = switch (_sort) {
+    final alphaKey = switch (sort) {
       TrackSort.title => (Track t) => t.title,
       TrackSort.artist => (Track t) => t.artist,
       _ => null,
@@ -225,7 +218,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         slivers: [
           SliverList.list(
             children: [
-              const SonarHeader(),
+              const NocturneHeader(),
               _Greeting(stats: stats),
               const SizedBox(height: AppSpacing.lg),
               _SearchField(
@@ -239,7 +232,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 },
               ),
               const SizedBox(height: AppSpacing.lg),
-              ScanStatusCard(libraryEmpty: stats.trackCount == 0),
+              // Only once the count is known: before, every start showed "No songs yet" for a moment
+              ScanStatusCard(libraryEmpty: statsAsync.hasValue && stats.trackCount == 0),
             ],
           ),
 
@@ -259,6 +253,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               emptyIcon: Icons.search_off_rounded,
               emptyTitle: l10n.nothingMatches(_query),
               emptyText: l10n.searchTryHint,
+              status: tracksAsync,
+              onRetry: retryTracks,
             ),
           ] else ...[
             SliverList.list(
@@ -280,8 +276,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     title: l10n.library,
                     icon: Icons.library_music_outlined,
                     action: switch (_view) {
-                      LibraryView.songs => '${_sort.label}  ▾',
-                      LibraryView.albums || LibraryView.artists => '${_groupSort.label}  ▾',
+                      LibraryView.songs => '${sort.label}  ▾',
+                      LibraryView.albums || LibraryView.artists => '${groupSort.label}  ▾',
                     },
                     onAction: _view == LibraryView.songs ? _pickSort : _pickGroupSort,
                   ),
@@ -292,7 +288,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
             switch (_view) {
-              LibraryView.songs => TrackSliverList(key: _libraryKey, tracks: library),
+              LibraryView.songs => TrackSliverList(key: _libraryKey, tracks: library, status: tracksAsync, onRetry: retryTracks),
               LibraryView.albums => AlbumGridSliver(albums: albums ?? const []),
               LibraryView.artists => ArtistListSliver(artists: artists ?? const []),
             },
@@ -530,3 +526,13 @@ class _RecommendedRow extends ConsumerWidget {
     );
   }
 }
+
+/// Order of the Songs list — persisted.
+final _librarySortProvider = NotifierProvider<EnumSetting<TrackSort>, TrackSort>(
+  () => EnumSetting(SettingsKeys.librarySort, TrackSort.values, TrackSort.recentlyAdded),
+);
+
+/// Order of Albums / Artists — persisted.
+final _groupSortProvider = NotifierProvider<EnumSetting<GroupSort>, GroupSort>(
+  () => EnumSetting(SettingsKeys.groupSort, GroupSort.values, GroupSort.name),
+);

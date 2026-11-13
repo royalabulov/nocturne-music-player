@@ -1,12 +1,12 @@
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/datasources/cover_cache.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/mappers/track_mapper.dart';
-import 'package:sonar/data/repositories/history_repository_impl.dart';
-import 'package:sonar/data/repositories/playlist_repository_impl.dart';
-import 'package:sonar/domain/repositories/history_repository.dart';
+import 'package:nocturne/data/datasources/cover_cache.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/mappers/track_mapper.dart';
+import 'package:nocturne/data/repositories/history_repository_impl.dart';
+import 'package:nocturne/data/repositories/playlist_repository_impl.dart';
+import 'package:nocturne/domain/repositories/history_repository.dart';
 
 void main() {
   late AppDatabase db;
@@ -194,7 +194,7 @@ void main() {
     final c = await addTrack('c');
     final pid = await playlists.create('Mix');
     await playlists.addTracks(pid, [a, b]);
-    await playlists.addTracks(pid, [b, c]); // b dublikat
+    await playlists.addTracks(pid, [b, c]); // b is a duplicate
     var titles = (await playlists.watchTracks(pid).first).map((t) => t.title).toList();
     expect(titles, ['a', 'b', 'c']);
 

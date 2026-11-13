@@ -5,41 +5,47 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
-import '../../data/services/library_scanner.dart';
+import '../../domain/entities/scan_progress.dart';
+import '../../domain/repositories/settings_repository.dart';
 import 'permission_gate.dart';
 
 /// Scan state seen by the UI: permission + scanner progress.
-class ScanState {
-  const ScanState({required this.permission, required this.progress});
+class LibraryScanState {
+  const LibraryScanState({required this.permission, required this.progress});
 
   final MediaPermission permission;
   final ScanProgress progress;
 
   bool get isRunning => progress.isRunning;
 
-  ScanState copyWith({MediaPermission? permission, ScanProgress? progress}) =>
-      ScanState(permission: permission ?? this.permission, progress: progress ?? this.progress);
+  LibraryScanState copyWith({MediaPermission? permission, ScanProgress? progress}) =>
+      LibraryScanState(permission: permission ?? this.permission, progress: progress ?? this.progress);
 }
 
-class ScanController extends Notifier<ScanState> {
+class ScanController extends Notifier<LibraryScanState> {
   StreamSubscription<ScanProgress>? _sub;
 
   @override
-  ScanState build() {
+  LibraryScanState build() {
     // Web demo: no scanner/DB, the library is in memory → permission granted, idle
-    if (kIsWeb) return const ScanState(permission: MediaPermission.granted, progress: ScanProgress.idle);
+    if (kIsWeb) return const LibraryScanState(permission: MediaPermission.granted, progress: ScanProgress.idle);
     final scanner = ref.watch(libraryScannerProvider);
-    _sub?.cancel();
+    unawaited(_sub?.cancel());
     _sub = scanner.progress.listen((p) => state = state.copyWith(progress: p));
     ref.onDispose(() {
-      _sub?.cancel();
+      unawaited(_sub?.cancel());
       _debounce?.cancel();
     });
 
     // Check the permission status in the background
-    PermissionGate.check().then((p) => state = state.copyWith(permission: p));
+    // (a failed check counts as "not allowed": the card offers to ask)
+    unawaited(PermissionGate.check()
+        .catchError((Object _) => MediaPermission.denied)
+        .then((p) => state = state.copyWith(permission: p)));
 
-    return ScanState(permission: MediaPermission.denied, progress: scanner.last);
+    // Unknown until the check answers: "denied" showed the "Allow access" card for a moment on
+    // every start
+    return LibraryScanState(permission: MediaPermission.unknown, progress: scanner.last);
   }
 
   /// Ask for permission → scan if granted. Settings "Rescan" and app launch go through here.
@@ -56,8 +62,7 @@ class ScanController extends Notifier<ScanState> {
   /// Doesn't ask if there's no permission — the user starts it from Settings/Home.
   Future<void> autoScanIfEnabled() async {
     if (kIsWeb) return;
-    final repo = ref.read(libraryRepositoryProvider);
-    if (await repo.getSetting('autoScan') == 'false') return;
+    if (await ref.read(settingsRepositoryProvider).getSetting(SettingsKeys.autoScan) == 'false') return;
     final p = await PermissionGate.check();
     state = state.copyWith(permission: p);
     if (p == MediaPermission.granted) await ref.read(libraryScannerProvider).scan();
@@ -66,11 +71,16 @@ class ScanController extends Notifier<ScanState> {
   Timer? _debounce;
   bool _queued = false;
 
+  /// Some call since the last scan asked for one whatever the check says.
+  bool _forced = false;
+
   /// A new song was downloaded while the app is open (MediaStore event) or the user
   /// came back to the app. Downloads fire many events → wait for [delay] of quiet,
   /// then scan once. If a scan is already running, scan once more after it ends.
-  void scheduleAutoScan({Duration delay = const Duration(seconds: 3)}) {
+  /// [onlyIfChanged]: coming back to the app scans only when the phone's files changed.
+  void scheduleAutoScan({Duration delay = const Duration(seconds: 3), bool onlyIfChanged = false}) {
     if (kIsWeb) return;
+    _forced |= !onlyIfChanged;
     _debounce?.cancel();
     _debounce = Timer(delay, () async {
       final scanner = ref.read(libraryScannerProvider);
@@ -80,6 +90,9 @@ class ScanController extends Notifier<ScanState> {
         await scanner.scan(); // wait for the running scan
         _queued = false;
       }
+      final forced = _forced;
+      _forced = false;
+      if (!forced && !await scanner.changedSinceLastScan()) return;
       await autoScanIfEnabled();
     });
   }
@@ -95,4 +108,4 @@ class ScanController extends Notifier<ScanState> {
   Future<void> openSystemSettings() => PermissionGate.openSettings();
 }
 
-final scanControllerProvider = NotifierProvider<ScanController, ScanState>(ScanController.new);
+final scanControllerProvider = NotifierProvider<ScanController, LibraryScanState>(ScanController.new);

@@ -147,6 +147,14 @@ class L10nAz extends L10n {
   }
 
   @override
+  String toastTrackUnreadable(String title) {
+    return '«$title» açılmadı';
+  }
+
+  @override
+  String get toastNoMusicPermission => 'Musiqi fayllarına icazə yoxdur';
+
+  @override
   String get notificationChannel => 'Nocturne oxutma';
 
   @override
@@ -371,6 +379,21 @@ class L10nAz extends L10n {
   String get knockHigh => 'Yüksək';
 
   @override
+  String get knockLogExport => 'Vurma qeydlərini saxla';
+
+  @override
+  String get knockLogExportHint =>
+      'Vurmanın tanınması ilə bağlı qeydlər Download qovluğuna saxlanılır. Bundan başqa telefondan çıxmır';
+
+  @override
+  String get knockLogEmpty => 'Hələ qeyd yoxdur';
+
+  @override
+  String knockLogSaved(String path) {
+    return 'Saxlanıldı → $path';
+  }
+
+  @override
   String get saveBackupDialog => 'Nocturne ehtiyat nüsxəsini saxla';
 
   @override
@@ -411,7 +434,14 @@ class L10nAz extends L10n {
 
   @override
   String get restoreBackupHint =>
-      'Mövcud kitabxanaya əlavə olunur (əvvəlcə mahnıları axtarın)';
+      'Mövcud kitabxanaya əlavə olunur; hələ tapılmayan mahnılar skan onları tapanda əlavə olunur';
+
+  @override
+  String get autoBackup => 'Aylıq backup';
+
+  @override
+  String get autoBackupHint =>
+      'Ayda bir dəfə Download/Nocturne qovluğuna, ən son ikisi saxlanılır. Tətbiq silinəndə də qalır.';
 
   @override
   String get open => 'Aç';
@@ -435,6 +465,13 @@ class L10nAz extends L10n {
 
   @override
   String get copy => 'Kopyala';
+
+  @override
+  String get share => 'Paylaş';
+
+  @override
+  String get shareFailed =>
+      'Paylaşmaq üçün tətbiq tapılmadı. Jurnal kopyalandı.';
 
   @override
   String get clear => 'Təmizlə';
@@ -472,6 +509,14 @@ class L10nAz extends L10n {
   @override
   String get eqUnavailable =>
       'Əvvəlcə hər hansı mahnını oxudun — sistem ekvalayzeri səs başlayandan sonra əlçatan olur.';
+
+  @override
+  String get eqNotSupported =>
+      'Bu telefonda sistem ekvalayzeri yoxdur. Musiqi onsuz çalır.';
+
+  @override
+  String get databaseReset =>
+      'Kitabxana məlumatları zədələnmişdi və kənara qoyuldu. Mahnılar yenidən tapılır; favoritləri və playlist-ləri qaytarmaq üçün Ayarlarda backup-ı bərpa edin.';
 
   @override
   String get bassBoost => 'Bas gücləndirmə';
@@ -921,9 +966,6 @@ class L10nAz extends L10n {
   }
 
   @override
-  String get stopsWhenTrackEnds => 'Bu mahnı bitəndə dayanır';
-
-  @override
   String stopsIn(String time) {
     return '$time sonra dayanır';
   }
@@ -1135,7 +1177,7 @@ class L10nAz extends L10n {
   }
 
   @override
-  String get savedToMusicSonar => 'Music/Nocturne qovluğuna saxlanıldı';
+  String get savedToMusicFolder => 'Music/Nocturne qovluğuna saxlanıldı';
 
   @override
   String skippedCount(int count) {
@@ -1340,7 +1382,7 @@ class L10nAz extends L10n {
 
   @override
   String restoreMissing(int count) {
-    return ' • $count mahnı bu cihazda tapılmadı';
+    return ' • $count mahnı hələ bu cihazda yoxdur: skan onları tapan kimi əlavə olunacaq';
   }
 
   @override
@@ -1520,4 +1562,64 @@ class L10nAz extends L10n {
 
   @override
   String get reminderEveryDay => 'Hər gün';
+
+  @override
+  String get stopsWhenTrackEnds => 'Bu mahnı bitəndə dayanır';
+
+  @override
+  String get search => 'Axtarış';
+
+  @override
+  String get coverHint =>
+      'Örtük. Başqa mahnı üçün sola və ya sağa sürüşdür, sözlər üçün toxun';
+
+  @override
+  String get openArtist => 'İfaçının səhifəsini aç';
+
+  @override
+  String get alphabetRail => 'Hərfə keç';
+
+  @override
+  String get removeFolder => 'Qovluğu sil';
+
+  @override
+  String get removeFolderQ => 'Bu qovluq silinsin?';
+
+  @override
+  String removeFolderWarning(String folder) {
+    return '$folder qovluğundakı mahnılar növbəti axtarışda kitabxanadan çıxacaq. Fayllar telefonda qalır.';
+  }
+
+  @override
+  String get loadFailed => 'Yükləmək alınmadı. Məlumatlarınız yerindədir.';
+
+  @override
+  String get scanFailedHint =>
+      'Musiqini oxuyarkən xəta baş verdi. Yenidən cəhd edin.';
+
+  @override
+  String get lastScanFailed => 'Son axtarış alınmadı. Yenidən cəhd edin.';
+
+  @override
+  String get startupFailedTitle => 'Nocturne başlaya bilmədi';
+
+  @override
+  String get startupFailedBody =>
+      'Telefonun yaddaşı dolu ola bilər. Bir az yer boşaldıb tətbiqi yenidən açın. Məlumatlarınız silinməyib.';
+
+  @override
+  String get shareErrorLog => 'Xəta jurnalını paylaş';
+
+  @override
+  String get closeApp => 'Bağla';
+
+  @override
+  String get licenses => 'Lisenziyalar';
+
+  @override
+  String get licensesHint =>
+      'Şriftlər, ağıllı qruplar modeli və açıq mənbəli kitabxanalar';
+
+  @override
+  String get widgetEmptyHint => 'Oxutmaq üçün mahnı seç';
 }

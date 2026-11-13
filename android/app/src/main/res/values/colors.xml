@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- AppColors.void_ — Flutter ilk kadrı çəkənə qədər eyni fon görünsün -->
-    <color name="sonar_void">#0A0E14</color>
+    <color name="nocturne_void">#0A0E14</color>
     <!-- Adaptive icon fonu (design/icon.png kənar rəngi) -->
     <color name="ic_launcher_background">#1A0A33</color>
+
+    <!-- Home screen widgets: the same tokens as lib/core/theme/app_colors.dart -->
+    <color name="widget_glass">#F50E1F3C</color>        <!-- glassLevel2Solid -->
+    <color name="widget_border">#3360A5FA</color>       <!-- borderLevel2 -->
+    <color name="widget_art_border">#14FFFFFF</color>   <!-- borderArt -->
+    <color name="widget_electric">#3B82F6</color>       <!-- electric -->
+    <color name="widget_electric_deep">#2563EB</color>  <!-- electricDeep -->
+    <color name="widget_cyan">#60A5FA</color>           <!-- cyan -->
+    <color name="widget_text_primary">#F8FAFC</color>   <!-- textPrimary -->
+    <color name="widget_text_secondary">#94A3B8</color> <!-- textSecondary -->
+    <color name="widget_scrub_track">#1E293B</color>    <!-- scrubTrack -->
+    <color name="widget_ink">#14FFFFFF</color>          <!-- inkSplash -->
 </resources>

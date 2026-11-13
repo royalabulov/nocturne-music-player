@@ -2,24 +2,23 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
 import '../../core/constants.dart';
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/crash_log.dart';
-import '../../data/analysis/music_features.dart';
+import '../../domain/analysis/music_features.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/analysis_repository.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../library_scan/scan_controller.dart';
 import 'vibe_classifier.dart';
 import 'vibe_review.dart';
 
 // ───────────────────────── background analysis ─────────────────────────
-
-/// Settings → "Smart groups analysis" (on by default).
-const kSmartAnalysisKey = 'smartAnalysis';
 
 /// Runs unanalyzed songs through the Kotlin AudioAnalyzer one by one.
 /// The heavy work is on a native background thread; only the queue is managed here.
@@ -32,7 +31,7 @@ class SmartAnalysisController extends Notifier<bool> {
     ref.onDispose(() => _stop = true);
     // Scan finished → there may be new songs
     ref.listen(scanControllerProvider.select((s) => s.isRunning), (was, now) {
-      if (was == true && !now) start();
+      if (was == true && !now) unawaited(start());
     });
     return false; // running
   }
@@ -41,7 +40,8 @@ class SmartAnalysisController extends Notifier<bool> {
     if (state) return;
     final source = ref.read(audioAnalyzerProvider);
     if (!source.supported) return;
-    final enabled = await ref.read(libraryRepositoryProvider).getSetting(kSmartAnalysisKey);
+    // Settings → "Smart groups analysis" (on by default)
+    final enabled = await ref.read(settingsRepositoryProvider).getSetting(SettingsKeys.smartAnalysis);
     if (enabled == 'false') return;
 
     final repo = ref.read(analysisRepositoryProvider);
@@ -59,10 +59,14 @@ class SmartAnalysisController extends Notifier<bool> {
             final segments = r.segments;
             final features = await Isolate.run(() => extractMusicFeatures(segments));
             await repo.save(p.trackId, kVibeAnalysisVersion, scores: {...r.scores, ...features}, rmsDb: r.rmsDb);
+          } on MissingPluginException {
+            // The analyzer isn't there (the engine started without it): no song is at fault.
+            // Recording each as failed kept them out of smart groups for good.
+            _stop = true;
           } catch (e) {
             // Corrupt/unreadable file: record it so it doesn't get stuck in the queue
             await repo.save(p.trackId, kVibeAnalysisVersion);
-            CrashLog.add('vibe analysis failed: ${p.path}: $e');
+            CrashLog.add('vibe analysis failed: ${p.path.split('/').last}: $e');
           }
           // Breathing room for UI and playback: the native work is on its own thread, but the channel is on the UI isolate
           await Future<void>.delayed(const Duration(milliseconds: 30));
@@ -76,7 +80,7 @@ class SmartAnalysisController extends Notifier<bool> {
   void stop() => _stop = true;
 
   Future<void> setEnabled(bool on) async {
-    await ref.read(libraryRepositoryProvider).setSetting(kSmartAnalysisKey, '$on');
+    await ref.read(settingsRepositoryProvider).setSetting(SettingsKeys.smartAnalysis, '$on');
     on ? unawaited(start()) : stop();
   }
 }
@@ -173,8 +177,3 @@ SmartGroups buildSmartGroups(List<Track> tracks, Map<int, VibeResult> vibes) {
     ]..sort((a, b) => b.tracks.length.compareTo(a.tracks.length)),
   );
 }
-
-const kVibeReviewRoute = '/home/vibe-review';
-const kVibesRoute = '/home/vibes';
-
-String smartGroupRoute(String key) => '/home/vibe?k=${Uri.encodeQueryComponent(key)}';

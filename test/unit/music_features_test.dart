@@ -2,7 +2,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/data/analysis/music_features.dart';
+import 'package:nocturne/domain/analysis/music_features.dart';
 
 const sr = 16000;
 

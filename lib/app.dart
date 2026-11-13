@@ -3,21 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants.dart';
 import 'core/di/providers.dart';
-import 'core/router/app_router.dart';
+import 'app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/ui/toast.dart';
+import 'domain/repositories/settings_repository.dart';
 import 'l10n/l10n.dart';
 
 /// Language the UI was last built in.
 Locale? _shownLocale;
 
-class SonarApp extends ConsumerWidget {
-  const SonarApp({super.key});
+class NocturneApp extends ConsumerWidget {
+  const NocturneApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Settings → Language; 'system' / null = the phone's language
-    final language = ref.watch(stringSettingProvider(kLanguageKey)).value ?? initialLanguage;
+    final language = ref.watch(stringSettingProvider(SettingsKeys.language)).value ?? initialLanguage;
     return MaterialApp.router(
       title: 'Nocturne',
       debugShowCheckedModeBanner: false,

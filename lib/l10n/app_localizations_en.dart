@@ -149,6 +149,14 @@ class L10nEn extends L10n {
   }
 
   @override
+  String toastTrackUnreadable(String title) {
+    return '\"$title\" couldn’t be played';
+  }
+
+  @override
+  String get toastNoMusicPermission => 'No permission to read music files';
+
+  @override
   String get notificationChannel => 'Nocturne playback';
 
   @override
@@ -370,6 +378,21 @@ class L10nEn extends L10n {
   String get knockHigh => 'High';
 
   @override
+  String get knockLogExport => 'Save knock log';
+
+  @override
+  String get knockLogExportHint =>
+      'Knock detection records, saved to the Download folder. They stay on this phone otherwise';
+
+  @override
+  String get knockLogEmpty => 'Nothing recorded yet';
+
+  @override
+  String knockLogSaved(String path) {
+    return 'Saved → $path';
+  }
+
+  @override
   String get saveBackupDialog => 'Save Nocturne backup';
 
   @override
@@ -410,7 +433,14 @@ class L10nEn extends L10n {
 
   @override
   String get restoreBackupHint =>
-      'Merges into the current library (scan your music first)';
+      'Merges into the current library; songs not found yet are added as scans find them';
+
+  @override
+  String get autoBackup => 'Monthly backup';
+
+  @override
+  String get autoBackupHint =>
+      'Once a month to Download/Nocturne, the two newest are kept. Stays after the app is removed.';
 
   @override
   String get open => 'Open';
@@ -434,6 +464,12 @@ class L10nEn extends L10n {
 
   @override
   String get copy => 'Copy';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get shareFailed => 'No app to share with. The log was copied instead.';
 
   @override
   String get clear => 'Clear';
@@ -471,6 +507,14 @@ class L10nEn extends L10n {
   @override
   String get eqUnavailable =>
       'Play any track first — the system equalizer becomes available once audio is initialised.';
+
+  @override
+  String get eqNotSupported =>
+      'This phone has no system equalizer. Music plays without it.';
+
+  @override
+  String get databaseReset =>
+      'Your library data was damaged and has been set aside. Your songs are being found again; restore a backup in Settings to bring back favorites and playlists.';
 
   @override
   String get bassBoost => 'Bass Boost';
@@ -924,9 +968,6 @@ class L10nEn extends L10n {
   }
 
   @override
-  String get stopsWhenTrackEnds => 'Stops when this track ends';
-
-  @override
   String stopsIn(String time) {
     return 'Stops in $time';
   }
@@ -1141,7 +1182,7 @@ class L10nEn extends L10n {
   }
 
   @override
-  String get savedToMusicSonar => 'Saved to Music/Nocturne';
+  String get savedToMusicFolder => 'Saved to Music/Nocturne';
 
   @override
   String skippedCount(int count) {
@@ -1345,7 +1386,7 @@ class L10nEn extends L10n {
 
   @override
   String restoreMissing(int count) {
-    return ' • $count tracks not found on this device';
+    return ' • $count tracks not on this device yet: they\'re added as soon as a scan finds them';
   }
 
   @override
@@ -1525,4 +1566,64 @@ class L10nEn extends L10n {
 
   @override
   String get reminderEveryDay => 'Every day';
+
+  @override
+  String get stopsWhenTrackEnds => 'Stops when this track ends';
+
+  @override
+  String get search => 'Search';
+
+  @override
+  String get coverHint =>
+      'Cover. Swipe left or right for another song, tap for lyrics';
+
+  @override
+  String get openArtist => 'Open the artist';
+
+  @override
+  String get alphabetRail => 'Jump to letter';
+
+  @override
+  String get removeFolder => 'Remove folder';
+
+  @override
+  String get removeFolderQ => 'Remove this folder?';
+
+  @override
+  String removeFolderWarning(String folder) {
+    return 'Songs in $folder leave the library at the next scan. The files stay on the phone.';
+  }
+
+  @override
+  String get loadFailed => 'Couldn’t load this. Your data is still there.';
+
+  @override
+  String get scanFailedHint =>
+      'Something went wrong while reading your music. Try again.';
+
+  @override
+  String get lastScanFailed => 'The last scan failed. Try again.';
+
+  @override
+  String get startupFailedTitle => 'Nocturne couldn’t start';
+
+  @override
+  String get startupFailedBody =>
+      'Your phone’s storage may be full. Free up some space and open the app again. Your data has not been deleted.';
+
+  @override
+  String get shareErrorLog => 'Share error log';
+
+  @override
+  String get closeApp => 'Close';
+
+  @override
+  String get licenses => 'Licenses';
+
+  @override
+  String get licensesHint =>
+      'Fonts, the smart groups model and open-source libraries';
+
+  @override
+  String get widgetEmptyHint => 'Pick a song to play';
 }

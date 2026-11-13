@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Behind the cover: what the picker's preview shows. A song without a cover gets
+     WidgetRenderer's own placeholder (AlbumArt's: the song's hue → void, plus the note). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <gradient
+                android:angle="315"
+                android:startColor="#FF3A2E6B"
+                android:endColor="@color/nocturne_void" />
+            <corners android:radius="@dimen/widget_inner_radius" />
+        </shape>
+    </item>
+    <item
+        android:width="40dp"
+        android:height="40dp"
+        android:gravity="center"
+        android:drawable="@drawable/ic_widget_cover_dim" />
+</layer-list>

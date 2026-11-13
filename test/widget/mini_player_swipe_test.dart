@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/features/shell/mini_player.dart';
+import 'package:nocturne/features/shell/mini_player.dart';
 
 /// Mini player: swipe sideways closes the player, a short drag springs back,
 /// swipe up opens Now Playing.

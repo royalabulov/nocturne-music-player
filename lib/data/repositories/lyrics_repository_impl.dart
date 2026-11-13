@@ -1,3 +1,4 @@
+import '../../domain/entities/track_keys.dart';
 import 'package:drift/drift.dart';
 
 import '../../domain/entities/lyrics.dart';
@@ -82,13 +83,6 @@ class LyricsRepositoryImpl implements LyricsRepository {
         instrumental: r.instrumental,
       );
 
-  /// "Paster x OD", "Artz × Bugy", "OGB feat. Xpert" → "Paster", "Artz", "OGB".
-  /// "&" and "," stay ("Simon & Garfunkel", "Tyler, The Creator").
   /// LRCLIB lists the main artist; the full string rarely matches.
-  static String firstArtist(String artist) {
-    final first = artist.split(_join).first.trim();
-    return first.isEmpty ? artist.trim() : first;
-  }
-
-  static final _join = RegExp(r'\s*×\s*|\s+[xX]\s+|\s+(?:feat|ft)\.?\s+', caseSensitive: false);
+  static String firstArtist(String artist) => artistsOf(artist).first;
 }

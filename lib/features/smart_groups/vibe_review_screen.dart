@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/audio/sonar_audio_handler.dart';
+import '../../core/audio/nocturne_audio_handler.dart';
 import '../../core/di/providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -11,12 +13,14 @@ import '../../domain/entities/track.dart';
 import '../../domain/repositories/analysis_repository.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../shared/album_art.dart';
-import '../player/player_providers.dart';
+import '../../core/audio/player_providers.dart';
 import 'smart_groups.dart';
 import 'vibe_classifier.dart';
 import 'vibe_review.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
+import '../../shared/screen_back_button.dart';
+import '../../shared/tap_target.dart';
 
 const _sampleSize = 40;
 const _all = (sort: TrackSort.recentlyAdded, query: '');
@@ -24,29 +28,78 @@ const _all = (sort: TrackSort.recentlyAdded, query: '');
 /// "Check smart groups": random songs are shown one by one, the user
 /// confirms or corrects the AI's guess. Answers both correct the groups
 /// and are stored to compute the accuracy percentage.
-class VibeReviewScreen extends ConsumerStatefulWidget {
+class VibeReviewScreen extends ConsumerWidget {
   const VibeReviewScreen({super.key});
 
   @override
-  ConsumerState<VibeReviewScreen> createState() => _VibeReviewScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final data = ref.watch(vibeDataProvider).value;
+    final predicted = ref.watch(vibePredictionsProvider).value;
+    final labels = ref.watch(vibeLabelsProvider).value;
+    final tracks = ref.watch(tracksProvider(_all)).value;
+
+    return Scaffold(
+      backgroundColor: AppColors.void_,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const ScreenBackButton(),
+                Expanded(child: Text(l10n.checkSmartGroups, style: AppTypography.headlineMd)),
+              ],
+            ),
+            Expanded(
+              child: data == null || predicted == null || labels == null || tracks == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : _ReviewSession(data: data, predicted: predicted, labels: labels, tracks: tracks),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _VibeReviewScreenState extends ConsumerState<VibeReviewScreen> {
-  late final SonarAudioHandler _handler = ref.read(audioHandlerProvider);
-  List<int>? _queue;
+/// Starts once the data is there, so the sample is picked once and not on every rebuild.
+class _ReviewSession extends ConsumerStatefulWidget {
+  const _ReviewSession({required this.data, required this.predicted, required this.labels, required this.tracks});
+  final List<TrackVibeData> data;
+  final Map<int, VibeResult> predicted;
+  final List<VibeLabel> labels;
+  final List<Track> tracks;
+
+  @override
+  ConsumerState<_ReviewSession> createState() => _ReviewSessionState();
+}
+
+class _ReviewSessionState extends ConsumerState<_ReviewSession> {
+  late final NocturneAudioHandler _handler = ref.read(audioHandlerProvider);
+  late List<int> _queue;
   int _i = 0;
   int _answered = 0;
   String? _mood, _genre; // current choice (null = the guess is still shown)
   bool _clipPlaying = false;
 
   @override
+  void initState() {
+    super.initState();
+    _newSession();
+  }
+
+  @override
   void dispose() {
-    if (_clipPlaying) _handler.pause();
+    if (_clipPlaying) unawaited(_handler.pause());
     super.dispose();
   }
 
-  void _newSession(List<TrackVibeData> data, Map<int, VibeResult> predicted, List<VibeLabel> labels) {
-    _queue = pickReviewSample(data, predicted, {for (final l in labels) l.trackId}, count: _sampleSize);
+  void _newSession() {
+    _queue = pickReviewSample(
+      widget.data,
+      widget.predicted,
+      {for (final l in widget.labels) l.trackId},
+      count: _sampleSize,
+    );
     _i = 0;
     _answered = 0;
     _resetChoice();
@@ -94,75 +147,44 @@ class _VibeReviewScreenState extends ConsumerState<VibeReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final data = ref.watch(vibeDataProvider).value;
-    // Read only the first time, so the guesses stay fixed during the session
-    final predicted = ref.watch(vibePredictionsProvider).value;
-    final labels = ref.watch(vibeLabelsProvider).value;
-    final tracks = ref.watch(tracksProvider(_all)).value;
-
-    Widget body;
-    if (data == null || predicted == null || labels == null || tracks == null) {
-      body = const Center(child: CircularProgressIndicator());
-    } else {
-      if (_queue == null) _newSession(data, predicted, labels);
-      final byId = {for (final t in tracks) t.id: t};
-      final queue = _queue!.where(byId.containsKey).toList();
-      if (queue.isEmpty && labels.isEmpty) {
-        body = _Message(
-          icon: Icons.hourglass_top_rounded,
-          title: l10n.notEnoughAnalyzed,
-          text: l10n.notEnoughAnalyzedHint,
-        );
-      } else if (_i >= queue.length) {
-        body = _Results(
-          report: accuracyOf(labels),
-          current: currentAccuracy(labels, predicted),
-          answeredNow: _answered,
-          onMore: () => setState(() => _newSession(data, predicted, labels)),
-        );
-      } else {
-        final t = byId[queue[_i]]!;
-        final p = predicted[t.id];
-        body = _ReviewCard(
-          // New song = new scroll position (start from the top)
-          key: ValueKey(t.id),
-          track: t,
-          position: _i + 1,
-          total: queue.length,
-          predictedMood: moodKey(p?.mood),
-          predictedGenre: genreKey(p?.genre),
-          mood: _mood ?? moodKey(p?.mood),
-          genre: _genre ?? genreKey(p?.genre),
-          clipPlaying: _clipPlaying,
-          report: labels.isEmpty ? null : accuracyOf(labels),
-          onMood: (v) => setState(() => _mood = v),
-          onGenre: (v) => setState(() => _genre = v),
-          onPlay: () => _playClip(t),
-          onSave: () => _answer(t.id, p, skip: false),
-          onSkip: () => _answer(t.id, p, skip: true),
-        );
-      }
+    final labels = widget.labels;
+    final predicted = widget.predicted;
+    final byId = {for (final t in widget.tracks) t.id: t};
+    final queue = _queue.where(byId.containsKey).toList();
+    if (queue.isEmpty && labels.isEmpty) {
+      return _Message(
+        icon: Icons.hourglass_top_rounded,
+        title: l10n.notEnoughAnalyzed,
+        text: l10n.notEnoughAnalyzedHint,
+      );
     }
-
-    return Scaffold(
-      backgroundColor: AppColors.void_,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  color: AppColors.textPrimary,
-                ),
-                Expanded(child: Text(l10n.checkSmartGroups, style: AppTypography.headlineMd)),
-              ],
-            ),
-            Expanded(child: body),
-          ],
-        ),
-      ),
+    if (_i >= queue.length) {
+      return _Results(
+        report: accuracyOf(labels),
+        current: currentAccuracy(labels, predicted),
+        answeredNow: _answered,
+        onMore: () => setState(_newSession),
+      );
+    }
+    final t = byId[queue[_i]]!;
+    final p = predicted[t.id];
+    return _ReviewCard(
+      // New song = new scroll position (start from the top)
+      key: ValueKey(t.id),
+      track: t,
+      position: _i + 1,
+      total: queue.length,
+      predictedMood: moodKey(p?.mood),
+      predictedGenre: genreKey(p?.genre),
+      mood: _mood ?? moodKey(p?.mood),
+      genre: _genre ?? genreKey(p?.genre),
+      clipPlaying: _clipPlaying,
+      report: labels.isEmpty ? null : accuracyOf(labels),
+      onMood: (v) => setState(() => _mood = v),
+      onGenre: (v) => setState(() => _genre = v),
+      onPlay: () => _playClip(t),
+      onSave: () => _answer(t.id, p, skip: false),
+      onSkip: () => _answer(t.id, p, skip: true),
     );
   }
 }
@@ -253,27 +275,25 @@ class _ReviewCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         Text(l10n.whatMood, style: AppTypography.titleSm),
-        const SizedBox(height: AppSpacing.xs),
         Wrap(
           spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
+          runSpacing: _chipRunSpacing,
           children: [
             for (final k in [...Mood.values.map((m) => m.name), kNone])
               _Chip(label: moodTitle(k), selected: mood == k, onTap: () => onMood(k)),
           ],
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.lg - 8),
         Text(l10n.andGenre, style: AppTypography.titleSm),
-        const SizedBox(height: AppSpacing.xs),
         Wrap(
           spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
+          runSpacing: _chipRunSpacing,
           children: [
             for (final k in [...Genre.values.map((g) => g.name), kNone])
               _Chip(label: genreTitle(k), selected: genre == k, onTap: () => onGenre(k)),
           ],
         ),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.xl - 8),
         // Too narrow side by side → stacked, the main button full width
         FilledButton.icon(
           onPressed: onSave,
@@ -341,7 +361,7 @@ class _Results extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         FilledButton.icon(
           onPressed: onMore,
-          style: FilledButton.styleFrom(backgroundColor: AppColors.electric, foregroundColor: Colors.white),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.accentFill, foregroundColor: Colors.white),
           icon: const Icon(Icons.refresh_rounded, size: 18),
           label: Text(l10n.checkMoreSongs),
         ),
@@ -405,6 +425,10 @@ class _Errors extends StatelessWidget {
   }
 }
 
+/// Review chips are 32 px high in 48 px touch areas: the rows overlap those areas by 8 px so
+/// the chips stay 8 px apart, as before.
+const _chipRunSpacing = AppSpacing.xs - (kMinTapTarget - 32);
+
 class _Chip extends StatelessWidget {
   const _Chip({required this.label, required this.selected, required this.onTap, this.icon});
   final String label;
@@ -414,14 +438,18 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.electric : AppColors.surfaceContainer,
-      shape: StadiumBorder(side: BorderSide(color: selected ? AppColors.electric : AppColors.borderLevel1)),
+    return TapTarget(
+      label: label,
+      selected: selected,
+      onTap: onTap,
+      child: Material(
+      color: selected ? AppColors.accentFill : AppColors.surfaceContainer,
+      shape: StadiumBorder(side: BorderSide(color: selected ? AppColors.accentFill : AppColors.borderLevel1)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        splashColor: const Color(0x14FFFFFF),
-        highlightColor: const Color(0x0AFFFFFF),
+        splashColor: AppColors.inkSplash,
+        highlightColor: AppColors.inkHighlight,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
@@ -433,6 +461,7 @@ class _Chip extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

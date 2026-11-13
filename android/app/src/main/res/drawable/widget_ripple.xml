@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Touch feedback of the widget's icon buttons: AppColors.inkSplash, no mask = round -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="@color/widget_ink" />

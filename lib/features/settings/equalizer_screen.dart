@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,9 +10,11 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass.dart';
 import '../../shared/codec_chip.dart';
-import '../player/player_providers.dart';
+import '../../core/audio/player_providers.dart';
 import 'settings_controller.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/screen_back_button.dart';
+import '../../shared/tap_target.dart';
 
 /// System EQ (Android Equalizer). The number of bands depends on the device (usually 5).
 class EqualizerScreen extends ConsumerStatefulWidget {
@@ -23,12 +27,11 @@ class EqualizerScreen extends ConsumerStatefulWidget {
 class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
   List<EqBand> _bands = const [];
   List<double> _gains = const [];
-  int? _dragging;
 
   @override
   void initState() {
     super.initState();
-    _refresh();
+    unawaited(_refresh());
   }
 
   Future<void> _refresh() async {
@@ -60,11 +63,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
           children: [
             Row(
               children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  color: AppColors.textPrimary,
-                ),
+                const ScreenBackButton(),
                 Expanded(child: Text(l10n.equalizer, style: AppTypography.headlineLg)),
                 Padding(
                   padding: const EdgeInsets.only(right: AppSpacing.md),
@@ -78,19 +77,23 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                 children: [
                   Icon(_outputIcon(output), size: 18, color: AppColors.cyan),
                   const SizedBox(width: 6),
-                  Text(output.label, style: AppTypography.labelMd),
+                  // Flexible: at a large font on a narrow phone the line didn't fit
+                  Flexible(child: Text(output.label, style: AppTypography.labelMd, maxLines: 1, overflow: TextOverflow.ellipsis)),
                   const SizedBox(width: 8),
                   if (s.autoPreset) const CodecChip('AUTO'),
                   const Spacer(),
-                  Text(preset.label, style: AppTypography.labelMd.copyWith(color: AppColors.cyan)),
+                  Flexible(
+                    child: Text(preset.label,
+                        style: AppTypography.labelMd.copyWith(color: AppColors.cyan), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md - 4),
 
-            // Preset chips
+            // Preset chips: 40 px, with 48 px touch areas (4 px of the gaps around)
             SizedBox(
-              height: 40,
+              height: kMinTapTarget,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
@@ -99,14 +102,17 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                 itemBuilder: (_, i) {
                   final p = EqPreset.all[i];
                   final active = p.name == preset.name;
-                  return GestureDetector(
+                  return TapTarget(
+                    label: p.label,
+                    selected: active,
                     onTap: () => ctrl.setPreset(p.name),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
+                      height: 40,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: active ? AppColors.electric : AppColors.surfaceHigh,
+                        color: active ? AppColors.accentFill : AppColors.surfaceHigh,
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                         boxShadow: active ? Glow.accent : null,
                       ),
@@ -118,7 +124,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                 },
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.xl - 4),
 
             // Bands
             Padding(
@@ -129,7 +135,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                     ? Padding(
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         child: Text(
-                          l10n.eqUnavailable,
+                          ref.read(audioHandlerProvider).effects.supported ? l10n.eqUnavailable : l10n.eqNotSupported,
                           textAlign: TextAlign.center,
                           style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
                         ),
@@ -145,14 +151,8 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                                   band: _bands[i],
                                   value: i < _gains.length ? _gains[i] : 0,
                                   enabled: s.eqEnabled,
-                                  onChanged: (v) => setState(() {
-                                    _dragging = i;
-                                    _gains = [..._gains]..[i] = v;
-                                  }),
-                                  onChangeEnd: (v) {
-                                    _dragging = null;
-                                    ctrl.setCustomGain(i, v, _bands.length);
-                                  },
+                                  onChanged: (v) => setState(() => _gains = [..._gains]..[i] = v),
+                                  onChangeEnd: (v) => unawaited(ctrl.setCustomGain(i, v, _bands.length)),
                                 )),
                             ],
                           ),
@@ -180,7 +180,7 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                     ),
                     Slider(
                       value: s.bassBoost,
-                      onChanged: s.eqEnabled ? (v) => ctrl.setBassBoost(v) : null,
+                      onChanged: s.eqEnabled ? ctrl.setBassBoost : null,
                     ),
                   ],
                 ),
@@ -196,7 +196,6 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                 style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
               ),
             ),
-            if (_dragging != null) const SizedBox.shrink(),
           ],
         ),
       ),

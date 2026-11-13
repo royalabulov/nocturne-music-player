@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/domain/entities/audio_format.dart';
-import 'package:sonar/domain/entities/track.dart';
-import 'package:sonar/shared/track_tile.dart';
+import 'package:nocturne/domain/entities/audio_format.dart';
+import 'package:nocturne/domain/entities/track.dart';
+import 'package:nocturne/shared/track_tile.dart';
 
 Track t(String title, String artist, String album) => Track(
       id: 1,

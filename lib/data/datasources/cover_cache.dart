@@ -5,6 +5,9 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+/// A cover's file name in the cache. Same picture, same name: an album's songs share one file.
+String coverHashOf(Uint8List bytes) => md5.convert(bytes).toString();
+
 /// Keeps cover art in the app's own folder: `<appSupport>/covers/<md5>`
 /// 12 songs of the same album carry the same image → deduplicated by md5.
 class CoverCache {
@@ -19,11 +22,29 @@ class CoverCache {
   }
 
   /// Writes the bytes, returns the hash. Doesn't write again if it already exists.
-  Future<String> store(Uint8List bytes) async {
-    final hash = md5.convert(bytes).toString();
+  /// [hash]: already worked out off the UI isolate ([TagInfo.coverHash]).
+  Future<String> store(Uint8List bytes, {String? hash}) async {
+    hash ??= coverHashOf(bytes);
     final f = File(p.join((await warmUp()).path, hash));
     if (!await f.exists()) await f.writeAsBytes(bytes, flush: true);
     return hash;
+  }
+
+  /// Deletes the covers no song uses any more (re-tagged, replaced, deleted songs): the folder
+  /// only ever grew. [keep]: every cover name the library still points at, missing songs too.
+  /// Returns how many went.
+  Future<int> prune(Set<String> keep) async {
+    var removed = 0;
+    await for (final e in (await warmUp()).list(followLinks: false)) {
+      if (e is! File || keep.contains(p.basename(e.path))) continue;
+      try {
+        await e.delete();
+        removed++;
+      } on FileSystemException {
+        // in use or already gone: next time
+      }
+    }
+    return removed;
   }
 
   /// Synchronous, for Image.file in the UI. [warmUp] is called at app start.

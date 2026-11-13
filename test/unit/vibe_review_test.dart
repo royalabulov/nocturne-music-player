@@ -3,14 +3,14 @@ import 'dart:math';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/core/demo/demo_library.dart';
-import 'package:sonar/data/db/app_database.dart';
-import 'package:sonar/data/repositories/analysis_repository_impl.dart';
-import 'package:sonar/data/services/backup_service.dart';
-import 'package:sonar/domain/repositories/analysis_repository.dart';
-import 'package:sonar/features/smart_groups/vibe_classifier.dart';
-import 'package:sonar/features/smart_groups/vibe_export.dart';
-import 'package:sonar/features/smart_groups/vibe_review.dart';
+import 'package:nocturne/demo/demo_library.dart';
+import 'package:nocturne/data/db/app_database.dart';
+import 'package:nocturne/data/repositories/analysis_repository_impl.dart';
+import 'package:nocturne/data/services/backup_service.dart';
+import 'package:nocturne/domain/repositories/analysis_repository.dart';
+import 'package:nocturne/features/smart_groups/vibe_classifier.dart';
+import 'package:nocturne/features/smart_groups/vibe_export.dart';
+import 'package:nocturne/features/smart_groups/vibe_review.dart';
 
 VibeLabel label(int id, String mood, String genre, String pMood, String pGenre) => VibeLabel(
       trackId: id,
@@ -59,9 +59,9 @@ void main() {
     final data = [
       for (var i = 0; i < 30; i++) TrackVibeData(trackId: i, scores: scores), // all "calm"
       const TrackVibeData(trackId: 100, scores: scores), // sad
-      const TrackVibeData(trackId: 101, scores: scores), // qrupsuz
+      const TrackVibeData(trackId: 101, scores: scores), // no group
       const TrackVibeData(trackId: 102), // not analyzed
-      const TrackVibeData(trackId: 103, scores: {'Speech': .9, 'Music': .01}), // podkast
+      const TrackVibeData(trackId: 103, scores: {'Speech': .9, 'Music': .01}), // podcast
     ];
     final predicted = {
       for (var i = 0; i < 30; i++) i: const VibeResult(mood: Mood.calm),
@@ -89,6 +89,49 @@ void main() {
     expect(lines[1], contains(',-12.35,none,hipHop,sad,hipHop,none,hipHop,0.2,0.01'));
   });
 
+  group('CSV export cannot carry a spreadsheet formula', () {
+    // A song's tags are written by whoever made the file, and the CSV is opened in Excel
+    String csvFor(String genreTag) {
+      final t = DemoLibrary.tracks().first;
+      final csv = buildVibeCsv(
+        tracks: [t],
+        data: [TrackVibeData(trackId: t.id, genreTag: genreTag, rmsDb: -12.345)],
+        predicted: const {},
+        labels: const [],
+      );
+      return csv.split('\r\n')[1];
+    }
+
+    for (final formula in [
+      '=1+1',
+      '+1+1',
+      '-1+1',
+      '@SUM(A1)',
+      '=cmd|\' /C calc\'!A0',
+      '\t=1+1',
+    ]) {
+      test('neutralized: ${formula.trim()}', () {
+        final row = csvFor(formula);
+        expect(row, contains("'$formula"));
+      });
+    }
+
+    test('a formula with quotes stays one quoted, neutralized cell', () {
+      expect(csvFor('=HYPERLINK("http://x","y")'), contains('"\'=HYPERLINK(""http://x"",""y"")"'));
+    });
+
+    test('real numbers stay numbers', () {
+      final row = csvFor('Rock');
+      expect(row, contains(',-12.35,'));
+      expect(row, isNot(contains("'-12.35")));
+      expect(csvFor('-5'), isNot(contains("'-5")));
+    });
+
+    test('ordinary text is untouched', () {
+      expect(csvFor('Hip-Hop'), contains(',Hip-Hop,'));
+    });
+  });
+
   group('labels in DB', () {
     Future<int> addTrack(AppDatabase db, String name) => db.into(db.tracks).insert(TracksCompanion.insert(
           path: '/music/$name.mp3',
@@ -102,7 +145,7 @@ void main() {
           dateModified: 1,
         ));
 
-    test('save / update / delete', () async {
+    test('save / update', () async {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
       final repo = AnalysisRepositoryImpl(db);
@@ -112,8 +155,6 @@ void main() {
       final ls = await repo.watchLabels().first;
       expect(ls.single.mood, 'happy');
       expect(ls.single.moodCorrect, false);
-      await repo.deleteLabel(a);
-      expect(await repo.watchLabels().first, isEmpty);
     });
 
     test('answers survive backup → fresh install → restore', () async {

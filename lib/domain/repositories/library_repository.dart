@@ -1,6 +1,4 @@
-import '../../core/constants.dart';
 import '../entities/track.dart';
-import '../../l10n/l10n.dart';
 
 /// Library statistics for the Home greeting.
 class LibraryStats {
@@ -8,8 +6,6 @@ class LibraryStats {
     required this.trackCount,
     required this.totalDuration,
     required this.losslessCount,
-    required this.maxSampleRateHz,
-    required this.maxBitDepth,
     this.lastScanAt,
   });
 
@@ -17,15 +13,11 @@ class LibraryStats {
     trackCount: 0,
     totalDuration: Duration.zero,
     losslessCount: 0,
-    maxSampleRateHz: 0,
-    maxBitDepth: 0,
   );
 
   final int trackCount;
   final Duration totalDuration;
   final int losslessCount;
-  final int maxSampleRateHz;
-  final int maxBitDepth;
   final DateTime? lastScanAt;
 
   // Value equality: screens don't rebuild when the stream repeats the same result.
@@ -35,13 +27,10 @@ class LibraryStats {
       other.trackCount == trackCount &&
       other.totalDuration == totalDuration &&
       other.losslessCount == losslessCount &&
-      other.maxSampleRateHz == maxSampleRateHz &&
-      other.maxBitDepth == maxBitDepth &&
       other.lastScanAt == lastScanAt;
 
   @override
-  int get hashCode =>
-      Object.hash(trackCount, totalDuration, losslessCount, maxSampleRateHz, maxBitDepth, lastScanAt);
+  int get hashCode => Object.hash(trackCount, totalDuration, losslessCount, lastScanAt);
 }
 
 enum TrackSort {
@@ -50,16 +39,7 @@ enum TrackSort {
   artist,
   album,
   longest,
-  shortest;
-
-  String get label => switch (this) {
-        recentlyAdded => l10n.sortRecentlyAdded,
-        title => l10n.sortTitle,
-        artist => l10n.sortArtist,
-        album => l10n.sortAlbum,
-        longest => l10n.sortLongest,
-        shortest => l10n.sortShortest,
-      };
+  shortest,
 }
 
 /// Which files show up in the library: size and length range
@@ -67,7 +47,8 @@ enum TrackSort {
 /// this filter is applied only in queries → changing it needs no rescan.
 class TrackFilter {
   const TrackFilter({
-    this.minBytes = kMinTrackBytes,
+    // Keeps voice notes, notification sounds and half-downloaded files out
+    this.minBytes = 100 * 1024,
     this.maxBytes,
     this.minMs = 40000,
     this.maxMs,
@@ -79,15 +60,6 @@ class TrackFilter {
   final int? maxBytes, maxMs;
 
   static const defaults = TrackFilter();
-
-  /// SQL condition for `tracks t` (custom selects).
-  String get sql => [
-        't.is_missing = 0',
-        't.file_size >= $minBytes',
-        if (maxBytes != null) 't.file_size <= $maxBytes',
-        't.duration_ms >= $minMs',
-        if (maxMs != null) 't.duration_ms <= $maxMs',
-      ].join(' AND ');
 
   @override
   bool operator ==(Object other) =>
@@ -112,8 +84,6 @@ abstract interface class LibraryRepository {
   /// Tracks that aren't missing. Sort + LIKE search (title/artist/album).
   Stream<List<Track>> watchTracks({TrackSort sort = TrackSort.recentlyAdded, String query = ''});
 
-  Stream<List<Track>> watchRecentlyAdded({int limit = 10});
-
   Stream<LibraryStats> watchStats();
 
   Stream<List<Track>> watchFavorites();
@@ -124,6 +94,10 @@ abstract interface class LibraryRepository {
   Future<void> setArtist(int trackId, String artist);
 
   Future<Track?> getTrack(int id);
+
+  /// The songs among [ids] that are still in the library (not missing), in no set order.
+  /// For the stored play queue, which may hold thousands.
+  Future<List<Track>> getTracks(List<int> ids);
 
   /// By file path (Open with Nocturne: is the file already in the library?).
   Future<Track?> getTrackByPath(String path);
@@ -151,9 +125,4 @@ abstract interface class LibraryRepository {
   Future<void> addScanFolder(String path);
   Future<void> removeScanFolder(int id);
   Future<void> setScanFolderEnabled(int id, bool enabled);
-
-  /// scan_state key/value (lastScanAt, autoScan ...)
-  Future<String?> getSetting(String key);
-  Future<void> setSetting(String key, String value);
-  Stream<String?> watchSetting(String key);
 }

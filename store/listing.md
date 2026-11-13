@@ -151,8 +151,11 @@ Play-in tərifləri vaxtaşırı dəyişir — göndərməzdən əvvəl Play Con
   - Required or optional: **Optional** (Onlayn rejim və Ayarlardakı seçim).
   - Purpose: **App functionality**.
 - Is all user data encrypted in transit? **Yes** (HTTPS).
-- Do you provide a way for users to request that their data is deleted? **No** — developer heç bir data saxlamır; telefondakı data tətbiq silinəndə silinir.
+- Do you provide a way for users to request that their data is deleted? **No** — developer heç bir data saxlamır; telefondakı data tətbiq silinəndə silinir (aylıq backup faylından başqa, onu istifadəçi özü silir).
 - Online rejimdəki boş internet yoxlaması istifadəçi məlumatı daşımır.
+- "Vuraraq mahnı dəyiş"in sensor göstəriciləri telefonda qalır, ona görə "collected" sayılmır. İstifadəçi qeydləri Download-a ixrac edəndə də fayl telefonda qalır.
+- **Aylıq avtomatik backup** (`Download/Nocturne`, standart olaraq açıq, ən son 2 fayl): bəyənilənlər, pleylistlər, tarixçə, əhval/janr düzəlişləri. Fayl telefondan çıxmır, ona görə "collected" sayılmır, amma tətbiq silinəndən sonra qalır — məxfilik siyasətinin "Backups" bölməsində yazılıb.
+- **Xəta jurnalının paylaşılması** (Ayarlar → Xəta jurnalı → Paylaş): istifadəçi özü seçdiyi tətbiqlə göndərir (e-poçt, messencer); tətbiq heç yerə avtomatik göndərmir, ona görə "collected" sayılmır.
 
 ### Government apps / Financial features / Health / News
 - Hamısı: **No / Not applicable**.
@@ -184,7 +187,36 @@ Play-in tərifləri vaxtaşırı dəyişir — göndərməzdən əvvəl Play Con
 5. **Play App Signing**: "Let Google create and manage my app signing key" seçin.
    `sonar-release.jks` yalnız *upload key* olacaq; istifadəçilərə gedən tətbiqi Google-un açarı imzalayır,
    sertifikatda adınız görünmür. Upload key-i itirsəniz, Play Console-dan yenisini istəmək olur.
+   - **"Use my own key / Export and upload a key" seçməyin.** `sonar-release.jks`-in sertifikatında
+     `O=Royal` yazılıb; öz açarınızı yükləsəniz, Play-dən endirilən hər APK-da bu ad görünəcək.
 6. **Formlar**: yuxarıdakı 3-cü bölmənin cavabları.
-7. **Qapalı test (məcburi)**: Testing → Closed testing → `app-release.aab` yükləyin →
+7. **Qapalı test (məcburi)**: Testing → Closed testing → **təzə yığılmış** AAB yükləyin →
    **ən azı 12 testçi** e-poçtu əlavə edin → onlar linkdən qoşulub tətbiqi **14 gün** saxlamalıdırlar.
+   - `build/` qovluğunda qalan köhnə AAB-ni yükləməyin. Hər yükləmədən dərhal əvvəl:
+     ```
+     flutter build appbundle --release
+     ```
+     Fayl: `build/app/outputs/bundle/release/app-release.aab` (tarixinə baxın — bu günün olmalıdır).
+   - Hər yeni yükləmədə `pubspec.yaml`-dakı `version`-un `+` sonrakı rəqəmini (versionCode) artırın.
 8. 14 gündən sonra **Production access** üçün müraciət (bir neçə sualdan ibarət sorğu) → təsdiqdən sonra Production-a buraxılış.
+
+## 5. Öz telefonunuzu Play versiyasına keçirmək
+
+Telefondakı Nocturne `adb` ilə quraşdırılıb: versionCode `2046` (split-per-abi arm64 üçün 2000 əlavə edir)
+və `sonar-release.jks` ilə imzalanıb. Play versiyası Google-un açarı ilə imzalanır və versionCode-u
+`pubspec.yaml`-dakı rəqəmdir. İmza fərqli olduğu üçün Play onu köhnənin üstünə **quraşdıra bilməz** —
+köhnəni silmək lazımdır. Data itməsin deyə bu ardıcıllıqla:
+
+1. Nocturne → Ayarlar → **Backup** → faylı telefonda bir yerə saxlayın (və ya `Download/Nocturne`-dakı ən son aylıq faylı yoxlayın).
+2. Faylı kompüterə də köçürün (ehtiyat üçün).
+3. Nocturne-u **özünüz** silin (Ayarlar → Tətbiqlər).
+4. Play-dən (qapalı test linki ilə) quraşdırın, mahnıları skan etsin.
+5. Ayarlar → **Bərpa et** → saxladığınız faylı seçin.
+
+Backup ayarları (ekvalayzer və digər audio ayarları, skan qovluqları, sıralamalar, dil) və
+ifaçı adlarına etdiyiniz düzəlişləri də aparır. Düşmür, əl ilə yenidən açılır: Onlayn rejim
+(backup faylı şəbəkəni aça bilməsin deyə) və unudulmuş sevimlilər xatırlatması (icazəni bu telefonda
+yenidən istəyir). Mahnı sözləri və əhval/janr analizi özü yenidən yaranır.
+
+Bu addımdan sonra telefona `adb install -r` ilə öz yığdığınız APK-nı da quraşdıra bilməyəcəksiniz
+(imza fərqlidir). Test üçün Play-in **Internal testing** trekindən istifadə edin.

@@ -6,7 +6,7 @@ export 'app_localizations.dart';
 
 /// UI text in the language the app is shown in (English / Azerbaijani; texts
 /// in app_*.arb). A global, not `L10n.of(context)`: enums, toasts, the scanner
-/// and notifications have no BuildContext. SonarApp sets it before anything
+/// and notifications have no BuildContext. NocturneApp sets it before anything
 /// builds and rebuilds the whole tree when the language changes.
 L10n get l10n => _current;
 L10n _current = lookupL10n(supportedLocale(PlatformDispatcher.instance.locale));
@@ -24,7 +24,6 @@ Locale supportedLocale(Locale l) =>
 String? initialLanguage;
 
 /// Settings → Language: 'system' (follow the phone), 'en', 'az'.
-const kLanguageKey = 'language';
 const kLanguages = ['system', 'en', 'az'];
 
 /// null = follow the phone's language.

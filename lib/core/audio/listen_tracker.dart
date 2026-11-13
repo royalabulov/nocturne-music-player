@@ -1,9 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/repositories/history_repository.dart';
-import '../../features/player/player_providers.dart';
+import 'player_providers.dart';
 import '../di/providers.dart';
 
 /// Measures how long each play is really heard: a stopwatch that runs only
@@ -13,15 +14,17 @@ import '../di/providers.dart';
 /// Saved every 5 s while playing, on pause and when the next song starts, so
 /// killing the app loses at most a few seconds.
 class ListenTracker {
-  ListenTracker(this._history, Stream<bool> playing) {
+  ListenTracker(this._history, Stream<bool> playing, {@visibleForTesting Stopwatch? watch})
+      : _watch = watch ?? Stopwatch() {
     _sub = playing.distinct().listen(_onPlaying);
   }
 
   final HistoryRepository _history;
-  final _watch = Stopwatch();
+  final Stopwatch _watch;
   late final StreamSubscription<bool> _sub;
   Timer? _flush;
   int? _playId;
+  int _starts = 0;
 
   /// A new song started: close the previous play and open a row for this one.
   /// The stopwatch keeps its running/stopped state — only the count restarts.
@@ -29,7 +32,11 @@ class ListenTracker {
     _save();
     _playId = null;
     _watch.reset();
-    _playId = await _history.recordPlay(trackId);
+    final start = ++_starts;
+    final id = await _history.recordPlay(trackId);
+    // Skipped on before this row was written: the stopwatch is the newer song's now,
+    // and its time must not land on this one
+    if (start == _starts) _playId = id;
   }
 
   void _onPlaying(bool playing) {
@@ -47,13 +54,13 @@ class ListenTracker {
   /// Reads id + time synchronously, so a song change right after can't mix them up.
   void _save() {
     final id = _playId;
-    if (id != null) _history.saveListened(id, _watch.elapsed);
+    if (id != null) unawaited(_history.saveListened(id, _watch.elapsed));
   }
 
   void dispose() {
     _save();
     _flush?.cancel();
-    _sub.cancel();
+    unawaited(_sub.cancel());
   }
 }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,7 +10,7 @@ import '../../core/theme/app_typography.dart';
 import '../../domain/entities/lyrics.dart';
 import '../../l10n/l10n.dart';
 import 'lyrics_controller.dart';
-import 'player_providers.dart';
+import '../../core/audio/player_providers.dart';
 
 /// Lyrics in the cover's place, same square. Synced lyrics follow the song and a
 /// tapped line jumps there; any other tap (the parent) goes back to the cover.
@@ -161,7 +163,7 @@ class _SyncedLyricsState extends ConsumerState<_SyncedLyrics> {
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
                     _userScrolledAt = DateTime(0);
-                    handler.seek(lines[i].time);
+                    unawaited(handler.seek(lines[i].time));
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),

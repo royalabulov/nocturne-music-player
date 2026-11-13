@@ -80,7 +80,7 @@ abstract final class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceHigh,
-        selectedColor: AppColors.electric,
+        selectedColor: AppColors.accentFill,
         side: BorderSide.none,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.pill),

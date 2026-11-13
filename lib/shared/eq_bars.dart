@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_colors.dart';
-import '../features/player/player_providers.dart';
+import '../core/audio/player_providers.dart';
+import 'app_visible.dart';
 
 /// "Live" EQ bars over the playing song's cover. They bounce while playing,
 /// low static bars remain while paused.
@@ -23,7 +24,7 @@ class EqBars extends ConsumerStatefulWidget {
   ConsumerState<EqBars> createState() => _EqBarsState();
 }
 
-class _EqBarsState extends ConsumerState<EqBars> {
+class _EqBarsState extends ConsumerState<EqBars> with AppVisible {
   static const _frame = Duration(milliseconds: 66);
   static const _periodMs = 1400;
 
@@ -48,8 +49,11 @@ class _EqBarsState extends ConsumerState<EqBars> {
     _sync();
   }
 
+  @override
+  void onAppVisibleChanged() => _sync();
+
   void _sync() {
-    if (_playing && _visible) {
+    if (_playing && _visible && appVisible) {
       _timer ??= Timer.periodic(_frame, (_) {
         _t.value = (_t.value + _frame.inMilliseconds / _periodMs) % 1;
       });

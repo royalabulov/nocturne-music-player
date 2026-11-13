@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/utils/well_formed.dart';
 import '../../domain/entities/lyrics.dart';
 import 'lrc_parser.dart';
 
@@ -116,7 +118,21 @@ class LrclibSource {
     return LrclibFound(synced: synced, plain: plain, instrumental: instrumental && synced == null && plain == null);
   }
 
-  static String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v : null;
+  static String? _text(Object? v) => v is String && v.trim().isNotEmpty ? wellFormed(v) : null;
+
+  /// A search answer is a few KB of text per hit; anything near this is not an answer.
+  static const maxResponseBytes = 2 * 1024 * 1024;
+
+  /// The whole body, or [FormatException] as soon as it passes [maxBytes].
+  @visibleForTesting
+  static Future<List<int>> readBounded(Stream<List<int>> body, {int maxBytes = maxResponseBytes}) async {
+    final out = BytesBuilder(copy: false);
+    await for (final chunk in body) {
+      out.add(chunk);
+      if (out.length > maxBytes) throw const FormatException('response too large');
+    }
+    return out.takeBytes();
+  }
 
   static Future<(int, Object?)> _httpGet(Uri uri) async {
     final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
@@ -124,10 +140,14 @@ class LrclibSource {
       final req = await client.getUrl(uri).timeout(const Duration(seconds: 8));
       req.headers.set(HttpHeaders.userAgentHeader, 'Nocturne/1.0');
       final res = await req.close().timeout(const Duration(seconds: 10));
-      final text = await res.transform(utf8.decoder).join().timeout(const Duration(seconds: 10));
-      return (res.statusCode, res.statusCode == 200 ? jsonDecode(text) : null);
+      if (res.statusCode != 200) return (res.statusCode, null);
+      final body = await readBounded(res).timeout(const Duration(seconds: 10));
+      return (res.statusCode, await compute(_decodeJson, body));
     } finally {
       client.close(force: true);
     }
   }
 }
+
+/// Top level: runs in another isolate, so a big answer doesn't stutter the UI.
+Object? _decodeJson(List<int> body) => jsonDecode(utf8.decode(body));

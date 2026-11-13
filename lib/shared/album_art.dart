@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -7,6 +8,9 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import 'cover_crop.dart';
+
+/// Hero tag for the cover between the mini player and Now Playing.
+const kNowPlayingArtHero = 'now-playing-art';
 
 /// Album art: 16px radius + 1px inset hairline. Without a cover,
 /// a gradient placeholder + note icon. Black video bars are zoomed past (CoverCrop).
@@ -47,9 +51,9 @@ class _AlbumArtState extends State<AlbumArt> {
   void _checkBars() {
     final p = widget.path;
     if (kIsWeb || p == null || p.isEmpty || isCoverCropKnown(p)) return;
-    coverCrop(p).then((c) {
+    unawaited(coverCrop(p).then((c) {
       if (c != null && mounted && widget.path == p) setState(() {});
-    });
+    }));
   }
 
   double get size => widget.size;

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_typography.dart';
-import 'sonar_sheet.dart';
+import 'nocturne_sheet.dart';
 
 /// Bottom sheet for picking a sort order; the current one is checked.
 /// Home (Songs / Albums / Artists) and Favorites use the same one.
@@ -14,7 +14,7 @@ Future<T?> showSortSheet<T>(
   required T current,
   required String Function(T) label,
 }) {
-  return showSonarSheet<T>(
+  return showNocturneSheet<T>(
     context,
     useRootNavigator: true,
     child: Builder(

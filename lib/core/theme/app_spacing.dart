@@ -7,7 +7,6 @@ abstract final class AppSpacing {
   static const double lg = 20;
   static const double xl = 24;
   static const double xxl = 32;
-  static const double xxxl = 40;
 
   /// Horizontal margin of screens (mobile).
   static const double screenH = 20;

@@ -1,3 +1,4 @@
+import '../../l10n/domain_labels.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,10 +13,10 @@ import '../../domain/repositories/history_repository.dart';
 import '../../shared/page_title.dart';
 import '../../shared/filter_chip_row.dart';
 import '../../shared/glow_play_button.dart';
-import '../../shared/track_sliver_list.dart';
-import '../player/player_providers.dart';
+import '../tracks/track_sliver_list.dart';
+import '../../core/audio/player_providers.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/display_names.dart';
+import '../../core/utils/display_names.dart';
 
 /// Only listening history here — "Recently added" and "A–Z" were Home's sort
 /// orders repeated (design review, 2026-11-02).
@@ -45,15 +46,21 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
     // Source + subtitle depending on the chosen filter
     final List<Track> tracks;
     final String Function(Track) subtitle;
+    final AsyncValue<List<PlayedTrack>> source;
+    final VoidCallback retry;
     switch (_filter) {
       case _Filter.recentlyPlayed:
-        final items = ref.watch(recentlyPlayedProvider(_period)).value ?? const <PlayedTrack>[];
+        source = ref.watch(recentlyPlayedProvider(_period));
+        retry = () => ref.invalidate(recentlyPlayedProvider(_period));
+        final items = source.value ?? const <PlayedTrack>[];
         final meta = {for (final p in items) p.track.id: p};
         tracks = [for (final p in items) p.track];
         // Plays within the chosen period (Today / This week / This month)
         subtitle = (t) => '${meta[t.id]?.playCount ?? 0}× • ${_ago(meta[t.id]?.lastPlayedAt)} • ${t.artistLabel}';
       case _Filter.mostPlayed:
-        final items = ref.watch(mostPlayedProvider(_period)).value ?? const <PlayedTrack>[];
+        source = ref.watch(mostPlayedProvider(_period));
+        retry = () => ref.invalidate(mostPlayedProvider(_period));
+        final items = source.value ?? const <PlayedTrack>[];
         final meta = {for (final p in items) p.track.id: p};
         tracks = [for (final p in items) p.track];
         subtitle = (t) => '${meta[t.id]?.playCount ?? 0}× • ${t.artistLabel}';
@@ -97,7 +104,8 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
                 padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
                 child: _ContinueListeningCard(),
               ),
-              const SizedBox(height: AppSpacing.md),
+              // The chip row is 48 high around 40 px chips: 4 px of it is this gap
+              const SizedBox(height: AppSpacing.md - 4),
             ],
             FilterChipRow(
               items: [l10n.filterPlayed, l10n.filterMostPlayed],
@@ -105,13 +113,15 @@ class _RecentScreenState extends ConsumerState<RecentScreen> {
               selected: _filter.index,
               onSelected: (i) => setState(() => _filter = _Filter.values[i]),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md - 4),
           ]),
           TrackSliverList(
             tracks: tracks,
             subtitle: subtitle,
             emptyIcon: Icons.history_rounded,
             emptyText: emptyText,
+            status: source,
+            onRetry: retry,
           ),
           const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight)),
         ],

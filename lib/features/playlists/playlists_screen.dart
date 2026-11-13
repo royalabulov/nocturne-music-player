@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/router/routes.dart';
 import '../../core/di/providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -12,7 +15,7 @@ import '../../domain/entities/playlist.dart';
 import '../../shared/page_title.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/album_art.dart';
-import '../../shared/sonar_sheet.dart';
+import '../../shared/nocturne_sheet.dart';
 import '../../l10n/l10n.dart';
 
 class PlaylistsScreen extends ConsumerWidget {
@@ -23,7 +26,8 @@ class PlaylistsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playlists = ref.watch(playlistsProvider).value ?? const <Playlist>[];
+    final playlistsAsync = ref.watch(playlistsProvider);
+    final playlists = playlistsAsync.value ?? const <Playlist>[];
     final repo = ref.read(playlistRepositoryProvider);
 
     return SafeArea(
@@ -45,12 +49,12 @@ class PlaylistsScreen extends ConsumerWidget {
                 final name = await showNameDialog(context, title: l10n.newPlaylist, hint: l10n.playlistName);
                 if (name == null) return;
                 final id = await repo.create(name);
-                if (context.mounted) context.push('/playlists/$id');
+                if (context.mounted) unawaited(context.push(playlistRoute(id)));
               },
               child: Container(
                 height: 52,
                 decoration: BoxDecoration(
-                  color: AppColors.electric,
+                  color: AppColors.accentFill,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   boxShadow: Glow.accent,
                 ),
@@ -68,10 +72,14 @@ class PlaylistsScreen extends ConsumerWidget {
           // Rescan lives in Settings; the page title already says what this is
           const SizedBox(height: AppSpacing.lg),
           if (playlists.isEmpty)
-            EmptyState(
-              icon: Icons.queue_music_rounded,
-              title: l10n.noPlaylists,
-              message: l10n.noPlaylistsHint,
+            ListStatus(
+              value: playlistsAsync,
+              onRetry: () => ref.invalidate(playlistsProvider),
+              empty: EmptyState(
+                icon: Icons.queue_music_rounded,
+                title: l10n.noPlaylists,
+                message: l10n.noPlaylistsHint,
+              ),
             )
           else
             Padding(
@@ -111,7 +119,7 @@ class _PlaylistCard extends ConsumerWidget {
     final p = playlist;
     return SolidCard(
       color: AppColors.surfaceLow,
-      onTap: () => context.push('/playlists/${p.id}'),
+      onTap: () => context.push(playlistRoute(p.id)),
       onLongPress: () => showPlaylistActions(context, ref, p),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +157,7 @@ class _PlaylistCard extends ConsumerWidget {
 /// Long-press: rename / delete.
 Future<void> showPlaylistActions(BuildContext context, WidgetRef ref, Playlist p) {
   final repo = ref.read(playlistRepositoryProvider);
-  return showSonarSheet(
+  return showNocturneSheet(
     context,
     child: Column(
       mainAxisSize: MainAxisSize.min,

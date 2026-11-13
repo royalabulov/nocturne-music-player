@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/di/providers.dart';
 import '../../core/network/online_mode.dart';
 import '../../domain/entities/lyrics.dart';
-import 'player_providers.dart';
-
-/// Settings → Network: look for lyrics on lrclib.net (only in Online mode). Default on.
-const kLyricsOnlineKey = 'lyricsOnline';
+import '../../domain/repositories/settings_repository.dart';
+import '../../core/audio/player_providers.dart';
 
 /// Now Playing shows lyrics instead of the cover. Stays on across songs (not saved).
 class ShowLyrics extends Notifier<bool> {
@@ -26,7 +24,8 @@ class LyricsController extends AsyncNotifier<LyricsResult> {
     ref.watch(currentTrackProvider.select((a) => a.value?.id));
     // Online mode switched on/off (not every connection re-check)
     ref.watch(onlineModeProvider.select((s) => s.enabled));
-    ref.watch(boolSettingProvider(kLyricsOnlineKey));
+    // Settings → Network: look for lyrics on lrclib.net (only in Online mode). Default on.
+    ref.watch(boolSettingProvider(SettingsKeys.lyricsOnline));
     return _load();
   }
 
@@ -36,7 +35,7 @@ class LyricsController extends AsyncNotifier<LyricsResult> {
     return ref.read(lyricsRepositoryProvider).load(
           track,
           online: ref.read(onlineModeProvider).enabled,
-          onlineSearch: ref.read(boolSettingProvider(kLyricsOnlineKey)).value ?? true,
+          onlineSearch: ref.read(boolSettingProvider(SettingsKeys.lyricsOnline)).value ?? true,
           force: force,
           // A rebuild (next song) makes this ref stale → stop retrying for the old song
           isCancelled: () => !ref.mounted,

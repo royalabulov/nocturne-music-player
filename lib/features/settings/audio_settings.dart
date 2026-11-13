@@ -19,6 +19,10 @@ class AudioSettings {
     this.knockSensitivity = 1,
   });
 
+  /// Far beyond any device's equalizer; the player clamps gains to the real range.
+  static const _maxBands = 64;
+  static const _maxGainDb = 30.0;
+
   /// Default per output while auto preset is on.
   static const defaultPresetByOutput = {
     'headphones': 'Headphones',
@@ -98,13 +102,16 @@ class AudioSettings {
         'knockSensitivity': knockSensitivity,
       };
 
+  /// Also reads what a backup file brought in, so every number is brought into range.
   static AudioSettings fromJson(Map<String, dynamic> j) => AudioSettings(
         crossfade: j['crossfade'] as bool? ?? false,
-        crossfadeSec: (j['crossfadeSec'] as num?)?.toDouble() ?? 3.5,
+        crossfadeSec: ((j['crossfadeSec'] as num?)?.toDouble() ?? 3.5).clamp(1.0, 12.0),
         eqEnabled: j['eqEnabled'] as bool? ?? false,
         preset: j['preset'] as String? ?? 'Flat',
-        customGains: [for (final g in (j['customGains'] as List? ?? const [])) (g as num).toDouble()],
-        bassBoost: (j['bassBoost'] as num?)?.toDouble() ?? 0,
+        customGains: [
+          for (final g in (j['customGains'] as List? ?? const []).take(_maxBands)) (g as num).toDouble().clamp(-_maxGainDb, _maxGainDb),
+        ],
+        bassBoost: ((j['bassBoost'] as num?)?.toDouble() ?? 0).clamp(0.0, 1.0),
         autoPreset: j['autoPreset'] as bool? ?? true,
         presetByOutput: {
           ...defaultPresetByOutput,

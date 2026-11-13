@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The play button: AppColors.playGradient (electric → electricDeep, top left → bottom right) -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="@color/widget_ink">
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:angle="315"
+                android:startColor="@color/widget_electric"
+                android:endColor="@color/widget_electric_deep" />
+        </shape>
+    </item>
+</ripple>

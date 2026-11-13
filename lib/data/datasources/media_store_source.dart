@@ -3,11 +3,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../../domain/repositories/device_files.dart';
 import 'raw_audio.dart';
 
 /// Android MediaStore — the MethodChannel on the Kotlin side (MainActivity.kt).
 /// iOS has no MediaStore → empty list.
-class MediaStoreSource {
+class MediaStoreSource implements DeviceFiles {
   static const _ch = MethodChannel('com.nocturne/media_store');
 
   Future<List<RawAudio>> enumerate() async {
@@ -23,6 +24,20 @@ class MediaStoreSource {
     ];
   }
 
+  /// Changes whenever a song is added, changed or removed in the phone's media index
+  /// (Android 11+, every storage volume; photos and other media don't count). Null where
+  /// there is no such counter or it can't be read: then nobody can tell, and the caller scans.
+  Future<String?> generation() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      return await _ch.invokeMethod<String>('mediaGeneration');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
 /// Add files found by the folder walk but unknown to MediaStore to the index,
 /// so other apps (and Bluetooth/Android Auto) see them too.
   Future<void> notify(List<String> paths) async {
@@ -30,21 +45,34 @@ class MediaStoreSource {
     await _ch.invokeMethod('scanFiles', {'paths': paths});
   }
 
-  /// Writes a file to the shared Download folder without a dialog. Result: the visible path.
-  /// Null if not on Android (the caller falls back to a file picker).
-  static Future<String?> saveToDownloads(String name, Uint8List bytes, String mime) async {
+  @override
+  Future<String?> saveToDownloads(String name, Uint8List bytes, String mime) async {
     if (!Platform.isAndroid) return null;
     final r = await _ch.invokeMethod<String>('saveToDownloads', {'name': name, 'mime': mime, 'bytes': bytes});
-    if (r == null || r.startsWith('error:')) throw Exception(r ?? 'error: no result');
+    if (r == null) throw Exception('no result');
     return r;
+  }
+
+  @override
+  Future<String?> saveBackupCopy(String name, Uint8List bytes, {required String prefix, int keep = 2}) async {
+    if (!Platform.isAndroid) return null;
+    return _ch.invokeMethod<String>('saveBackupCopy', {'name': name, 'bytes': bytes, 'prefix': prefix, 'keep': keep});
+  }
+
+  @override
+  Future<bool> shareText(String text, {required String title}) async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _ch.invokeMethod<bool>('shareText', {'text': text, 'title': title}) ?? false;
+    } on PlatformException {
+      return false;
+    }
   }
 
   // ── open with / import ──────────────────────────────────
 
-  /// Events from native code (while the app is open):
-  /// - "Open with Nocturne" / Share brings a new file → [onOpened]
-  /// - audio changes in MediaStore (a new song was downloaded) → [onMediaChanged]
-  static void setListeners({
+  @override
+  void setListeners({
     required Future<void> Function() onOpened,
     required void Function() onMediaChanged,
   }) {
@@ -59,28 +87,35 @@ class MediaStoreSource {
     });
   }
 
-  /// Pending "Open with" / Share URIs (removed once taken).
+  @override
   Future<List<String>> takeOpenedUris() async {
     if (!Platform.isAndroid) return const [];
     return await _ch.invokeListMethod<String>('takeOpenedUris') ?? const [];
   }
 
-  /// URI or path → readable file path on the phone (if any), name, size.
+  @override
   Future<({String? path, String name, int size})> resolveAudio(String source) async {
-    final r = await _ch.invokeMethod<Object?>('resolveAudio', {'source': source});
-    if (r is! Map) throw ImportFailed('$r');
+    final r = await _importCall<Map<Object?, Object?>>('resolveAudio', source);
     return (path: r['path'] as String?, name: r['name'] as String, size: (r['size'] as num).toInt());
   }
 
-  /// Copy the file to Music/Nocturne → new path. Returns the existing one if name+size match.
+  @override
   Future<String> importAudio(String source) async {
-    final r = await _ch.invokeMethod<Object?>('importAudio', {'source': source});
-    debugPrint('import "$source" → $r');
-    if (r is String && r.startsWith('/')) return r;
-    throw ImportFailed(r is String && r.startsWith('error: ') ? r.substring(7) : '$r');
+    return _importCall<String>('importAudio', source);
   }
 
-  /// Notify MediaScanner and wait for it to finish (max 5 s).
+  Future<T> _importCall<T>(String method, String source) async {
+    try {
+      final r = await _ch.invokeMethod<T>(method, {'source': source});
+      if (r != null) return r;
+      throw const ImportFailed('no result');
+    } on PlatformException catch (e) {
+      debugPrint('$method failed: ${e.message}');
+      throw ImportFailed(e.message ?? e.code);
+    }
+  }
+
+  @override
   Future<void> scanAndWait(List<String> paths) async {
     if (!Platform.isAndroid || paths.isEmpty) return;
     await _ch.invokeMethod('scanFilesAndWait', {'paths': paths});
@@ -95,12 +130,16 @@ class MediaStoreSource {
       if (await f.exists()) await f.delete();
       return true;
     }
-    final status = await _ch.invokeMethod<Object?>('deleteAudio', {'path': path});
-    debugPrint('delete "$path" → $status');
+    final String? status;
+    try {
+      status = await _ch.invokeMethod<String>('deleteAudio', {'path': path});
+    } on PlatformException catch (e) {
+      throw DeleteFailed(e.message ?? e.code);
+    }
+    debugPrint('delete → $status');
     return switch (status) {
       'deleted' => true,
       'cancelled' => false,
-      final String s when s.startsWith('error: ') => throw DeleteFailed(s.substring(7)),
       _ => throw DeleteFailed('unexpected result: $status'),
     };
   }
@@ -118,7 +157,15 @@ extension MediaStoreBatchDelete on MediaStoreSource {
       }
       return done;
     }
-    final res = await MediaStoreSource._ch.invokeMapMethod<String, Object?>('deleteAudioBatch', {'paths': paths});
+    final Map<String, Object?>? res;
+    try {
+      res = await MediaStoreSource._ch.invokeMapMethod<String, Object?>('deleteAudioBatch', {'paths': paths});
+    } on PlatformException catch (e) {
+      // Some files may be gone already: that part did happen
+      final gone = (e.details as List? ?? const []).cast<String>();
+      if (gone.isNotEmpty) return gone.toSet();
+      throw DeleteFailed(e.message ?? e.code);
+    }
     final status = res?['status'];
     final deleted = {...(res?['deleted'] as List? ?? const []).cast<String>()};
     debugPrint('delete batch (${paths.length}) → $status, ${deleted.length} deleted');
@@ -131,9 +178,6 @@ extension MediaStoreBatchDelete on MediaStoreSource {
           if (await delete(p)) deleted.add(p);
         }
         return deleted;
-      case final String s when s.startsWith('error: '):
-        if (deleted.isNotEmpty) return deleted;
-        throw DeleteFailed(s.substring(7));
       default:
         throw DeleteFailed('unexpected result: $status');
     }

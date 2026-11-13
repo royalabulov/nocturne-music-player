@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/core/demo/demo_repositories.dart';
-import 'package:sonar/core/di/providers.dart';
-import 'package:sonar/core/network/network_monitor.dart';
-import 'package:sonar/core/network/online_mode.dart';
+import 'package:nocturne/demo/demo_repositories.dart';
+import 'package:nocturne/core/di/providers.dart';
+import 'package:nocturne/core/network/network_monitor.dart';
+import 'package:nocturne/core/network/online_mode.dart';
+import 'package:nocturne/domain/repositories/settings_repository.dart';
 
 class FakeNetwork implements NetworkMonitor {
   NetworkKind kind = NetworkKind.none;
@@ -34,15 +35,15 @@ class FakeNetwork implements NetworkMonitor {
 
 void main() {
   late FakeNetwork net;
-  late DemoLibraryRepository repo;
+  late DemoSettingsRepository repo;
   late ProviderContainer c;
 
   setUp(() {
     net = FakeNetwork();
-    repo = DemoLibraryRepository();
+    repo = DemoSettingsRepository();
     c = ProviderContainer(overrides: [
       networkMonitorProvider.overrideWithValue(net),
-      libraryRepositoryProvider.overrideWithValue(repo),
+      settingsRepositoryProvider.overrideWithValue(repo),
     ]);
     addTearDown(c.dispose);
   });
@@ -68,7 +69,7 @@ void main() {
     final r = await c.read(onlineModeProvider.notifier).enable();
     expect(r, EnableResult.noInternet);
     expect(c.read(onlineModeProvider).enabled, false);
-    expect(await repo.getSetting('onlineMode'), isNot('true'));
+    expect(await repo.getSetting(SettingsKeys.onlineMode), isNot('true'));
   });
 
   test('mobile data with internet → online, persisted; disable turns it off', () async {
@@ -80,11 +81,11 @@ void main() {
     final s = c.read(onlineModeProvider);
     expect(s.isOnline, true);
     expect(s.network, NetworkKind.mobile);
-    expect(await repo.getSetting('onlineMode'), 'true');
+    expect(await repo.getSetting(SettingsKeys.onlineMode), 'true');
 
     await ctrl.disable();
     expect(c.read(onlineModeProvider).isOnline, false);
-    expect(await repo.getSetting('onlineMode'), 'false');
+    expect(await repo.getSetting(SettingsKeys.onlineMode), 'false');
   });
 
   test('losing the connection keeps the mode and recovers when it returns', () async {
@@ -112,7 +113,7 @@ void main() {
   });
 
   test('saved online mode is restored on start', () async {
-    await repo.setSetting('onlineMode', 'true');
+    await repo.setSetting(SettingsKeys.onlineMode, 'true');
     net
       ..kind = NetworkKind.wifi
       ..internet = true;

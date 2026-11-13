@@ -43,9 +43,12 @@ class AudioAnalyzer(private val context: Context) {
 
     private val interpreter: Interpreter
         get() = interp ?: run {
-            val fd = context.assets.openFd(MODEL)
-            val model = FileInputStream(fd.fileDescriptor).channel
-                .map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
+            // The mapping stays valid after the file is closed; the descriptor used to stay open
+            val model = context.assets.openFd(MODEL).use { fd ->
+                FileInputStream(fd.fileDescriptor).use {
+                    it.channel.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
+                }
+            }
             Interpreter(model, Interpreter.Options().setNumThreads(2))
         }.also { interp = it }
 
@@ -89,8 +92,6 @@ class AudioAnalyzer(private val context: Context) {
         return mapOf(
             "scores" to scores,
             "rmsDb" to 20 * log10(max(rms, 1e-6)),
-            "windows" to frames,
-            "sampleRate" to SAMPLE_RATE,
             "segments" to segments,
         )
     }
@@ -99,18 +100,21 @@ class AudioAnalyzer(private val context: Context) {
     /// song (one part for short songs), 16 kHz mono. 1-second windows are too short
     /// for tempo and key — hence contiguous segments.
     private fun decodeSegments(path: String, durationMs: Long): List<FloatArray> {
+        // Everything inside the try: a file that can't be opened or a codec the phone doesn't
+        // have used to leave the native extractor behind until the garbage collector ran
         val ex = MediaExtractor()
-        ex.setDataSource(path)
-        val track = (0 until ex.trackCount).firstOrNull {
-            ex.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
-        } ?: run { ex.release(); error("no audio track") }
-        ex.selectTrack(track)
-        val fmt = ex.getTrackFormat(track)
-        val durUs = if (fmt.containsKey(MediaFormat.KEY_DURATION)) fmt.getLong(MediaFormat.KEY_DURATION)
-        else durationMs * 1000
-        val codec = MediaCodec.createDecoderByType(fmt.getString(MediaFormat.KEY_MIME)!!)
+        var codec: MediaCodec? = null
         val out = ArrayList<FloatArray>()
         try {
+            ex.setDataSource(path)
+            val track = (0 until ex.trackCount).firstOrNull {
+                ex.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
+            } ?: error("no audio track")
+            ex.selectTrack(track)
+            val fmt = ex.getTrackFormat(track)
+            val durUs = if (fmt.containsKey(MediaFormat.KEY_DURATION)) fmt.getLong(MediaFormat.KEY_DURATION)
+            else durationMs * 1000
+            codec = MediaCodec.createDecoderByType(fmt.getString(MediaFormat.KEY_MIME)!!)
             codec.configure(fmt, null, null, 0)
             codec.start()
             val pcm = PcmState(
@@ -125,8 +129,10 @@ class AudioAnalyzer(private val context: Context) {
                 out.add(resample(mono, pcm.rate))
             }
         } finally {
-            try { codec.stop() } catch (_: Exception) {}
-            codec.release()
+            codec?.let {
+                try { it.stop() } catch (_: Exception) {}
+                it.release()
+            }
             ex.release()
         }
         return out

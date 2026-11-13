@@ -10,10 +10,10 @@ import '../../l10n/l10n.dart';
 ///
 /// * Dart: FlutterError, uncaught async errors, every debugPrint
 ///   (player transition errors are written with debugPrint too).
-/// * Native: `SonarApplication.kt` writes Java/Kotlin crashes to the same folder
+/// * Native: `NocturneApplication.kt` writes Java/Kotlin crashes to the same folder
 ///   as `native_crash.log` (even if the process dies).
 ///
-/// File: `<filesDir>/logs/sonar.log`, rotated to `.1` when it grows past 256 KB.
+/// File: `<filesDir>/logs/sonar.log` (the app's old name, kept), rotated to `.1` when it grows past 256 KB.
 abstract final class CrashLog {
   static const _maxBytes = 256 * 1024;
   static File? _file;
@@ -25,7 +25,7 @@ abstract final class CrashLog {
     try {
       final dir = Directory(p.join((await getApplicationSupportDirectory()).path, 'logs'));
       await dir.create(recursive: true);
-      _file = File(p.join(dir.path, 'sonar.log'));
+      useFolder(dir.path);
     } catch (_) {
       return;
     }
@@ -41,17 +41,32 @@ abstract final class CrashLog {
     };
     final prevPrint = debugPrint;
     debugPrint = (String? message, {int? wrapWidth}) {
-      prevPrint(message, wrapWidth: wrapWidth);
+      // Release: only this private file. A message can name a song, and logcat is not ours.
+      if (!kReleaseMode) prevPrint(message, wrapWidth: wrapWidth);
       if (message != null) add(message);
     };
     add('--- app start ---');
   }
 
+  /// Where the log lives (`<filesDir>/logs` in the app, a temporary folder in tests).
+  @visibleForTesting
+  static void useFolder(String dir) => _file = File(p.join(dir, 'sonar.log'));
+
   static void add(String line) {
     if (_file == null) return;
-    _pending.add('${DateTime.now().toIso8601String()}  $line');
+    _pending.add('${DateTime.now().toIso8601String()}  ${withoutFolders(line)}');
     _flush ??= Timer(const Duration(milliseconds: 500), _write);
   }
+
+  /// The log can be copied out of the app: a crash needs the file's name, not where the person
+  /// keeps their files. The same for a URI from another app.
+  @visibleForTesting
+  static String withoutFolders(String text) =>
+      text.replaceAll(_folders, '…/').replaceAll(_contentUri, 'content://…');
+
+  /// Starts where a path starts: "package:nocturne/data/x.dart" in a stack trace is not one.
+  static final _folders = RegExp(r'''(?<![\w:.])/(?:storage|sdcard|mnt|data/user|data/data)/[^\n'"]*/''');
+  static final _contentUri = RegExp(r'''content://[^\s'"]+''');
 
   static void _write() {
     _flush = null;
@@ -85,7 +100,9 @@ abstract final class CrashLog {
     for (final f in _files()) {
       if (await f.exists()) {
         final name = p.basename(f.path);
-        parts.add('===== $name =====\n${await f.readAsString()}');
+        // native_crash.log is written by Kotlin, which doesn't strip folders: a Java error
+        // names the whole path of the file it failed on. Cleaned here, before anyone shares it.
+        parts.add('===== $name =====\n${withoutFolders(await f.readAsString())}');
       }
     }
     return parts.isEmpty ? l10n.noErrorsLogged : parts.join('\n');

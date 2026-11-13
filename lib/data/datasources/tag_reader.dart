@@ -1,12 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:path/path.dart' as p;
 
+import '../../core/utils/bounded_isolate.dart';
+import '../../core/utils/well_formed.dart';
 import '../../domain/entities/audio_format.dart';
+import '../../domain/entities/track.dart';
+import 'cover_cache.dart';
+import 'image_size.dart';
 
 /// Result of reading tags — the raw form before it becomes a Track.
 class TagInfo {
@@ -25,6 +29,7 @@ class TagInfo {
     this.sampleRateHz,
     this.bitDepth,
     this.cover,
+    this.coverHash,
     this.replayGainDb,
   });
 
@@ -35,21 +40,40 @@ class TagInfo {
   final AudioFormat format;
   final int? bitrateKbps, sampleRateHz, bitDepth;
   final Uint8List? cover;
+
+  /// [cover]'s name in the cover cache, worked out here in the reading isolate: hashing a
+  /// few MB of cover on the UI isolate stuttered the first scan.
+  final String? coverHash;
   final double? replayGainDb;
 }
 
 /// audio_metadata_reader wrapper. Parsing is synchronous — so [readMany]
 /// runs it in a separate isolate to keep the UI smooth.
 abstract final class TagReader {
-  static const unknownArtist = 'Unknown Artist';
-  static const unknownAlbum = 'Unknown Album';
+  static const unknownArtist = kUnknownArtist;
+  static const unknownAlbum = kUnknownAlbum;
+
+  /// Tags are written by whoever made the file. Nothing real comes close to these.
+  static const maxTextChars = 500;
+  static const maxCoverBytes = 10 * 1024 * 1024;
+
+  /// A batch takes well under a second; a file that makes the parser hang must not stop the scan.
+  static const batchTimeout = Duration(seconds: 60);
 
   static Future<Map<String, TagInfo?>> readMany(List<String> paths) =>
-      Isolate.run(() => {for (final path in paths) path: read(path)});
+      runBounded(() => {for (final path in paths) path: read(path)}, timeout: batchTimeout);
+
+  /// The format from the name, and for an .m4a from its bitrate too ([AudioFormat.forM4a]).
+  /// [audioBytes]: the file without its pictures, so a big cover on a short song doesn't look
+  /// like a high bitrate.
+  static AudioFormat formatOf(String path, {required int audioBytes, required int durationMs}) {
+    final byName = AudioFormat.fromExtension(p.extension(path));
+    if (p.extension(path).toLowerCase() != '.m4a' || durationMs <= 0) return byName;
+    return AudioFormat.forM4a(averageKbps: (audioBytes * 8 / durationMs).round());
+  }
 
   static TagInfo? read(String path) {
     final file = File(path);
-    final format = AudioFormat.fromExtension(p.extension(path));
     AudioMetadata? m;
     double? replayGain;
     try {
@@ -67,6 +91,11 @@ abstract final class TagReader {
     }
 
     final durationMs = m?.duration?.inMilliseconds ?? 0;
+    final format = formatOf(
+      path,
+      audioBytes: size - (m?.pictures.fold<int>(0, (sum, x) => sum + x.bytes.length) ?? 0),
+      durationMs: durationMs,
+    );
     // In MP3 VBR the first frame's bitrate is misleading → compute the average bitrate
     int? bitrateKbps;
     if (!format.isLossless && durationMs > 0) {
@@ -89,7 +118,8 @@ abstract final class TagReader {
     final pics = m?.pictures;
     if (pics != null && pics.isNotEmpty) {
       final front = pics.where((x) => x.pictureType == PictureType.coverFront).firstOrNull;
-      cover = (front ?? pics.first).bytes;
+      final bytes = (front ?? pics.first).bytes;
+      if (bytes.length <= maxCoverBytes && isDecodableCover(bytes)) cover = bytes;
     }
 
     var title = _clean(m?.title);
@@ -101,10 +131,10 @@ abstract final class TagReader {
     // Check the raw value: _fixUtf16 swaps bytes and turns "�" (FFFD) into FDFF.
     if ([m?.title, m?.artist, m?.album, m?.albumArtist].any((s) => s != null && s.contains('�'))) {
       final raw = _readId3Text(file);
-      title = raw['TIT2'] ?? title;
-      artist = raw['TPE1'] ?? artist;
-      album = raw['TALB'] ?? album;
-      albumArtist = raw['TPE2'] ?? albumArtist;
+      title = _clean(raw['TIT2']) ?? title;
+      artist = _clean(raw['TPE1']) ?? artist;
+      album = _clean(raw['TALB']) ?? album;
+      albumArtist = _clean(raw['TPE2']) ?? albumArtist;
     }
 
     // If the tag has no artist, take it from an "Artist - Title" name (video-site downloads)
@@ -113,10 +143,10 @@ abstract final class TagReader {
     return TagInfo(
       title: guessed.title,
       artist: guessed.artist ?? unknownArtist,
-      // Video saytının avto-kanalı: albom "Michael Tai - Topic" → "Michael Tai"
+      // A video site auto-channel: album "Michael Tai - Topic" → "Michael Tai"
       album: stripTopic(album) ?? unknownAlbum,
       albumArtist: albumArtist,
-      genre: m?.genres.firstOrNull,
+      genre: _clean(m?.genres.firstOrNull),
       trackNo: m?.trackNumber,
       discNo: m?.discNumber,
       year: m?.year?.year,
@@ -126,6 +156,7 @@ abstract final class TagReader {
       sampleRateHz: sampleRate,
       bitDepth: bitDepth,
       cover: cover,
+      coverHash: cover == null ? null : coverHashOf(cover),
       replayGainDb: replayGain,
     );
   }
@@ -137,12 +168,12 @@ abstract final class TagReader {
       final raw = readAllMetadata(file, getImage: false);
       String? value;
       switch (raw) {
-        case Mp3Metadata m:
+        case final Mp3Metadata m:
           value = m.customMetadata.entries
               .where((e) => e.key.toUpperCase().trim() == 'REPLAYGAIN_TRACK_GAIN')
               .map((e) => e.value)
               .firstOrNull;
-        case VorbisMetadata m:
+        case final VorbisMetadata m:
           value = m.replayGainTrackGain.firstOrNull;
         default:
           value = null;
@@ -157,9 +188,14 @@ abstract final class TagReader {
 
   static String? _clean(String? s) {
     if (s == null) return null;
-    final t = _fixUtf16(s).replaceAll(String.fromCharCode(0), '').trim();
-    return t.isEmpty ? null : t;
+    final t = _fixUtf16(s).replaceAll(String.fromCharCode(0), '').replaceAll(_control, ' ').trim();
+    if (t.isEmpty) return null;
+    if (t.length <= maxTextChars) return wellFormed(t);
+    // Not between the two halves of an emoji
+    return wellFormed(t.substring(0, isHighSurrogate(t.codeUnitAt(maxTextChars - 1)) ? maxTextChars - 1 : maxTextChars));
   }
+
+  static final _control = RegExp(r'[\x01-\x1F\x7F]');
 
   /// ID3v2 UTF-16 fix. Some downloaders (ffmpeg / Lavf) write frames as "01 FE FF FE FF ..."
   /// (a doubled big-endian BOM); audio_metadata_reader ignores the BOM and reads
@@ -180,7 +216,7 @@ abstract final class TagReader {
     for (; i < units.length; i++) {
       final c = units[i];
       final sw = ((c & 0xFF) << 8) | (c >> 8);
-      if (sw == 0xFEFF) continue; // qalan BOM-lar
+      if (sw == 0xFEFF) continue; // leftover BOMs
       out.add(sw);
     }
     return String.fromCharCodes(out);
@@ -368,7 +404,7 @@ abstract final class TagReader {
     }
   }
 
-  /// ID3 text frame: ilk bayt encoding (0 Latin-1, 1 UTF-16+BOM, 2 UTF-16BE, 3 UTF-8).
+  /// ID3 text frame: first byte is the encoding (0 Latin-1, 1 UTF-16+BOM, 2 UTF-16BE, 3 UTF-8).
   static String _decodeText(Uint8List d) {
     if (d.isEmpty) return '';
     final enc = d[0];
@@ -405,7 +441,7 @@ abstract final class TagReader {
     return (nul >= 0 ? s.substring(0, nul) : s).trim();
   }
 
-  /// FLAC STREAMINFO → (sampleRate, bitsPerSample). Paket bit depth vermir.
+  /// FLAC STREAMINFO → (sampleRate, bitsPerSample). The package does not give the bit depth.
   static (int, int)? _flacStreamInfo(File f) {
     RandomAccessFile? raf;
     try {

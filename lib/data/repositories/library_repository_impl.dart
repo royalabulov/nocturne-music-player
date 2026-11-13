@@ -1,14 +1,18 @@
-import 'dart:convert';
+import 'dart:math' show min;
 
+import 'track_filter_sql.dart';
+import '../../domain/entities/audio_format.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
 import '../../domain/entities/track.dart';
+import '../../domain/entities/track_keys.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../datasources/media_store_source.dart';
 import '../db/app_database.dart';
 import '../mappers/track_mapper.dart';
-import '../services/library_scanner.dart' show kArtistOverridesKey;
+import '../services/artist_overrides.dart';
 
 class LibraryRepositoryImpl implements LibraryRepository {
   LibraryRepositoryImpl(this.db, this.mapper, {MediaStoreSource? mediaStore, this.filter = TrackFilter.defaults})
@@ -22,23 +26,11 @@ class LibraryRepositoryImpl implements LibraryRepository {
   final TrackFilter filter;
 
   /// isMissing = false AND the size/length range of [filter].
-  Expression<bool> _visible($TracksTable t) {
-    var e = t.isMissing.not() &
-        t.durationMs.isBiggerOrEqualValue(filter.minMs) &
-        t.fileSize.isBiggerOrEqualValue(filter.minBytes);
-    if (filter.maxMs != null) e = e & t.durationMs.isSmallerOrEqualValue(filter.maxMs!);
-    if (filter.maxBytes != null) e = e & t.fileSize.isSmallerOrEqualValue(filter.maxBytes!);
-    return e;
-  }
+  Expression<bool> _visible($TracksTable t) => CustomExpression<bool>(filter.sqlOn(t.actualTableName));
 
   @override
   Stream<List<Track>> watchTracks({TrackSort sort = TrackSort.recentlyAdded, String query = ''}) {
     final q = db.select(db.tracks)..where(_visible);
-    final needle = query.trim();
-    if (needle.isNotEmpty) {
-      final like = '%$needle%';
-      q.where((t) => t.title.like(like) | t.artist.like(like) | t.album.like(like));
-    }
     q.orderBy(switch (sort) {
       TrackSort.recentlyAdded => [
           (t) => OrderingTerm.desc(t.dateAdded),
@@ -57,16 +49,7 @@ class LibraryRepositoryImpl implements LibraryRepository {
       TrackSort.longest => [(t) => OrderingTerm.desc(t.durationMs), (t) => OrderingTerm.asc(t.id)],
       TrackSort.shortest => [(t) => OrderingTerm.asc(t.durationMs), (t) => OrderingTerm.asc(t.id)],
     });
-    return q.watch().map(mapper.toDomainList);
-  }
-
-  @override
-  Stream<List<Track>> watchRecentlyAdded({int limit = 10}) {
-    final q = db.select(db.tracks)
-      ..where(_visible)
-      ..orderBy([(t) => OrderingTerm.desc(t.dateAdded), (t) => OrderingTerm.desc(t.id)])
-      ..limit(limit);
-    return q.watch().map(mapper.toDomainList);
+    return q.watch().map((rows) => searchTracks(mapper.toDomainList(rows), query));
   }
 
   @override
@@ -82,25 +65,23 @@ class LibraryRepositoryImpl implements LibraryRepository {
     final t = db.tracks;
     final count = t.id.count();
     final dur = t.durationMs.sum();
-    final sr = t.sampleRateHz.max();
-    final bd = t.bitDepth.max();
 
     final row = await (db.selectOnly(t)
-          ..addColumns([count, dur, sr, bd])
+          ..addColumns([count, dur])
           ..where(_visible(t)))
         .getSingle();
     final lrow = await (db.selectOnly(t)
           ..addColumns([count])
-          ..where(_visible(t) & t.format.isIn(['flac', 'alac', 'wav'])))
+          ..where(_visible(t) & t.format.isIn([for (final f in AudioFormat.values) if (f.isLossless) f.name])))
         .getSingle();
-    final last = await getSetting('lastScanAt');
+    final last = (await (db.select(db.scanState)..where((s) => s.key.equals(SettingsKeys.lastScanAt)))
+            .getSingleOrNull())
+        ?.value;
 
     return LibraryStats(
       trackCount: row.read(count) ?? 0,
       totalDuration: Duration(milliseconds: row.read(dur) ?? 0),
       losslessCount: lrow.read(count) ?? 0,
-      maxSampleRateHz: row.read(sr) ?? 0,
-      maxBitDepth: row.read(bd) ?? 0,
       lastScanAt: last == null ? null : DateTime.fromMillisecondsSinceEpoch(int.parse(last)),
     );
   }
@@ -125,37 +106,43 @@ class LibraryRepositoryImpl implements LibraryRepository {
   Future<void> setArtist(int trackId, String artist) async {
     final row = await (db.select(db.tracks)..where((t) => t.id.equals(trackId))).getSingleOrNull();
     if (row == null) return;
-    final saved = await (db.select(db.scanState)..where((s) => s.key.equals(kArtistOverridesKey))).getSingleOrNull();
-    Map<String, dynamic> overrides;
-    try {
-      overrides = saved == null ? {} : jsonDecode(saved.value) as Map<String, dynamic>;
-    } catch (_) {
-      overrides = {};
-    }
+    final overrides = await ArtistOverrides.load(db);
     overrides[row.path] = artist;
     await db.batch((b) {
       b.update(db.tracks, TracksCompanion(artist: Value(artist)), where: (t) => t.id.equals(trackId));
-      b.insertAllOnConflictUpdate(db.scanState, [
-        ScanStateCompanion(key: const Value(kArtistOverridesKey), value: Value(jsonEncode(overrides))),
-      ]);
+      b.insertAllOnConflictUpdate(db.scanState, [ArtistOverrides.row(overrides)]);
     });
   }
 
+  /// One transaction: two quick taps used to both find nothing to remove, and the second insert
+  /// hit the primary key.
   @override
-  Future<void> toggleFavorite(int trackId) async {
-    final removed = await (db.delete(db.favorites)..where((f) => f.trackId.equals(trackId))).go();
-    if (removed == 0) {
-      await db.into(db.favorites).insert(FavoritesCompanion.insert(
-            trackId: Value(trackId),
-            addedAt: DateTime.now().millisecondsSinceEpoch,
-          ));
-    }
-  }
+  Future<void> toggleFavorite(int trackId) => db.transaction(() async {
+        final removed = await (db.delete(db.favorites)..where((f) => f.trackId.equals(trackId))).go();
+        if (removed == 0) {
+          await db.into(db.favorites).insert(FavoritesCompanion.insert(
+                trackId: Value(trackId),
+                addedAt: DateTime.now().millisecondsSinceEpoch,
+              ));
+        }
+      });
 
   @override
   Future<Track?> getTrack(int id) async {
     final row = await (db.select(db.tracks)..where((t) => t.id.equals(id))).getSingleOrNull();
     return row == null ? null : mapper.toDomain(row);
+  }
+
+  @override
+  Future<List<Track>> getTracks(List<int> ids) async {
+    final out = <Track>[];
+    // In parts: SQLite caps how many values one query may take
+    for (var i = 0; i < ids.length; i += 500) {
+      final part = ids.sublist(i, min(i + 500, ids.length));
+      final rows = await (db.select(db.tracks)..where((t) => t.id.isIn(part) & t.isMissing.equals(false))).get();
+      out.addAll(rows.map(mapper.toDomain));
+    }
+    return out;
   }
 
   @override
@@ -166,8 +153,10 @@ class LibraryRepositoryImpl implements LibraryRepository {
 
   @override
   Future<Track?> findTrackByFile(String fileName, int size) async {
+    // The name comes from another app: % and _ in it are plain characters, not wildcards
+    final name = fileName.replaceAllMapped(RegExp(r'[\\%_]'), (m) => '\\${m[0]}');
     final rows = await (db.select(db.tracks)
-          ..where((t) => t.fileSize.equals(size) & t.path.like('%/$fileName'))
+          ..where((t) => t.fileSize.equals(size) & t.path.like('%/$name', escapeChar: r'\'))
           ..limit(1))
         .get();
     return rows.isEmpty ? null : mapper.toDomain(rows.first);
@@ -179,14 +168,7 @@ class LibraryRepositoryImpl implements LibraryRepository {
     if (row == null) return true;
     final ok = await mediaStore.delete(row.path);
     if (!ok) return false;
-    // FK cascade: favorites / playlist_tracks / play_history are deleted too.
-    // The file is already gone — hide it from lists even if the DB fails.
-    try {
-      await (db.delete(db.tracks)..where((t) => t.id.equals(id))).go();
-    } catch (e) {
-      debugPrint('delete: DB row $id not removed ($e) — marking missing');
-      await markMissing(id);
-    }
+    await _forget({id});
     return true;
   }
 
@@ -197,15 +179,27 @@ class LibraryRepositoryImpl implements LibraryRepository {
     final deletedPaths = await mediaStore.deleteMany([for (final r in rows) r.path]);
     final deleted = {for (final r in rows) if (deletedPaths.contains(r.path)) r.id};
     if (deleted.isEmpty) return deleted;
+    await _forget(deleted);
+    return deleted;
+  }
+
+  /// The files are gone: the songs leave favorites and playlists and are hidden, but their row
+  /// stays, so the play history and the stats built on it don't change (deleting the row
+  /// cascaded the history away). A file that comes back, or is found moved, picks the row up.
+  Future<void> _forget(Set<int> ids) async {
     try {
-      await (db.delete(db.tracks)..where((t) => t.id.isIn(deleted))).go();
+      await db.transaction(() async {
+        await (db.delete(db.favorites)..where((f) => f.trackId.isIn(ids))).go();
+        await (db.delete(db.playlistTracks)..where((pt) => pt.trackId.isIn(ids))).go();
+        await (db.update(db.tracks)..where((t) => t.id.isIn(ids))).write(const TracksCompanion(isMissing: Value(true)));
+      });
     } catch (e) {
-      debugPrint('delete: DB rows not removed ($e) — marking missing');
-      for (final id in deleted) {
+      // The files are already gone: at least hide them
+      debugPrint('delete: DB not updated ($e) — marking missing');
+      for (final id in ids) {
         await markMissing(id);
       }
     }
-    return deleted;
   }
 
   @override
@@ -248,23 +242,6 @@ class LibraryRepositoryImpl implements LibraryRepository {
   Future<void> setScanFolderEnabled(int id, bool enabled) =>
       (db.update(db.scanFolders)..where((f) => f.id.equals(id)))
           .write(ScanFoldersCompanion(enabled: Value(enabled)));
-
-  // ── settings (scan_state key/value) ────────────────────────
-
-  @override
-  Future<String?> getSetting(String key) async =>
-      (await (db.select(db.scanState)..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
-
-  @override
-  Future<void> setSetting(String key, String value) => db
-      .into(db.scanState)
-      .insertOnConflictUpdate(ScanStateCompanion(key: Value(key), value: Value(value)));
-
-  @override
-  Stream<String?> watchSetting(String key) => (db.select(db.scanState)..where((s) => s.key.equals(key)))
-      .watchSingleOrNull()
-      .map((r) => r?.value)
-      .distinct(); // every write to scan_state (resume position every 5 s) wakes all keys
 
   static Stream<T> _startWith<T>(Stream<T> rest, Future<T> Function() first) async* {
     yield await first();

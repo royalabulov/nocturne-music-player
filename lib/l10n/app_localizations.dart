@@ -331,6 +331,18 @@ abstract class L10n {
   /// **'\"{title}\" wasn’t found — skipped'**
   String toastTrackMissing(String title);
 
+  /// No description provided for @toastTrackUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" couldn’t be played'**
+  String toastTrackUnreadable(String title);
+
+  /// No description provided for @toastNoMusicPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'No permission to read music files'**
+  String get toastNoMusicPermission;
+
   /// No description provided for @notificationChannel.
   ///
   /// In en, this message translates to:
@@ -703,6 +715,30 @@ abstract class L10n {
   /// **'High'**
   String get knockHigh;
 
+  /// No description provided for @knockLogExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Save knock log'**
+  String get knockLogExport;
+
+  /// No description provided for @knockLogExportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Knock detection records, saved to the Download folder. They stay on this phone otherwise'**
+  String get knockLogExportHint;
+
+  /// No description provided for @knockLogEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing recorded yet'**
+  String get knockLogEmpty;
+
+  /// No description provided for @knockLogSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved → {path}'**
+  String knockLogSaved(String path);
+
   /// No description provided for @saveBackupDialog.
   ///
   /// In en, this message translates to:
@@ -778,8 +814,20 @@ abstract class L10n {
   /// No description provided for @restoreBackupHint.
   ///
   /// In en, this message translates to:
-  /// **'Merges into the current library (scan your music first)'**
+  /// **'Merges into the current library; songs not found yet are added as scans find them'**
   String get restoreBackupHint;
+
+  /// No description provided for @autoBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly backup'**
+  String get autoBackup;
+
+  /// No description provided for @autoBackupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Once a month to Download/Nocturne, the two newest are kept. Stays after the app is removed.'**
+  String get autoBackupHint;
 
   /// No description provided for @open.
   ///
@@ -822,6 +870,18 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Copy'**
   String get copy;
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @shareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'No app to share with. The log was copied instead.'**
+  String get shareFailed;
 
   /// No description provided for @clear.
   ///
@@ -888,6 +948,18 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Play any track first — the system equalizer becomes available once audio is initialised.'**
   String get eqUnavailable;
+
+  /// No description provided for @eqNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has no system equalizer. Music plays without it.'**
+  String get eqNotSupported;
+
+  /// No description provided for @databaseReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Your library data was damaged and has been set aside. Your songs are being found again; restore a backup in Settings to bring back favorites and playlists.'**
+  String get databaseReset;
 
   /// No description provided for @bassBoost.
   ///
@@ -1633,12 +1705,6 @@ abstract class L10n {
   /// **'{count, plural, =1{Sleep timer: 1 minute left} other{Sleep timer: {count} minutes left}}'**
   String sleepTimerLeftSpoken(int count);
 
-  /// No description provided for @stopsWhenTrackEnds.
-  ///
-  /// In en, this message translates to:
-  /// **'Stops when this track ends'**
-  String get stopsWhenTrackEnds;
-
   /// No description provided for @stopsIn.
   ///
   /// In en, this message translates to:
@@ -1957,11 +2023,11 @@ abstract class L10n {
   /// **'{count, plural, =1{Added 1 track} other{Added {count} tracks}}'**
   String addedTracks(int count);
 
-  /// No description provided for @savedToMusicSonar.
+  /// No description provided for @savedToMusicFolder.
   ///
   /// In en, this message translates to:
   /// **'Saved to Music/Nocturne'**
-  String get savedToMusicSonar;
+  String get savedToMusicFolder;
 
   /// No description provided for @skippedCount.
   ///
@@ -2313,7 +2379,7 @@ abstract class L10n {
   /// No description provided for @restoreMissing.
   ///
   /// In en, this message translates to:
-  /// **' • {count} tracks not found on this device'**
+  /// **' • {count} tracks not on this device yet: they\'re added as soon as a scan finds them'**
   String restoreMissing(int count);
 
   /// No description provided for @appLanguage.
@@ -2621,6 +2687,114 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Every day'**
   String get reminderEveryDay;
+
+  /// No description provided for @stopsWhenTrackEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops when this track ends'**
+  String get stopsWhenTrackEnds;
+
+  /// No description provided for @search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get search;
+
+  /// No description provided for @coverHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover. Swipe left or right for another song, tap for lyrics'**
+  String get coverHint;
+
+  /// No description provided for @openArtist.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the artist'**
+  String get openArtist;
+
+  /// No description provided for @alphabetRail.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to letter'**
+  String get alphabetRail;
+
+  /// No description provided for @removeFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove folder'**
+  String get removeFolder;
+
+  /// No description provided for @removeFolderQ.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this folder?'**
+  String get removeFolderQ;
+
+  /// No description provided for @removeFolderWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Songs in {folder} leave the library at the next scan. The files stay on the phone.'**
+  String removeFolderWarning(String folder);
+
+  /// No description provided for @loadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load this. Your data is still there.'**
+  String get loadFailed;
+
+  /// No description provided for @scanFailedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while reading your music. Try again.'**
+  String get scanFailedHint;
+
+  /// No description provided for @lastScanFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The last scan failed. Try again.'**
+  String get lastScanFailed;
+
+  /// No description provided for @startupFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nocturne couldn’t start'**
+  String get startupFailedTitle;
+
+  /// No description provided for @startupFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone’s storage may be full. Free up some space and open the app again. Your data has not been deleted.'**
+  String get startupFailedBody;
+
+  /// No description provided for @shareErrorLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Share error log'**
+  String get shareErrorLog;
+
+  /// No description provided for @closeApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get closeApp;
+
+  /// No description provided for @licenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Licenses'**
+  String get licenses;
+
+  /// No description provided for @licensesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fonts, the smart groups model and open-source libraries'**
+  String get licensesHint;
+
+  /// No description provided for @widgetEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a song to play'**
+  String get widgetEmptyHint;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

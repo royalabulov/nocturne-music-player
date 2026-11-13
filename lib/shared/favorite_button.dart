@@ -6,6 +6,7 @@ import '../core/theme/app_colors.dart';
 import '../l10n/l10n.dart';
 
 /// Heart — writes to/removes from the favorites table. Each tile watches its own id.
+/// Full 48 px touch size (it was 40 in every song row).
 class FavoriteButton extends ConsumerWidget {
   const FavoriteButton({super.key, required this.trackId, this.size = 22, this.quiet = false});
 
@@ -23,7 +24,6 @@ class FavoriteButton extends ConsumerWidget {
       tooltip: isFav ? l10n.removeFromFavorites : l10n.addToFavorites,
       onPressed: () => ref.read(libraryRepositoryProvider).toggleFavorite(trackId),
       iconSize: size,
-      visualDensity: VisualDensity.compact,
       icon: Icon(
         isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         color: quiet && !isFav ? AppColors.textMuted : AppColors.cyan,

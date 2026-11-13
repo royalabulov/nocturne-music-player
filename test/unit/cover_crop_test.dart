@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sonar/shared/cover_crop.dart';
+import 'package:nocturne/shared/cover_crop.dart';
 
 /// w×h RGBA image: black where [black] says so, mid grey elsewhere.
 Uint8List image(int w, int h, bool Function(int x, int y) black) {
