@@ -51,6 +51,10 @@ flutter:
   uses-material-design: true
   generate: true
 
+  # Licence texts of the fonts and the YAMNet model (Settings → Licenses)
+  assets:
+    - assets/licenses/
+
   # Variable fonts: all weights in one file. The google_fonts package is
   # deliberately not used — the app must be fully offline.
   fonts:

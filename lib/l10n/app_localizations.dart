@@ -2777,6 +2777,18 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Close'**
   String get closeApp;
+
+  /// No description provided for @licenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Licenses'**
+  String get licenses;
+
+  /// No description provided for @licensesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fonts, the smart groups model and open-source libraries'**
+  String get licensesHint;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

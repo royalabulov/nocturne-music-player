@@ -445,5 +445,7 @@
   "startupFailedTitle": "Nocturne başlaya bilmədi",
   "startupFailedBody": "Telefonun yaddaşı dolu ola bilər. Bir az yer boşaldıb tətbiqi yenidən açın. Məlumatlarınız silinməyib.",
   "shareErrorLog": "Xəta jurnalını paylaş",
-  "closeApp": "Bağla"
+  "closeApp": "Bağla",
+  "licenses": "Lisenziyalar",
+  "licensesHint": "Şriftlər, ağıllı qruplar modeli və açıq mənbəli kitabxanalar"
 }

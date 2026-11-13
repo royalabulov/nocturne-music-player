@@ -80,6 +80,20 @@ class SettingsScreen extends StatelessWidget {
           _Group(children: [
             _InfoRow(title: 'Nocturne', subtitle: l10n.versionLabel(kAppVersion)),
             _InfoRow(title: l10n.privacy, subtitle: l10n.privacyText),
+            // The fonts' and the model's licences ask for their text to go along with the app
+            InkWell(
+              onTap: () => showLicensePage(
+                context: context,
+                applicationName: 'Nocturne',
+                applicationVersion: kAppVersion,
+                useRootNavigator: true,
+              ),
+              child: _InfoRow(
+                title: l10n.licenses,
+                subtitle: l10n.licensesHint,
+                trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+              ),
+            ),
           ]),
         ],
       ),

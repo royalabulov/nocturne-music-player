@@ -20,6 +20,7 @@ import 'core/audio/service_release.dart';
 import 'core/diagnostics/crash_log.dart';
 import 'core/constants.dart';
 import 'core/di/providers.dart';
+import 'core/licenses/app_licenses.dart';
 import 'core/ui/toast.dart';
 import 'data/datasources/media_store_source.dart';
 import 'data/datasources/playback_service_source.dart';
@@ -46,6 +47,7 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
   WidgetsFlutterBinding.ensureInitialized();
   // Error log first: so startup errors are recorded too.
   await CrashLog.init();
+  registerAppLicenses();
 
   // Edge-to-edge: status bar and nav bar transparent, content goes underneath.
   unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));

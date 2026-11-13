@@ -1612,4 +1612,11 @@ class L10nAz extends L10n {
 
   @override
   String get closeApp => 'Bağla';
+
+  @override
+  String get licenses => 'Lisenziyalar';
+
+  @override
+  String get licensesHint =>
+      'Şriftlər, ağıllı qruplar modeli və açıq mənbəli kitabxanalar';
 }

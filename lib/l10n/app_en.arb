@@ -1050,5 +1050,7 @@
   "startupFailedTitle": "Nocturne couldn’t start",
   "startupFailedBody": "Your phone’s storage may be full. Free up some space and open the app again. Your data has not been deleted.",
   "shareErrorLog": "Share error log",
-  "closeApp": "Close"
+  "closeApp": "Close",
+  "licenses": "Licenses",
+  "licensesHint": "Fonts, the smart groups model and open-source libraries"
 }
