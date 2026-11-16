@@ -14,6 +14,9 @@ genre — no account, no cloud, no tracking.
 - **Your Vibes** — on-device audio classification with Google's YAMNet (TensorFlow Lite)
   plus tempo/key analysis sorts songs into mood and genre groups. A review screen lets
   the user correct guesses to measure accuracy.
+- **Song radio** — from any song, an endless queue of songs that sound like it, compared by
+  YAMNet's audio embedding on device. Smooths tempo, key and loudness between songs, spaces out
+  artists, and learns as you listen: songs heard to the end steer it, skips steer it away.
 - **Smart recommendations** — "Recommended" ranks tracks by recency × frequency
   (`Σ exp(-daysAgo / 14)` over the last 120 days of plays).
 - **Playback** — gapless A/B player handover, background playback with media

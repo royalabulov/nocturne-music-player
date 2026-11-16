@@ -22,6 +22,9 @@ enum RadioStart {
 
   /// Too few songs analyzed yet for a radio worth hearing.
   notReady,
+
+  /// A radio was already starting: this tap is ignored.
+  busy,
 }
 
 /// The radio playing now, if any — the queue sheet shows it.
@@ -53,7 +56,7 @@ class RadioController extends Notifier<RadioState> {
   /// Plays [seed] and the songs that sound like it. The queue is replaced only when a radio
   /// really starts.
   Future<RadioStart> start(Track seed) async {
-    if (state.starting) return RadioStart.notReady;
+    if (state.starting) return RadioStart.busy;
     state = RadioState(seed: state.seed, starting: true);
     try {
       return await _start(seed);

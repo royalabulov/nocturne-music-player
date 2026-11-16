@@ -2795,6 +2795,60 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Pick a song to play'**
   String get widgetEmptyHint;
+
+  /// No description provided for @radioFromSong.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio from this song'**
+  String get radioFromSong;
+
+  /// No description provided for @menuRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio'**
+  String get menuRadio;
+
+  /// No description provided for @menuRadioHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Endless songs that sound like the one playing'**
+  String get menuRadioHint;
+
+  /// No description provided for @radioOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio: {title}'**
+  String radioOf(String title);
+
+  /// No description provided for @radioStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop radio'**
+  String get radioStop;
+
+  /// No description provided for @radioStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding songs that sound alike…'**
+  String get radioStarting;
+
+  /// No description provided for @radioNotAnalyzed.
+  ///
+  /// In en, this message translates to:
+  /// **'This song couldn\'t be analyzed, so radio can\'t start from it'**
+  String get radioNotAnalyzed;
+
+  /// No description provided for @radioNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio needs more of your songs analyzed: {done} of {total} so far'**
+  String radioNotReady(int done, int total);
+
+  /// No description provided for @radioNothingPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a song first: radio starts from it'**
+  String get radioNothingPlaying;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

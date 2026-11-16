@@ -1626,4 +1626,36 @@ class L10nEn extends L10n {
 
   @override
   String get widgetEmptyHint => 'Pick a song to play';
+
+  @override
+  String get radioFromSong => 'Radio from this song';
+
+  @override
+  String get menuRadio => 'Radio';
+
+  @override
+  String get menuRadioHint => 'Endless songs that sound like the one playing';
+
+  @override
+  String radioOf(String title) {
+    return 'Radio: $title';
+  }
+
+  @override
+  String get radioStop => 'Stop radio';
+
+  @override
+  String get radioStarting => 'Finding songs that sound alike…';
+
+  @override
+  String get radioNotAnalyzed =>
+      'This song couldn\'t be analyzed, so radio can\'t start from it';
+
+  @override
+  String radioNotReady(int done, int total) {
+    return 'Radio needs more of your songs analyzed: $done of $total so far';
+  }
+
+  @override
+  String get radioNothingPlaying => 'Play a song first: radio starts from it';
 }

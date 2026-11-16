@@ -12,6 +12,7 @@ import '../../core/utils/duration_format.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/entities/track_keys.dart';
 import '../../core/audio/player_providers.dart';
+import '../radio/radio_actions.dart';
 import 'add_to_playlist_sheet.dart';
 import '../../shared/album_art.dart';
 import 'delete_track.dart';
@@ -136,6 +137,15 @@ class _TrackActions extends ConsumerWidget {
           onTap: () {
             unawaited(handler.enqueue([track]));
             close();
+          },
+        ),
+        SheetAction(
+          icon: Icons.radio_rounded,
+          label: l10n.radioFromSong,
+          onTap: () {
+            final container = ProviderScope.containerOf(context, listen: false);
+            close();
+            unawaited(startRadio(container, track));
           },
         ),
         SheetAction(

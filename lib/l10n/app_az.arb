@@ -448,5 +448,14 @@
   "closeApp": "Bağla",
   "licenses": "Lisenziyalar",
   "licensesHint": "Şriftlər, ağıllı qruplar modeli və açıq mənbəli kitabxanalar",
-  "widgetEmptyHint": "Oxutmaq üçün mahnı seç"
+  "widgetEmptyHint": "Oxutmaq üçün mahnı seç",
+  "radioFromSong": "Bu mahnıdan radio",
+  "menuRadio": "Radio",
+  "menuRadioHint": "Çalan mahnıya bənzər sonsuz axın",
+  "radioOf": "Radio: {title}",
+  "radioStop": "Radionu dayandır",
+  "radioStarting": "Bənzər mahnılar axtarılır…",
+  "radioNotAnalyzed": "Bu mahnı analiz oluna bilmədi, ondan radio başlatmaq olmur",
+  "radioNotReady": "Radio üçün daha çox mahnı analiz olunmalıdır: hələlik {done}/{total}",
+  "radioNothingPlaying": "Əvvəlcə bir mahnı oxut: radio ondan başlayacaq"
 }
