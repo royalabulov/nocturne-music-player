@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -54,6 +54,8 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) await m.createTable(trackAnalyses);
           if (from < 4) await m.createTable(vibeLabels);
           if (from < 5) await m.createTable(trackLyrics);
+          // Below v3 the table was just created above, already with the column
+          if (from >= 3 && from < 6) await m.addColumn(trackAnalyses, trackAnalyses.embedding);
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

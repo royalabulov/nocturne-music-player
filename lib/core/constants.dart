@@ -14,7 +14,8 @@ const kTagReaderVersion = 9;
 /// Version of the smart-groups audio analysis (Kotlin AudioAnalyzer + stored
 /// classes). When it goes up, every song is re-analyzed in the background.
 /// v2: 3×10 s segments (with low-pass) + tempo, major/minor, brightness.
-const kVibeAnalysisVersion = 2;
+/// v3: + the YAMNet embedding, for song radio.
+const kVibeAnalysisVersion = 3;
 
 /// Version shown in Settings (keep in sync with pubspec.yaml).
 const kAppVersion = '1.0.1';

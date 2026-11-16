@@ -9,6 +9,7 @@ import 'package:rxdart/rxdart.dart';
 import '../../core/constants.dart';
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/crash_log.dart';
+import '../../domain/analysis/embedding.dart';
 import '../../domain/analysis/music_features.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/analysis_repository.dart';
@@ -58,7 +59,13 @@ class SmartAnalysisController extends Notifier<bool> {
             // Tempo / major-minor / brightness — heavy FFT work off the UI isolate
             final segments = r.segments;
             final features = await Isolate.run(() => extractMusicFeatures(segments));
-            await repo.save(p.trackId, kVibeAnalysisVersion, scores: {...r.scores, ...features}, rmsDb: r.rmsDb);
+            await repo.save(
+              p.trackId,
+              kVibeAnalysisVersion,
+              scores: {...r.scores, ...features},
+              rmsDb: r.rmsDb,
+              embedding: r.embedding == null ? null : encodeEmbedding(r.embedding!),
+            );
           } on MissingPluginException {
             // The analyzer isn't there (the engine started without it): no song is at fault.
             // Recording each as failed kept them out of smart groups for good.

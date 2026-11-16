@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'dart:typed_data';
+
 
 import 'package:rxdart/rxdart.dart';
 
@@ -397,7 +399,10 @@ class DemoAnalysisRepository implements AnalysisRepository {
   Future<List<PendingAnalysis>> pending(int version, {int limit = 20}) async => const [];
 
   @override
-  Future<void> save(int trackId, int version, {Map<String, double>? scores, double? rmsDb}) async {}
+  Future<void> save(int trackId, int version, {Map<String, double>? scores, double? rmsDb, Uint8List? embedding}) async {}
+
+  @override
+  Future<Map<int, Uint8List>> embeddings() async => const {};
 
   @override
   Stream<List<TrackVibeData>> watchVibeData() => lib.watchTracks().map(_build);

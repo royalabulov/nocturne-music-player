@@ -139,6 +139,19 @@ void main() {
       expect((await repo.pending(2)).length, 2);
     });
 
+    test('embeddings: saved with the analysis, only songs that have one, hidden songs left out', () async {
+      final a = await addTrack('a');
+      final b = await addTrack('b');
+      final short = await addTrack('short');
+      await (db.update(db.tracks)..where((t) => t.id.equals(short))).write(const TracksCompanion(durationMs: Value(5000)));
+
+      await repo.save(a, 3, scores: {'Music': .5}, embedding: Uint8List.fromList([1, 2, 3]));
+      await repo.save(b, 3, scores: {'Music': .5}); // a model without the embedding output
+      await repo.save(short, 3, scores: {'Music': .5}, embedding: Uint8List.fromList([9]));
+
+      expect(await repo.embeddings(), {a: [1, 2, 3]});
+    });
+
     test('deleting a track removes its analysis', () async {
       final a = await addTrack('a');
       await repo.save(a, 1, scores: {'Music': .5});
