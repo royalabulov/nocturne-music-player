@@ -28,6 +28,7 @@ class RadioPick {
     required this.exclude,
     required this.recentArtists,
     required this.penalty,
+    this.affinity = const {},
     required this.count,
   });
   final RadioLibrary lib;
@@ -36,6 +37,7 @@ class RadioPick {
   final Set<int> exclude;
   final List<String> recentArtists;
   final Map<int, double> penalty;
+  final Map<int, double> affinity;
   final int count;
 }
 
@@ -51,6 +53,7 @@ List<int> _pick(RadioPick p) => pickRadioSongs(
       exclude: p.exclude,
       recentArtists: p.recentArtists,
       penalty: p.penalty,
+      affinity: p.affinity,
       count: p.count,
     );
 
@@ -67,6 +70,7 @@ class RadioSession {
     required this.tracks,
     required this.seed,
     this.penalty = const {},
+    this.together,
     RadioPicker? picker,
     this.onEnded,
   }) : _picker = picker ?? pickInBackground;
@@ -78,6 +82,9 @@ class RadioSession {
   final Map<int, Track> tracks;
   final Track seed;
   final Map<int, double> penalty;
+
+  /// What this listener plays together; null (or empty) = by sound alone.
+  final CoListening? together;
   final RadioPicker _picker;
   final void Function()? onEnded;
 
@@ -236,6 +243,7 @@ class RadioSession {
         exclude: {seed.id, ...exclude},
         recentArtists: recentArtists,
         penalty: penalty,
+        affinity: together?.affinity(seed.id, liked: _liked) ?? const {},
         count: min(count, max(lib.length - 1, 0)),
       );
 }

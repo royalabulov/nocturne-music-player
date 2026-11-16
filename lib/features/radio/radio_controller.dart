@@ -111,6 +111,7 @@ class RadioController extends Notifier<RadioState> {
       tracks: tracks,
       seed: seed,
       penalty: radioPenalties(plays, now: now),
+      together: CoListening.fromPlays(plays),
       onEnded: () {
         if (_session != session) return;
         _session = null;

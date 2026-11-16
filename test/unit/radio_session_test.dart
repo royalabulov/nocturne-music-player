@@ -6,6 +6,7 @@ import 'package:nocturne/domain/entities/audio_format.dart';
 import 'package:nocturne/domain/analysis/embedding.dart';
 import 'package:nocturne/domain/analysis/song_radio.dart';
 import 'package:nocturne/domain/entities/track.dart';
+import 'package:nocturne/domain/repositories/history_repository.dart';
 import 'package:nocturne/features/radio/radio_session.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -101,11 +102,54 @@ void main() {
           exclude: p.exclude,
           recentArtists: p.recentArtists,
           penalty: p.penalty,
+          affinity: p.affinity,
           count: p.count,
           random: Random(p.after),
         ),
         onEnded: () => ended++,
       );
+
+  test('a song the listener often plays right after the first one comes in early', () async {
+    Future<List<int>> radio(CoListening? together) async {
+      final p = _Player();
+      await RadioSession(
+        player: p,
+        lib: lib,
+        tracks: tracks,
+        seed: tracks[0]!,
+        together: together,
+        picker: (r) async => pickRadioSongs(
+          r.lib,
+          direction: r.direction,
+          after: r.after,
+          exclude: r.exclude,
+          affinity: r.affinity,
+          count: r.count,
+          random: Random(1),
+        ),
+      ).start();
+      return p.ids;
+    }
+
+    final bySound = await radio(null);
+    // The style-0 song that sounds least like song 0: not in its first ten
+    final far = [for (var i = 1; i < 30; i++) i].lastWhere((id) => !bySound.contains(id));
+    final at = DateTime(2026, 11, 1, 20);
+    final plays = [
+      for (var day = 0; day < 5; day++)
+        for (final (i, id) in [0, far].indexed)
+          PlayRecord(
+            trackId: id,
+            playedAt: at.add(Duration(days: day, minutes: 4 * i)),
+            listened: const Duration(minutes: 3),
+            duration: const Duration(minutes: 3),
+          ),
+    ];
+    final withHabits = await radio(CoListening.fromPlays(plays));
+    expect(withHabits.indexOf(far), inInclusiveRange(1, 3), reason: '$bySound → $withHabits');
+    // The rest is still by sound: all style 0
+    expect(withHabits.every((id) => id < 100), isTrue);
+  });
 
   test('plays the first song, then ten that sound like it', () async {
     final s = session();
