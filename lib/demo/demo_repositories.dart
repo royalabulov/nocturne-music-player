@@ -1,7 +1,10 @@
 import 'dart:math';
+import 'dart:typed_data';
+
 
 import 'package:rxdart/rxdart.dart';
 
+import '../domain/analysis/embedding.dart';
 import '../domain/entities/playlist.dart';
 import '../domain/entities/track.dart';
 import '../domain/entities/track_keys.dart';
@@ -172,6 +175,13 @@ class DemoHistoryRepository implements HistoryRepository {
   /// Web demo: stats keep counting full song length.
   @override
   Future<void> saveListened(int playId, Duration listened) async {}
+
+  @override
+  Future<List<PlayRecord>> playsSince(DateTime since) async => [
+        for (final (id, at) in _plays.value)
+          if (!at.isBefore(since))
+            PlayRecord(trackId: id, playedAt: at, listened: null, duration: const Duration(minutes: 3)),
+      ];
 
   /// id → (count, lastPlayed, score)
   Map<int, (int, DateTime, double)> _agg(List<(int, DateTime)> plays) {
@@ -397,7 +407,26 @@ class DemoAnalysisRepository implements AnalysisRepository {
   Future<List<PendingAnalysis>> pending(int version, {int limit = 20}) async => const [];
 
   @override
-  Future<void> save(int trackId, int version, {Map<String, double>? scores, double? rmsDb}) async {}
+  Future<void> save(int trackId, int version, {Map<String, double>? scores, double? rmsDb, Uint8List? embedding}) async {}
+
+  /// Song radio: songs of the same demo mood sound alike.
+  @override
+  Future<Map<int, Uint8List>> embeddings() async {
+    final style = [
+      for (var m = 0; m < _moodClasses.length; m++)
+        () {
+          final r = Random(1000 + m);
+          return [for (var j = 0; j < 64; j++) r.nextDouble() < .25 ? r.nextDouble() : 0.0];
+        }(),
+    ];
+    return {
+      for (final t in await lib.watchTracks().first)
+        t.id: () {
+          final r = Random(t.id), own = style[t.id % _moodClasses.length];
+          return encodeEmbedding([for (var j = 0; j < 64; j++) 1 + own[j] + r.nextDouble() * .15]);
+        }(),
+    };
+  }
 
   @override
   Stream<List<TrackVibeData>> watchVibeData() => lib.watchTracks().map(_build);

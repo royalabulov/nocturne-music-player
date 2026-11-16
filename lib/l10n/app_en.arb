@@ -1053,5 +1053,31 @@
   "closeApp": "Close",
   "licenses": "Licenses",
   "licensesHint": "Fonts, the smart groups model and open-source libraries",
-  "widgetEmptyHint": "Pick a song to play"
+  "widgetEmptyHint": "Pick a song to play",
+  "radioFromSong": "Radio from this song",
+  "menuRadio": "Radio",
+  "menuRadioHint": "Endless songs that sound like the one playing",
+  "radioOf": "Radio: {title}",
+  "@radioOf": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "radioStop": "Stop radio",
+  "radioStarting": "Finding songs that sound alike…",
+  "radioNotAnalyzed": "This song couldn't be analyzed, so radio can't start from it",
+  "radioNotReady": "Radio needs more of your songs analyzed: {done} of {total} so far",
+  "@radioNotReady": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "radioNothingPlaying": "Play a song first: radio starts from it"
 }

@@ -2907,6 +2907,17 @@ class $TrackAnalysesTable extends TrackAnalyses
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _embeddingMeta = const VerificationMeta(
+    'embedding',
+  );
+  @override
+  late final GeneratedColumn<Uint8List> embedding = GeneratedColumn<Uint8List>(
+    'embedding',
+    aliasedName,
+    true,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     trackId,
@@ -2914,6 +2925,7 @@ class $TrackAnalysesTable extends TrackAnalyses
     scores,
     rmsDb,
     analyzedAt,
+    embedding,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2961,6 +2973,12 @@ class $TrackAnalysesTable extends TrackAnalyses
     } else if (isInserting) {
       context.missing(_analyzedAtMeta);
     }
+    if (data.containsKey('embedding')) {
+      context.handle(
+        _embeddingMeta,
+        embedding.isAcceptableOrUnknown(data['embedding']!, _embeddingMeta),
+      );
+    }
     return context;
   }
 
@@ -2990,6 +3008,10 @@ class $TrackAnalysesTable extends TrackAnalyses
         DriftSqlType.int,
         data['${effectivePrefix}analyzed_at'],
       )!,
+      embedding: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}embedding'],
+      ),
     );
   }
 
@@ -3010,12 +3032,16 @@ class TrackAnalysisRow extends DataClass
   final String? scores;
   final double? rmsDb;
   final int analyzedAt;
+
+  /// Song radio: the YAMNet embedding, packed by encodeEmbedding (v6). null = not there yet.
+  final Uint8List? embedding;
   const TrackAnalysisRow({
     required this.trackId,
     required this.version,
     this.scores,
     this.rmsDb,
     required this.analyzedAt,
+    this.embedding,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3029,6 +3055,9 @@ class TrackAnalysisRow extends DataClass
       map['rms_db'] = Variable<double>(rmsDb);
     }
     map['analyzed_at'] = Variable<int>(analyzedAt);
+    if (!nullToAbsent || embedding != null) {
+      map['embedding'] = Variable<Uint8List>(embedding);
+    }
     return map;
   }
 
@@ -3043,6 +3072,9 @@ class TrackAnalysisRow extends DataClass
           ? const Value.absent()
           : Value(rmsDb),
       analyzedAt: Value(analyzedAt),
+      embedding: embedding == null && nullToAbsent
+          ? const Value.absent()
+          : Value(embedding),
     );
   }
 
@@ -3057,6 +3089,7 @@ class TrackAnalysisRow extends DataClass
       scores: serializer.fromJson<String?>(json['scores']),
       rmsDb: serializer.fromJson<double?>(json['rmsDb']),
       analyzedAt: serializer.fromJson<int>(json['analyzedAt']),
+      embedding: serializer.fromJson<Uint8List?>(json['embedding']),
     );
   }
   @override
@@ -3068,6 +3101,7 @@ class TrackAnalysisRow extends DataClass
       'scores': serializer.toJson<String?>(scores),
       'rmsDb': serializer.toJson<double?>(rmsDb),
       'analyzedAt': serializer.toJson<int>(analyzedAt),
+      'embedding': serializer.toJson<Uint8List?>(embedding),
     };
   }
 
@@ -3077,12 +3111,14 @@ class TrackAnalysisRow extends DataClass
     Value<String?> scores = const Value.absent(),
     Value<double?> rmsDb = const Value.absent(),
     int? analyzedAt,
+    Value<Uint8List?> embedding = const Value.absent(),
   }) => TrackAnalysisRow(
     trackId: trackId ?? this.trackId,
     version: version ?? this.version,
     scores: scores.present ? scores.value : this.scores,
     rmsDb: rmsDb.present ? rmsDb.value : this.rmsDb,
     analyzedAt: analyzedAt ?? this.analyzedAt,
+    embedding: embedding.present ? embedding.value : this.embedding,
   );
   TrackAnalysisRow copyWithCompanion(TrackAnalysesCompanion data) {
     return TrackAnalysisRow(
@@ -3093,6 +3129,7 @@ class TrackAnalysisRow extends DataClass
       analyzedAt: data.analyzedAt.present
           ? data.analyzedAt.value
           : this.analyzedAt,
+      embedding: data.embedding.present ? data.embedding.value : this.embedding,
     );
   }
 
@@ -3103,13 +3140,21 @@ class TrackAnalysisRow extends DataClass
           ..write('version: $version, ')
           ..write('scores: $scores, ')
           ..write('rmsDb: $rmsDb, ')
-          ..write('analyzedAt: $analyzedAt')
+          ..write('analyzedAt: $analyzedAt, ')
+          ..write('embedding: $embedding')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(trackId, version, scores, rmsDb, analyzedAt);
+  int get hashCode => Object.hash(
+    trackId,
+    version,
+    scores,
+    rmsDb,
+    analyzedAt,
+    $driftBlobEquality.hash(embedding),
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3118,7 +3163,8 @@ class TrackAnalysisRow extends DataClass
           other.version == this.version &&
           other.scores == this.scores &&
           other.rmsDb == this.rmsDb &&
-          other.analyzedAt == this.analyzedAt);
+          other.analyzedAt == this.analyzedAt &&
+          $driftBlobEquality.equals(other.embedding, this.embedding));
 }
 
 class TrackAnalysesCompanion extends UpdateCompanion<TrackAnalysisRow> {
@@ -3127,12 +3173,14 @@ class TrackAnalysesCompanion extends UpdateCompanion<TrackAnalysisRow> {
   final Value<String?> scores;
   final Value<double?> rmsDb;
   final Value<int> analyzedAt;
+  final Value<Uint8List?> embedding;
   const TrackAnalysesCompanion({
     this.trackId = const Value.absent(),
     this.version = const Value.absent(),
     this.scores = const Value.absent(),
     this.rmsDb = const Value.absent(),
     this.analyzedAt = const Value.absent(),
+    this.embedding = const Value.absent(),
   });
   TrackAnalysesCompanion.insert({
     this.trackId = const Value.absent(),
@@ -3140,6 +3188,7 @@ class TrackAnalysesCompanion extends UpdateCompanion<TrackAnalysisRow> {
     this.scores = const Value.absent(),
     this.rmsDb = const Value.absent(),
     required int analyzedAt,
+    this.embedding = const Value.absent(),
   }) : version = Value(version),
        analyzedAt = Value(analyzedAt);
   static Insertable<TrackAnalysisRow> custom({
@@ -3148,6 +3197,7 @@ class TrackAnalysesCompanion extends UpdateCompanion<TrackAnalysisRow> {
     Expression<String>? scores,
     Expression<double>? rmsDb,
     Expression<int>? analyzedAt,
+    Expression<Uint8List>? embedding,
   }) {
     return RawValuesInsertable({
       if (trackId != null) 'track_id': trackId,
@@ -3155,6 +3205,7 @@ class TrackAnalysesCompanion extends UpdateCompanion<TrackAnalysisRow> {
       if (scores != null) 'scores': scores,
       if (rmsDb != null) 'rms_db': rmsDb,
       if (analyzedAt != null) 'analyzed_at': analyzedAt,
+      if (embedding != null) 'embedding': embedding,
     });
   }
 
@@ -3164,6 +3215,7 @@ class TrackAnalysesCompanion extends UpdateCompanion<TrackAnalysisRow> {
     Value<String?>? scores,
     Value<double?>? rmsDb,
     Value<int>? analyzedAt,
+    Value<Uint8List?>? embedding,
   }) {
     return TrackAnalysesCompanion(
       trackId: trackId ?? this.trackId,
@@ -3171,6 +3223,7 @@ class TrackAnalysesCompanion extends UpdateCompanion<TrackAnalysisRow> {
       scores: scores ?? this.scores,
       rmsDb: rmsDb ?? this.rmsDb,
       analyzedAt: analyzedAt ?? this.analyzedAt,
+      embedding: embedding ?? this.embedding,
     );
   }
 
@@ -3192,6 +3245,9 @@ class TrackAnalysesCompanion extends UpdateCompanion<TrackAnalysisRow> {
     if (analyzedAt.present) {
       map['analyzed_at'] = Variable<int>(analyzedAt.value);
     }
+    if (embedding.present) {
+      map['embedding'] = Variable<Uint8List>(embedding.value);
+    }
     return map;
   }
 
@@ -3202,7 +3258,8 @@ class TrackAnalysesCompanion extends UpdateCompanion<TrackAnalysisRow> {
           ..write('version: $version, ')
           ..write('scores: $scores, ')
           ..write('rmsDb: $rmsDb, ')
-          ..write('analyzedAt: $analyzedAt')
+          ..write('analyzedAt: $analyzedAt, ')
+          ..write('embedding: $embedding')
           ..write(')'))
         .toString();
   }
@@ -6747,6 +6804,7 @@ typedef $$TrackAnalysesTableCreateCompanionBuilder =
       Value<String?> scores,
       Value<double?> rmsDb,
       required int analyzedAt,
+      Value<Uint8List?> embedding,
     });
 typedef $$TrackAnalysesTableUpdateCompanionBuilder =
     TrackAnalysesCompanion Function({
@@ -6755,6 +6813,7 @@ typedef $$TrackAnalysesTableUpdateCompanionBuilder =
       Value<String?> scores,
       Value<double?> rmsDb,
       Value<int> analyzedAt,
+      Value<Uint8List?> embedding,
     });
 
 final class $$TrackAnalysesTableReferences
@@ -6813,6 +6872,11 @@ class $$TrackAnalysesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<Uint8List> get embedding => $composableBuilder(
+    column: $table.embedding,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$TracksTableFilterComposer get trackId {
     final $$TracksTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -6866,6 +6930,11 @@ class $$TrackAnalysesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<Uint8List> get embedding => $composableBuilder(
+    column: $table.embedding,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TracksTableOrderingComposer get trackId {
     final $$TracksTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -6912,6 +6981,9 @@ class $$TrackAnalysesTableAnnotationComposer
     column: $table.analyzedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<Uint8List> get embedding =>
+      $composableBuilder(column: $table.embedding, builder: (column) => column);
 
   $$TracksTableAnnotationComposer get trackId {
     final $$TracksTableAnnotationComposer composer = $composerBuilder(
@@ -6970,12 +7042,14 @@ class $$TrackAnalysesTableTableManager
                 Value<String?> scores = const Value.absent(),
                 Value<double?> rmsDb = const Value.absent(),
                 Value<int> analyzedAt = const Value.absent(),
+                Value<Uint8List?> embedding = const Value.absent(),
               }) => TrackAnalysesCompanion(
                 trackId: trackId,
                 version: version,
                 scores: scores,
                 rmsDb: rmsDb,
                 analyzedAt: analyzedAt,
+                embedding: embedding,
               ),
           createCompanionCallback:
               ({
@@ -6984,12 +7058,14 @@ class $$TrackAnalysesTableTableManager
                 Value<String?> scores = const Value.absent(),
                 Value<double?> rmsDb = const Value.absent(),
                 required int analyzedAt,
+                Value<Uint8List?> embedding = const Value.absent(),
               }) => TrackAnalysesCompanion.insert(
                 trackId: trackId,
                 version: version,
                 scores: scores,
                 rmsDb: rmsDb,
                 analyzedAt: analyzedAt,
+                embedding: embedding,
               ),
           withReferenceMapper: (p0) => p0
               .map(

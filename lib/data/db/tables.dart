@@ -100,6 +100,9 @@ class TrackAnalyses extends Table {
   RealColumn get rmsDb => real().nullable()();
   IntColumn get analyzedAt => integer()();
 
+  /// Song radio: the YAMNet embedding, packed by encodeEmbedding (v6). null = not there yet.
+  BlobColumn get embedding => blob().nullable()();
+
   @override
   Set<Column> get primaryKey => {trackId};
 }

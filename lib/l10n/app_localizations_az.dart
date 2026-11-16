@@ -1622,4 +1622,37 @@ class L10nAz extends L10n {
 
   @override
   String get widgetEmptyHint => 'Oxutmaq üçün mahnı seç';
+
+  @override
+  String get radioFromSong => 'Bu mahnıdan radio';
+
+  @override
+  String get menuRadio => 'Radio';
+
+  @override
+  String get menuRadioHint => 'Çalan mahnıya bənzər sonsuz axın';
+
+  @override
+  String radioOf(String title) {
+    return 'Radio: $title';
+  }
+
+  @override
+  String get radioStop => 'Radionu dayandır';
+
+  @override
+  String get radioStarting => 'Bənzər mahnılar axtarılır…';
+
+  @override
+  String get radioNotAnalyzed =>
+      'Bu mahnı analiz oluna bilmədi, ondan radio başlatmaq olmur';
+
+  @override
+  String radioNotReady(int done, int total) {
+    return 'Radio üçün daha çox mahnı analiz olunmalıdır: hələlik $done/$total';
+  }
+
+  @override
+  String get radioNothingPlaying =>
+      'Əvvəlcə bir mahnı oxut: radio ondan başlayacaq';
 }

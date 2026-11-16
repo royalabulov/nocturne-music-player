@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +15,7 @@ import '../../domain/repositories/library_repository.dart';
 import '../../shared/nocturne_mark.dart';
 import '../import/audio_import.dart';
 import '../library_scan/scan_controller.dart';
+import '../radio/radio_actions.dart';
 import '../../l10n/l10n.dart';
 
 
@@ -86,6 +89,16 @@ class SideMenu extends ConsumerWidget {
                     label: l10n.checkAccuracy,
                     active: location.startsWith(kVibeReviewRoute),
                     onTap: () => go(kVibeReviewRoute),
+                  ),
+                  _Item(
+                    icon: Icons.radio_rounded,
+                    label: l10n.menuRadio,
+                    hint: l10n.menuRadioHint,
+                    onTap: () {
+                      final container = ProviderScope.containerOf(context, listen: false);
+                      Navigator.of(context).pop();
+                      unawaited(startRadioFromNowPlaying(container));
+                    },
                   ),
                   _Item(
                     icon: Icons.history_toggle_off_rounded,

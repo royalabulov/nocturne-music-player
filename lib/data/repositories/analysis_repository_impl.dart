@@ -67,14 +67,25 @@ class AnalysisRepositoryImpl implements AnalysisRepository {
   }
 
   @override
-  Future<void> save(int trackId, int version, {Map<String, double>? scores, double? rmsDb}) =>
+  Future<void> save(int trackId, int version, {Map<String, double>? scores, double? rmsDb, Uint8List? embedding}) =>
       db.into(db.trackAnalyses).insertOnConflictUpdate(TrackAnalysesCompanion.insert(
             trackId: Value(trackId),
             version: version,
             scores: Value(scores == null ? null : jsonEncode(_round(scores))),
             rmsDb: Value(rmsDb),
             analyzedAt: DateTime.now().millisecondsSinceEpoch,
+            embedding: Value(embedding),
           ));
+
+  @override
+  Future<Map<int, Uint8List>> embeddings() async {
+    final rows = await db.customSelect(
+      'SELECT t.id, a.embedding FROM tracks t '
+      'JOIN track_analyses a ON a.track_id = t.id WHERE $_visibleSql AND a.embedding IS NOT NULL',
+      readsFrom: {db.tracks, db.trackAnalyses},
+    ).get();
+    return {for (final r in rows) r.read<int>('id'): r.read<Uint8List>('embedding')};
+  }
 
   /// 4 digits are enough — the JSON shrinks by half. Keys starting with "_"
   /// (tempo, major/minor ...) can be negative or zero — always kept.

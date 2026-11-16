@@ -11,6 +11,7 @@ import '../../shared/album_art.dart';
 import '../../core/audio/player_providers.dart';
 import '../../l10n/l10n.dart';
 import '../../core/utils/display_names.dart';
+import '../radio/radio_controller.dart';
 
 /// The queue — bottom sheet. Tap → jump to that track.
 Future<void> showQueueSheet(BuildContext context) => showModalBottomSheet(
@@ -105,6 +106,7 @@ class _QueueSheetState extends ConsumerState<_QueueSheet> {
                   ],
                 ),
               ),
+              const _RadioBar(),
               Expanded(
                 // The tap ripple is drawn on the nearest Material: without this one it was the
                 // sheet's, under the coloured Container above, and never showed
@@ -162,6 +164,41 @@ class _QueueSheetState extends ConsumerState<_QueueSheet> {
           ),
         );
       },
+    );
+  }
+}
+
+/// While a radio plays: which song it started from, and a way to stop it (the songs already
+/// queued stay).
+class _RadioBar extends ConsumerWidget {
+  const _RadioBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final seed = ref.watch(radioProvider.select((r) => r.seed));
+    if (seed == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 0, AppSpacing.screenH - AppSpacing.xs, AppSpacing.sm),
+      child: Row(
+        children: [
+          const Icon(Icons.radio_rounded, size: 18, color: AppColors.cyan),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Text(
+              l10n.radioOf(seed.title),
+              style: AppTypography.labelMd.copyWith(color: AppColors.cyan),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.radioStop,
+            onPressed: () => ref.read(radioProvider.notifier).stop(),
+            icon: const Icon(Icons.close_rounded, size: 20),
+            color: AppColors.textSecondary,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -9,6 +9,7 @@ import 'package:rxdart/rxdart.dart';
 import '../../core/constants.dart';
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/crash_log.dart';
+import '../../domain/analysis/embedding.dart';
 import '../../domain/analysis/music_features.dart';
 import '../../domain/entities/track.dart';
 import '../../domain/repositories/analysis_repository.dart';
@@ -54,11 +55,7 @@ class SmartAnalysisController extends Notifier<bool> {
         for (final p in batch) {
           if (_stop) break;
           try {
-            final r = await source.analyze(p.path, p.durationMs);
-            // Tempo / major-minor / brightness — heavy FFT work off the UI isolate
-            final segments = r.segments;
-            final features = await Isolate.run(() => extractMusicFeatures(segments));
-            await repo.save(p.trackId, kVibeAnalysisVersion, scores: {...r.scores, ...features}, rmsDb: r.rmsDb);
+            await analyzeAndSave(ref, p);
           } on MissingPluginException {
             // The analyzer isn't there (the engine started without it): no song is at fault.
             // Recording each as failed kept them out of smart groups for good.
@@ -83,6 +80,23 @@ class SmartAnalysisController extends Notifier<bool> {
     await ref.read(settingsRepositoryProvider).setSetting(SettingsKeys.smartAnalysis, '$on');
     on ? unawaited(start()) : stop();
   }
+}
+
+/// One song: analyze it and store the result. Throws what the analyzer throws — the caller
+/// decides whether that marks the song as failed. Also used by song radio for a first song
+/// the background analysis hasn't reached yet.
+Future<void> analyzeAndSave(Ref ref, PendingAnalysis p) async {
+  final r = await ref.read(audioAnalyzerProvider).analyze(p.path, p.durationMs);
+  // Tempo / major-minor / brightness — heavy FFT work off the UI isolate
+  final segments = r.segments;
+  final features = await Isolate.run(() => extractMusicFeatures(segments));
+  await ref.read(analysisRepositoryProvider).save(
+    p.trackId,
+    kVibeAnalysisVersion,
+    scores: {...r.scores, ...features},
+    rmsDb: r.rmsDb,
+    embedding: r.embedding == null ? null : encodeEmbedding(r.embedding!),
+  );
 }
 
 final smartAnalysisProvider = NotifierProvider<SmartAnalysisController, bool>(SmartAnalysisController.new);

@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,7 +55,8 @@ class _Pending extends DemoAnalysisRepository {
       ];
 
   @override
-  Future<void> save(int trackId, int version, {Map<String, double>? scores, double? rmsDb}) async => saved.add(trackId);
+  Future<void> save(int trackId, int version, {Map<String, double>? scores, double? rmsDb, Uint8List? embedding}) async =>
+      saved.add(trackId);
 }
 
 class _NoChannel extends AudioAnalyzerSource {
@@ -65,13 +64,13 @@ class _NoChannel extends AudioAnalyzerSource {
   bool get supported => true;
 
   @override
-  Future<({Map<String, double> scores, double rmsDb, List<Float32List> segments})> analyze(String path, int durationMs) =>
+  Future<AnalyzedAudio> analyze(String path, int durationMs) =>
       throw MissingPluginException('No implementation found for method analyzeAudio');
 }
 
 class _Broken extends _NoChannel {
   @override
-  Future<({Map<String, double> scores, double rmsDb, List<Float32List> segments})> analyze(String path, int durationMs) =>
+  Future<AnalyzedAudio> analyze(String path, int durationMs) =>
       throw AudioAnalysisException('no audio decoded');
 }
 

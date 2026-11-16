@@ -61,6 +61,11 @@ const _trackAnalyses = 'CREATE TABLE "track_analyses" ("track_id" INTEGER NOT NU
     'ON DELETE CASCADE, "version" INTEGER NOT NULL, "scores" TEXT NULL, "rms_db" REAL NULL, '
     '"analyzed_at" INTEGER NOT NULL, PRIMARY KEY ("track_id"))';
 
+/// v6: + embedding (song radio).
+const _trackAnalysesV6 = 'CREATE TABLE "track_analyses" ("track_id" INTEGER NOT NULL REFERENCES tracks (id) '
+    'ON DELETE CASCADE, "version" INTEGER NOT NULL, "scores" TEXT NULL, "rms_db" REAL NULL, '
+    '"analyzed_at" INTEGER NOT NULL, "embedding" BLOB NULL, PRIMARY KEY ("track_id"))';
+
 const _vibeLabels = 'CREATE TABLE "vibe_labels" ("track_id" INTEGER NOT NULL REFERENCES tracks (id) '
     'ON DELETE CASCADE, "mood" TEXT NOT NULL, "genre" TEXT NOT NULL, "predicted_mood" TEXT NOT NULL, '
     '"predicted_genre" TEXT NOT NULL, "labeled_at" INTEGER NOT NULL, PRIMARY KEY ("track_id"))';
@@ -76,6 +81,7 @@ const _schemas = <int, List<String>>{
   3: [_tracksV2, ..._commonTables, _trackAnalyses],
   4: [_tracksV2, ..._commonTables, _trackAnalyses, _vibeLabels],
   5: [_tracksV2, ..._commonTables, _trackAnalyses, _vibeLabels, _trackLyrics],
+  6: [_tracksV2, ..._commonTables, _trackAnalysesV6, _vibeLabels, _trackLyrics],
 };
 
 /// Builds a database the way version [version] left it, with one user's data in it.
@@ -96,6 +102,7 @@ void _seed(int version, void Function(String sql) execute) {
     execute("INSERT INTO track_analyses (track_id, version, scores, rms_db, analyzed_at) "
         "VALUES (1, 2, '{\"Pop music\":0.5}', -14.5, 300)");
   }
+  if (version >= 6) execute("UPDATE track_analyses SET embedding = x'00ff80' WHERE track_id = 1");
   if (version >= 4) {
     execute("INSERT INTO vibe_labels (track_id, mood, genre, predicted_mood, predicted_genre, labeled_at) "
         "VALUES (1, 'happy', 'pop', 'sad', 'rock', 400)");
@@ -172,6 +179,7 @@ Future<void> _expectUserData(AppDatabase db, {required int from}) async {
   if (from >= 3) {
     expect(analyses.single.rmsDb, -14.5);
     expect(analyses.single.scores, '{"Pop music":0.5}');
+    expect(analyses.single.embedding, from >= 6 ? [0, 255, 128] : isNull);
   } else {
     expect(analyses, isEmpty);
   }

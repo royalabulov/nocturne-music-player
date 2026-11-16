@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 /// Raw data for one song for smart groups: the genre tag in the file +
 /// the YAMNet analysis result (if any).
 class TrackVibeData {
@@ -56,7 +58,12 @@ abstract interface class AnalysisRepository {
   Future<List<PendingAnalysis>> pending(int version, {int limit = 20});
 
   /// [scores] null = analysis failed; the song isn't retried in this version.
-  Future<void> save(int trackId, int version, {Map<String, double>? scores, double? rmsDb});
+  /// [embedding]: packed by encodeEmbedding (song radio).
+  Future<void> save(int trackId, int version, {Map<String, double>? scores, double? rmsDb, Uint8List? embedding});
+
+  /// Song radio: trackId → packed embedding, for the songs visible in lists that have one.
+  /// Read once per radio, not watched: 1 KB a song.
+  Future<Map<int, Uint8List>> embeddings();
 
   Stream<List<TrackVibeData>> watchVibeData();
 

@@ -131,6 +131,21 @@ void main() {
     expect(await h.trackQueue.first, isEmpty);
   });
 
+  test('queueGeneration: up when the whole queue is replaced, not when songs are added', () async {
+    await h.playTracks(five);
+    await settle();
+    final g = h.queueGeneration;
+    await h.enqueue([track(6)]);
+    await h.playNext(track(7));
+    await h.playTrackAt(3);
+    await settle();
+    expect(h.queueGeneration, g);
+    await h.playTracks(five.take(2).toList());
+    expect(h.queueGeneration, g + 1);
+    await h.closePlayer();
+    expect(h.queueGeneration, g + 2);
+  });
+
   test('previous on the first track wraps to the last', () async {
     await h.playTracks(five);
     await settle();

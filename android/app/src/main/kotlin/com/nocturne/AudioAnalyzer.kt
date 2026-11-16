@@ -5,6 +5,7 @@ import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.ByteBuffer
@@ -18,6 +19,8 @@ import kotlin.math.sqrt
 /// Smart groups: decodes a few parts of a song to PCM and runs them through YAMNet
 /// (fully offline). Result: mean scores of music-related classes +
 /// loudness (RMS dBFS). Genre/mood decisions are made on the Dart side (vibe_classifier).
+/// Song radio: the mean YAMNet embedding (1024 numbers) — the model's second output, added by
+/// tool/yamnet_add_embedding_output.py. A model without it gives no embedding, not an error.
 class AudioAnalyzer(private val context: Context) {
     companion object {
         private const val MODEL = "yamnet.tflite"
@@ -55,8 +58,13 @@ class AudioAnalyzer(private val context: Context) {
     private val frameLen by lazy { interpreter.getInputTensor(0).shape().last() } // 15600 = 0.975 s
     private val classes by lazy { interpreter.getOutputTensor(0).shape().last() } // 521
 
+    /// The embedding output (int8, [1,1,1,1024]); null for a model without it. Asked each time:
+    /// a Tensor belongs to one interpreter, and close() drops it.
+    private fun embeddingTensor() = interpreter.let { if (it.outputTensorCount < 2) null else it.getOutputTensor(1) }
+
     /// Result: YAMNet scores + RMS + the segments themselves (16 kHz mono) —
-    /// tempo/key analysis happens on the Dart side (music_features.dart).
+    /// tempo/key analysis happens on the Dart side (music_features.dart) — + "embedding"
+    /// (FloatArray of 1024, mean over all windows) when the model has it.
     @Synchronized
     fun analyze(path: String, durationMs: Long): Map<String, Any> {
         val segments = decodeSegments(path, durationMs)
@@ -65,6 +73,13 @@ class AudioAnalyzer(private val context: Context) {
         val input = ByteBuffer.allocateDirect(frameLen * 4).order(ByteOrder.nativeOrder())
         val output = ByteBuffer.allocateDirect(classes * 4).order(ByteOrder.nativeOrder())
         val sum = DoubleArray(classes)
+        val embTensor = embeddingTensor()
+        val embSize = embTensor?.numElements() ?: 0
+        val embOutput = embTensor?.let { ByteBuffer.allocateDirect(it.numBytes()).order(ByteOrder.nativeOrder()) }
+        val embSum = DoubleArray(embSize)
+        val embScale = embTensor?.quantizationParams()?.scale ?: 0f
+        val embZero = embTensor?.quantizationParams()?.zeroPoint ?: 0
+        val embFloat = embTensor?.dataType() == DataType.FLOAT32
         var frames = 0
         var sq = 0.0
         var n = 0L
@@ -80,7 +95,17 @@ class AudioAnalyzer(private val context: Context) {
                 for (i in 0 until frameLen) input.putFloat(if (start + i < seg.size) seg[start + i] else 0f)
                 input.rewind()
                 output.clear()
-                interpreter.run(input, output)
+                if (embOutput == null) {
+                    interpreter.run(input, output)
+                } else {
+                    embOutput.clear()
+                    interpreter.runForMultipleInputsOutputs(arrayOf(input), mapOf<Int, Any>(0 to output, 1 to embOutput))
+                    embOutput.rewind()
+                    for (e in 0 until embSize) {
+                        embSum[e] += if (embFloat) embOutput.float.toDouble()
+                        else (embOutput.get() - embZero) * embScale.toDouble()
+                    }
+                }
                 output.rewind()
                 for (c in 0 until classes) sum[c] += output.float.toDouble()
                 frames++
@@ -89,11 +114,13 @@ class AudioAnalyzer(private val context: Context) {
         val rms = sqrt(sq / max(n, 1L))
         val scores = HashMap<String, Double>()
         for (i in wanted) scores[labels[i]] = sum[i] / frames
-        return mapOf(
+        val result = hashMapOf<String, Any>(
             "scores" to scores,
             "rmsDb" to 20 * log10(max(rms, 1e-6)),
             "segments" to segments,
         )
+        if (embSize > 0) result["embedding"] = FloatArray(embSize) { (embSum[it] / frames).toFloat() }
+        return result
     }
 
     /// Contiguous SEGMENT_SECONDS-long parts from the 25% / 50% / 75% points of the
