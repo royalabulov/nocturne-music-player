@@ -460,6 +460,23 @@ class L10nEn extends L10n {
       'Crashes and playback errors recorded on this device';
 
   @override
+  String get groupDeveloper => 'Developer';
+
+  @override
+  String get developerMode => 'Developer mode';
+
+  @override
+  String get developerModeHint =>
+      'Tools for testing the app. Turning it off deletes the knock log';
+
+  @override
+  String get developerModeOn => 'Developer mode is on';
+
+  @override
+  String get developerModeNeedsPhone =>
+      'Turn on Developer options in the phone\'s settings first';
+
+  @override
   String get view => 'View';
 
   @override

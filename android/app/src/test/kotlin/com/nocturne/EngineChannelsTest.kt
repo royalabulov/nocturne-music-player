@@ -76,6 +76,7 @@ class EngineChannelsTest {
             "com.nocturne/audio_analysis",
             "com.nocturne/knock",
             "com.nocturne/playback_service",
+            "com.nocturne/device",
         )) {
             assertTrue(name, messenger.handlers[name] != null)
         }
@@ -121,5 +122,16 @@ class EngineChannelsTest {
         EngineChannels.attach(context, messenger)
         assertEquals(false, messenger.call("com.nocturne/playback_service", "paused"))
         assertEquals(false, messenger.call("com.nocturne/playback_service", "stopped"))
+    }
+
+    /// The app's developer mode opens only while the phone's own Developer options are on
+    @Test
+    fun `it says whether the phone's Developer options are on`() {
+        EngineChannels.attach(context, messenger)
+        val global = android.provider.Settings.Global.DEVELOPMENT_SETTINGS_ENABLED
+        android.provider.Settings.Global.putInt(context.contentResolver, global, 0)
+        assertEquals(false, messenger.call("com.nocturne/device", "developerOptionsOn"))
+        android.provider.Settings.Global.putInt(context.contentResolver, global, 1)
+        assertEquals(true, messenger.call("com.nocturne/device", "developerOptionsOn"))
     }
 }

@@ -45,6 +45,10 @@ abstract final class SettingsKeys {
   /// {path: artist} typed by the user (Edit artist). Wins over the tag.
   static const artistOverrides = 'artistOverrides';
 
+  /// Hidden tools for testing the app ('true' = on; off by default). Opened by tapping the
+  /// version in Settings 7 times.
+  static const developerMode = 'developerMode';
+
   /// The user's choices: they come back with a backup.
   static const backedUp = {
     audioSettings,
@@ -87,6 +91,8 @@ abstract final class SettingsKeys {
     uploaderArtists,
     // Travels in a backup too, in its own checked section (BackupFile.artists).
     artistOverrides,
+    // A backup is a file from outside the app: it must not switch the knock log on.
+    developerMode,
   };
 }
 

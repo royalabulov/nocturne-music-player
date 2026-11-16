@@ -859,6 +859,36 @@ abstract class L10n {
   /// **'Crashes and playback errors recorded on this device'**
   String get errorLogHint;
 
+  /// No description provided for @groupDeveloper.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer'**
+  String get groupDeveloper;
+
+  /// No description provided for @developerMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer mode'**
+  String get developerMode;
+
+  /// No description provided for @developerModeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools for testing the app. Turning it off deletes the knock log'**
+  String get developerModeHint;
+
+  /// No description provided for @developerModeOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer mode is on'**
+  String get developerModeOn;
+
+  /// No description provided for @developerModeNeedsPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on Developer options in the phone\'s settings first'**
+  String get developerModeNeedsPhone;
+
   /// No description provided for @view.
   ///
   /// In en, this message translates to:

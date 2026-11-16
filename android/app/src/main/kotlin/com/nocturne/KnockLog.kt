@@ -12,20 +12,35 @@ import java.util.concurrent.Executors
 /// phone). One JSON object per line in <filesDir>/logs/knock.log; never leaves the phone unless
 /// the user exports it. A separate file, not the library database: no migration, and shaking
 /// data can never touch the user's songs/playlists.
+///
+/// A developer tool: written only while developer mode is on ([setEnabled]), so other users'
+/// phones keep no sensor readings at all.
 object KnockLog {
     /// knock.log is renamed to knock.old.log at this size → at most twice this on disk.
     private const val MAX_FILE_BYTES = 4L * 1024 * 1024
+    private val FILES = listOf("knock.old.log", "knock.log")
 
     private val writer = Executors.newSingleThreadExecutor()
     private val time = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
     private var dir: File? = null
 
+    /// Off until Dart says developer mode is on.
+    @Volatile private var enabled = false
+
+    /// The same folder every time on a phone; a test's app has its own.
     fun init(context: Context) {
-        if (dir == null) dir = File(context.filesDir, "logs")
+        dir = File(context.filesDir, "logs")
+    }
+
+    /// Off also deletes what was recorded (after any writes already queued).
+    fun setEnabled(on: Boolean) {
+        enabled = on
+        if (!on) writer.execute { runCatching { dir?.let { d -> FILES.forEach { File(d, it).delete() } } } }
     }
 
     /// Safe from any thread; the file is written on its own thread, never the sensor's.
     fun write(event: JSONObject) {
+        if (!enabled) return
         val now = System.currentTimeMillis()
         writer.execute {
             runCatching {
@@ -46,7 +61,7 @@ object KnockLog {
     /// Everything recorded, oldest first (waits for queued writes). Null if there is nothing.
     fun export(): ByteArray? = writer.submit<ByteArray?> {
         val d = dir ?: return@submit null
-        val bytes = listOf("knock.old.log", "knock.log")
+        val bytes = FILES
             .map { File(d, it) }
             .filter { it.exists() }
             .fold(ByteArray(0)) { all, f -> all + f.readBytes() }
