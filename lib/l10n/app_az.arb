@@ -457,5 +457,7 @@
   "radioStarting": "Bənzər mahnılar axtarılır…",
   "radioNotAnalyzed": "Bu mahnı analiz oluna bilmədi, ondan radio başlatmaq olmur",
   "radioNotReady": "Radio üçün daha çox mahnı analiz olunmalıdır: hələlik {done}/{total}",
-  "radioNothingPlaying": "Əvvəlcə bir mahnı oxut: radio ondan başlayacaq"
+  "radioNothingPlaying": "Əvvəlcə bir mahnı oxut: radio ondan başlayacaq",
+  "radioLessLikeThis": "Belə mahnı az olsun",
+  "radioLessLikeThisDone": "Belə mahnılar az olacaq"
 }

@@ -66,6 +66,20 @@ class _Player implements RadioPlayer {
   @override
   Future<void> enqueue(List<Track> tracks) async => queue.add([...queue.value, ...tracks]);
 
+  @override
+  Future<void> removeTrack(int trackId) async {
+    final q = List.of(queue.value);
+    final at = q.lastIndexWhere((t) => t.id == trackId);
+    if (at >= 0) q.removeAt(at);
+    queue.add(q);
+  }
+
+  @override
+  Future<void> skipToNext() async {
+    final at = queue.value.lastIndexWhere((t) => t.id == current.value?.id);
+    if (at + 1 < queue.value.length) current.add(queue.value[at + 1]);
+  }
+
   /// Plays queue position [i], after the current song was heard up to [heard].
   Future<void> moveTo(int i, {required Duration heard}) async {
     pos
@@ -219,6 +233,65 @@ void main() {
     player.current.add(tracks[106]);
     await pumpEventQueue();
     expect(player.ids, [105, 106]);
+  });
+
+  test('less like this: skips the song, lines up new songs after it, keeps the ones the listener added', () async {
+    final s = session();
+    await s.start();
+    await pumpEventQueue();
+    await player.moveTo(2, heard: const Duration(minutes: 3));
+    final disliked = player.current.value!.id;
+    await player.enqueue([tracks[100]!]); // the listener's own
+    await pumpEventQueue();
+
+    expect(s.canDislike(0), isFalse, reason: 'the first song');
+    expect(s.canDislike(100), isFalse, reason: 'added by the listener');
+    expect(s.canDislike(disliked), isTrue);
+
+    await s.lessLikeThis();
+    await pumpEventQueue();
+
+    expect(s.disliked, [disliked]);
+    expect(s.canDislike(disliked), isFalse);
+    expect(player.current.value!.id, isNot(disliked));
+    final ids = player.ids;
+    final after = ids.sublist(ids.indexOf(disliked) + 1);
+    expect(after, contains(100));
+    expect(after, isNot(contains(disliked)));
+    expect(after.where((id) => id != 100).length, greaterThanOrEqualTo(RadioSession.batch));
+    expect(ids.toSet(), hasLength(ids.length), reason: '$ids');
+
+    // Moving on from it later doesn't also count it as a plain skip
+    await player.moveTo(ids.indexOf(player.current.value!.id) + 1, heard: const Duration(minutes: 3));
+    expect(s.skipped, isNot(contains(disliked)));
+  });
+
+  test('less like this: the songs lined up next are chosen away from it', () async {
+    final s = session();
+    await s.start();
+    await pumpEventQueue();
+    await player.moveTo(1, heard: const Duration(minutes: 3));
+    final disliked = player.current.value!.id;
+    final v = lib.vector(disliked)!;
+    double closeness(int id) {
+      final w = lib.vector(id)!;
+      var d = 0.0;
+      for (var j = 0; j < v.length; j++) {
+        d += v[j] * w[j];
+      }
+      return d;
+    }
+
+    double meanAhead() {
+      final ids = player.ids;
+      final ahead = ids.sublist(ids.indexOf(disliked) + 1);
+      return ahead.map(closeness).reduce((a, b) => a + b) / ahead.length;
+    }
+
+    final before = meanAhead();
+    await s.lessLikeThis();
+    await pumpEventQueue();
+    expect(meanAhead(), lessThan(before));
   });
 
   test('"Play next" / "Add to queue" by the user keep the radio going', () async {

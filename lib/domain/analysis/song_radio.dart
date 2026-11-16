@@ -122,13 +122,15 @@ class RadioLibrary {
 }
 
 /// Where the radio is heading: the first song, pulled toward the songs listened to the end and
-/// away from the ones skipped. Likes and skips count by their average, so the first song always
-/// weighs most; and if the skips would turn the radio away from it, it starts over from it.
+/// away from the ones skipped and, harder, from the ones marked "less like this" ([disliked]).
+/// Each kind counts by its average, so the first song always weighs most; and the radio never
+/// turns more than 60° away from it (cosine 0.5).
 Float64List? radioDirection(
   RadioLibrary lib,
   int seedId, {
   Iterable<int> liked = const [],
   Iterable<int> skipped = const [],
+  Iterable<int> disliked = const [],
 }) {
   final seed = lib.vector(seedId);
   if (seed == null) return null;
@@ -144,12 +146,41 @@ Float64List? radioDirection(
 
   add(liked, radioLikedWeight);
   add(skipped, -radioSkippedWeight);
-  var n = 0.0, toSeed = 0.0;
-  for (var j = 0; j < d.length; j++) {
-    n += d[j] * d[j];
-    toSeed += d[j] * seed[j];
+  add(disliked, -radioDislikedWeight);
+
+  // Turned too far from the first song (cosine under 0.5): turn only as far as allowed — still
+  // away from what was skipped, never away from the first song. Starting over from it instead
+  // dropped a "less like this" on a song much like the first one altogether.
+  final steer = Float64List.fromList([for (var j = 0; j < d.length; j++) d[j] - seed[j]]);
+  bool fits(double k) {
+    var n = 0.0, toSeed = 0.0;
+    for (var j = 0; j < d.length; j++) {
+      final x = seed[j] + k * steer[j];
+      n += x * x;
+      toSeed += x * seed[j];
+    }
+    return n > 1e-12 && toSeed / sqrt(n) >= 0.5;
   }
-  if (n < 1e-12 || toSeed / sqrt(n) < 0.5) return seed;
+
+  var k = 1.0;
+  if (!fits(1)) {
+    // k = 0 is the first song itself, which always fits: the furthest k that does
+    var lo = 0.0, hi = 1.0;
+    for (var i = 0; i < 20; i++) {
+      final mid = (lo + hi) / 2;
+      if (fits(mid)) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    k = lo;
+  }
+  var n = 0.0;
+  for (var j = 0; j < d.length; j++) {
+    d[j] = seed[j] + k * steer[j];
+    n += d[j] * d[j];
+  }
   n = 1 / sqrt(n);
   for (var j = 0; j < d.length; j++) {
     d[j] *= n;
@@ -162,6 +193,9 @@ Float64List? radioDirection(
 const radioMemory = 10;
 const radioLikedWeight = 0.6;
 const radioSkippedWeight = 0.6;
+
+/// "Less like this": said on purpose, so it weighs more than a skip — as much as the first song.
+const radioDislikedWeight = 1.0;
 
 /// The next [count] songs for a radio heading in [direction], [after] being the song they
 /// follow (for tempo, key and loudness).

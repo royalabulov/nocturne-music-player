@@ -140,6 +140,14 @@ void main() {
       expect(dot(lib.vector(3)!, dir), lessThan(dot(lib.vector(3)!, plain)));
     });
 
+    test('"less like this" pushes harder than a skip', () {
+      final lib = RadioLibrary(_library());
+      final skipped = radioDirection(lib, 0, skipped: [3])!;
+      final disliked = radioDirection(lib, 0, disliked: [3])!;
+      double dot(List<double> a, List<double> b) => [for (var j = 0; j < a.length; j++) a[j] * b[j]].reduce((x, y) => x + y);
+      expect(dot(lib.vector(3)!, disliked), lessThan(dot(lib.vector(3)!, skipped)));
+    });
+
     test("skips can't turn the radio away from the first song", () {
       final lib = RadioLibrary(_library());
       final seed = radioDirection(lib, 0)!;

@@ -8,6 +8,7 @@ import 'package:nocturne/core/di/providers.dart';
 import 'package:nocturne/domain/entities/audio_format.dart';
 import 'package:nocturne/domain/entities/track.dart';
 import 'package:nocturne/features/player/queue_sheet.dart';
+import 'package:nocturne/features/radio/less_like_this_button.dart';
 import 'package:nocturne/features/radio/radio_controller.dart';
 import 'package:nocturne/features/tracks/track_actions_sheet.dart';
 import 'package:nocturne/l10n/l10n.dart';
@@ -77,13 +78,47 @@ void main() {
     expect(radio.stopped, 1);
     expect(find.text(t.radioOf('Song 1')), findsNothing);
   });
+
+  group('less like this (Now Playing)', () {
+    Future<_Radio> pumpButton(WidgetTester tester, {Track? playing, required int trackId}) async {
+      final radio = _Radio(playing, picked: {5});
+      await tester.pumpWidget(ProviderScope(
+        overrides: [radioProvider.overrideWith(() => radio)],
+        child: MaterialApp(home: Scaffold(body: LessLikeThisButton(trackId: trackId))),
+      ));
+      return radio;
+    }
+
+    testWidgets('a song the radio chose: shown, and a tap tells the radio', (tester) async {
+      final radio = await pumpButton(tester, playing: track(1), trackId: 5);
+      await tester.tap(find.byTooltip(t.radioLessLikeThis));
+      await tester.pump();
+      expect(radio.lessLikeThisTaps, 1);
+    });
+
+    testWidgets('no radio, or a song the radio did not choose: nothing there', (tester) async {
+      await pumpButton(tester, trackId: 5);
+      expect(find.byTooltip(t.radioLessLikeThis), findsNothing);
+      await pumpButton(tester, playing: track(1), trackId: 9);
+      expect(find.byTooltip(t.radioLessLikeThis), findsNothing);
+    });
+  });
 }
 
 class _Radio extends RadioController {
-  _Radio(this._playing);
+  _Radio(this._playing, {this.picked = const {}});
   final Track? _playing;
+
+  /// Songs this fake radio chose.
+  final Set<int> picked;
   final started = <Track>[];
-  var stopped = 0;
+  var stopped = 0, lessLikeThisTaps = 0;
+
+  @override
+  bool canDislike(int trackId) => state.seed != null && picked.contains(trackId);
+
+  @override
+  Future<void> lessLikeThis() async => lessLikeThisTaps++;
 
   @override
   RadioState build() => RadioState(seed: _playing);

@@ -1079,5 +1079,7 @@
       }
     }
   },
-  "radioNothingPlaying": "Play a song first: radio starts from it"
+  "radioNothingPlaying": "Play a song first: radio starts from it",
+  "radioLessLikeThis": "Less like this",
+  "radioLessLikeThisDone": "Fewer songs like that"
 }

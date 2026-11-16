@@ -2849,6 +2849,18 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Play a song first: radio starts from it'**
   String get radioNothingPlaying;
+
+  /// No description provided for @radioLessLikeThis.
+  ///
+  /// In en, this message translates to:
+  /// **'Less like this'**
+  String get radioLessLikeThis;
+
+  /// No description provided for @radioLessLikeThisDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer songs like that'**
+  String get radioLessLikeThisDone;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

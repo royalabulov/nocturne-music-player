@@ -1655,4 +1655,10 @@ class L10nAz extends L10n {
   @override
   String get radioNothingPlaying =>
       'Əvvəlcə bir mahnı oxut: radio ondan başlayacaq';
+
+  @override
+  String get radioLessLikeThis => 'Belə mahnı az olsun';
+
+  @override
+  String get radioLessLikeThisDone => 'Belə mahnılar az olacaq';
 }

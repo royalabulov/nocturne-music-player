@@ -126,6 +126,12 @@ class RadioController extends Notifier<RadioState> {
   }
 
   void stop() => _session?.stop();
+
+  /// Whether "less like this" fits [trackId] in the radio playing (see RadioSession.canDislike).
+  bool canDislike(int trackId) => _session?.canDislike(trackId) ?? false;
+
+  /// "Less like this" on the song playing.
+  Future<void> lessLikeThis() async => _session?.lessLikeThis();
 }
 
 RadioLibrary _buildLibrary(List<RadioSong> songs) => RadioLibrary(songs);
@@ -146,6 +152,10 @@ class _HandlerPlayer implements RadioPlayer {
   Future<void> playTracks(List<Track> tracks) => _h.playTracks(tracks);
   @override
   Future<void> enqueue(List<Track> tracks) => _h.enqueue(tracks);
+  @override
+  Future<void> removeTrack(int trackId) => _h.removeTrack(trackId);
+  @override
+  Future<void> skipToNext() => _h.skipToNext();
 }
 
 final radioProvider = NotifierProvider<RadioController, RadioState>(RadioController.new);
