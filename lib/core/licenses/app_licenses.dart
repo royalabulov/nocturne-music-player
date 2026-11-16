@@ -6,7 +6,8 @@ import 'package:flutter/services.dart';
 /// licences ask for the text to go along with them; Settings → Licenses shows it.
 const kFontLicensePackages = ['Sora', 'Plus Jakarta Sans', 'JetBrains Mono'];
 const kApacheLicensePackages = [
-  'YAMNet (TensorFlow Authors)',
+  // Modified: the embedding layer is listed as a second output (tool/yamnet_add_embedding_output.py)
+  'YAMNet (TensorFlow Authors; modified by Nocturne)',
   'LiteRT (TensorFlow Lite)',
   'AndroidX',
   'Media3 (ExoPlayer)',

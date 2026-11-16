@@ -108,5 +108,7 @@ shares it.
 
 ## Credits
 
-- [YAMNet](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet) — Apache License 2.0
+- [YAMNet](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet) — Apache License 2.0.
+  Modified: `tool/yamnet_add_embedding_output.py` lists its embedding layer as a second output
+  (weights unchanged).
 - Fonts: Sora, Plus Jakarta Sans, JetBrains Mono — SIL Open Font License 1.1
