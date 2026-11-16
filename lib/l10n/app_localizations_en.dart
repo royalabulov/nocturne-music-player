@@ -852,7 +852,21 @@ class L10nEn extends L10n {
 
   @override
   String get playlistEmptyHint =>
-      'Tap ⋮ next to any song and choose \"Add to playlist\".';
+      'Pick songs from your library, or tap ⋮ next to any song.';
+
+  @override
+  String get addSongs => 'Add songs';
+
+  @override
+  String addSongsCount(int count) {
+    return 'Add ($count)';
+  }
+
+  @override
+  String get alreadyInPlaylist => 'Already in this playlist';
+
+  @override
+  String get noSongsFound => 'No songs found';
 
   @override
   String get noAlbums => 'No albums yet';

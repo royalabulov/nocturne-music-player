@@ -1516,8 +1516,32 @@ abstract class L10n {
   /// No description provided for @playlistEmptyHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap ⋮ next to any song and choose \"Add to playlist\".'**
+  /// **'Pick songs from your library, or tap ⋮ next to any song.'**
   String get playlistEmptyHint;
+
+  /// No description provided for @addSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Add songs'**
+  String get addSongs;
+
+  /// No description provided for @addSongsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add ({count})'**
+  String addSongsCount(int count);
+
+  /// No description provided for @alreadyInPlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in this playlist'**
+  String get alreadyInPlaylist;
+
+  /// No description provided for @noSongsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No songs found'**
+  String get noSongsFound;
 
   /// No description provided for @noAlbums.
   ///

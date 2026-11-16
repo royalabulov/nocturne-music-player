@@ -10,6 +10,7 @@ import '../../domain/entities/track.dart';
 import '../../shared/album_art.dart';
 import '../tracks/track_sliver_list.dart';
 import '../../core/audio/player_providers.dart';
+import 'add_tracks_picker_sheet.dart';
 import 'playlist_reorder_list.dart';
 import 'playlists_screen.dart';
 import '../../l10n/l10n.dart';
@@ -80,6 +81,13 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                   children: [
                     const ScreenBackButton(),
                     const Spacer(),
+                    if (!_reordering)
+                      IconButton(
+                        tooltip: l10n.addSongs,
+                        onPressed: () => showAddTracksPickerSheet(context, playlist),
+                        icon: const Icon(Icons.add_rounded),
+                        color: AppColors.textPrimary,
+                      ),
                     if (tracks.length > 1)
                       _reordering
                           ? TextButton.icon(
@@ -162,9 +170,37 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                 emptyIcon: Icons.playlist_add_rounded,
                 emptyTitle: l10n.playlistEmpty,
                 emptyText: l10n.playlistEmptyHint,
+                emptyAction: ActionPill(
+                  icon: Icons.add_rounded,
+                  label: l10n.addSongs,
+                  primary: true,
+                  onTap: () => showAddTracksPickerSheet(context, playlist),
+                ),
                 status: tracksAsync,
                 onRetry: () => ref.invalidate(playlistTracksProvider(id)),
                 onRemove: (t) => repo.removeTrack(id, t.id),
+              ),
+            // Also at the end of the list, so the next song is one tap away after the last one
+            if (!_reordering && tracks.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH - AppSpacing.xs),
+                  child: ListTile(
+                    onTap: () => showAddTracksPickerSheet(context, playlist),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                    leading: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceHigh,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: const Icon(Icons.add_rounded, color: AppColors.cyan),
+                    ),
+                    title: Text(l10n.addSongs, style: AppTypography.titleSm.copyWith(color: AppColors.cyan)),
+                  ),
+                ),
               ),
             const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight)),
           ],

@@ -542,7 +542,16 @@
   "playAll": "Play all",
   "shuffle": "Shuffle",
   "playlistEmpty": "This playlist is empty",
-  "playlistEmptyHint": "Tap ⋮ next to any song and choose \"Add to playlist\".",
+  "playlistEmptyHint": "Pick songs from your library, or tap ⋮ next to any song.",
+  "addSongs": "Add songs",
+  "addSongsCount": "Add ({count})",
+  "@addSongsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "alreadyInPlaylist": "Already in this playlist",
+  "noSongsFound": "No songs found",
   "noAlbums": "No albums yet",
   "noArtists": "No artists yet",
   "albumCount": "{count, plural, =1{1 album} other{{count} albums}}",

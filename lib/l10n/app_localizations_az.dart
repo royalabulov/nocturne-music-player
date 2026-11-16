@@ -852,7 +852,21 @@ class L10nAz extends L10n {
 
   @override
   String get playlistEmptyHint =>
-      'İstənilən mahnının yanındakı ⋮ işarəsinə basıb «Pleylistə əlavə et» seçin.';
+      'Kitabxanadan mahnı seçin və ya istənilən mahnının yanındakı ⋮ işarəsinə basın.';
+
+  @override
+  String get addSongs => 'Mahnı əlavə et';
+
+  @override
+  String addSongsCount(int count) {
+    return 'Əlavə et ($count)';
+  }
+
+  @override
+  String get alreadyInPlaylist => 'Artıq bu pleylistdədir';
+
+  @override
+  String get noSongsFound => 'Mahnı tapılmadı';
 
   @override
   String get noAlbums => 'Hələ albom yoxdur';
