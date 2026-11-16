@@ -1675,4 +1675,40 @@ class L10nAz extends L10n {
 
   @override
   String get radioLessLikeThisDone => 'Belə mahnılar az olacaq';
+
+  @override
+  String get turnOn => 'Aç';
+
+  @override
+  String menuRadioPreparing(int done, int total) {
+    return 'Hazırlanır · $done/$total mahnı';
+  }
+
+  @override
+  String menuRadioAnalysisOff(int done, int total) {
+    return 'Mahnı analizi söndürülüb · $done/$total mahnı';
+  }
+
+  @override
+  String radioNotReadyTimeLeft(int done, int total, String time) {
+    return 'Radio hazırlanır: $done/$total mahnı analiz olunub, təxminən $time qalıb';
+  }
+
+  @override
+  String get radioAnalysisOff =>
+      'Radio üçün mahnı analizi lazımdır, amma o söndürülüb';
+
+  @override
+  String get radioAnalysisTurnedOn =>
+      'Mahnı analizi açıldı: radio tezliklə hazır olacaq';
+
+  @override
+  String radioTooFewSongs(int count) {
+    return 'Radio üçün analiz oluna bilən ən azı $count mahnı lazımdır';
+  }
+
+  @override
+  String radioPickingFrom(int done, int total) {
+    return 'Hələlik $done/$total mahnı arasından seçir';
+  }
 }

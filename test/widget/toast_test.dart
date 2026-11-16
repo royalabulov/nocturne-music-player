@@ -57,6 +57,26 @@ void main() {
     expect(bottomGap, lessThan(100 + 24));
   });
 
+  testWidgets('an action: a button after the text; a tap runs it and closes the toast', (tester) async {
+    await pumpApp(tester);
+    var taps = 0;
+    showToast('Song analysis is off', action: ToastAction('Turn on', () => taps++));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final screen = tester.getSize(find.byType(Scaffold));
+    final rect = toastRect(tester);
+    expect(rect.left, greaterThanOrEqualTo(0));
+    expect(rect.right, lessThanOrEqualTo(screen.width));
+    expect(tester.getRect(find.text('Turn on')).right, lessThanOrEqualTo(rect.right));
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Turn on'));
+    await tester.pumpAndSettle();
+    expect(taps, 1);
+    expect(find.text('Song analysis is off'), findsNothing);
+  });
+
   testWidgets('a new toast replaces the old one', (tester) async {
     await pumpApp(tester);
     await show(tester, 'First');

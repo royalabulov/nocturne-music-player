@@ -9,6 +9,7 @@ import 'package:rxdart/rxdart.dart';
 import '../../core/constants.dart';
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/crash_log.dart';
+import '../../domain/analysis/analysis_pace.dart';
 import '../../domain/analysis/embedding.dart';
 import '../../domain/analysis/music_features.dart';
 import '../../domain/entities/track.dart';
@@ -26,6 +27,11 @@ import 'vibe_review.dart';
 /// Starts on its own after a scan (new songs) and when the app opens.
 class SmartAnalysisController extends Notifier<bool> {
   bool _stop = false;
+  final _pace = AnalysisPace();
+
+  /// About how long the [remaining] songs will take at this run's pace. null: not running,
+  /// or too early to say.
+  Duration? timeLeft(int remaining) => _pace.timeLeft(remaining);
 
   @override
   bool build() {
@@ -48,6 +54,7 @@ class SmartAnalysisController extends Notifier<bool> {
     final repo = ref.read(analysisRepositoryProvider);
     _stop = false;
     state = true;
+    _pace.begin();
     try {
       while (!_stop) {
         final batch = await repo.pending(kVibeAnalysisVersion);
@@ -67,9 +74,11 @@ class SmartAnalysisController extends Notifier<bool> {
           }
           // Breathing room for UI and playback: the native work is on its own thread, but the channel is on the UI isolate
           await Future<void>.delayed(const Duration(milliseconds: 30));
+          _pace.songDone();
         }
       }
     } finally {
+      _pace.end();
       state = false;
     }
   }

@@ -7,9 +7,11 @@ import 'package:nocturne/core/audio/player_providers.dart';
 import 'package:nocturne/core/di/providers.dart';
 import 'package:nocturne/domain/entities/audio_format.dart';
 import 'package:nocturne/domain/entities/track.dart';
+import 'package:nocturne/domain/repositories/analysis_repository.dart';
 import 'package:nocturne/features/player/queue_sheet.dart';
 import 'package:nocturne/features/radio/less_like_this_button.dart';
 import 'package:nocturne/features/radio/radio_controller.dart';
+import 'package:nocturne/features/smart_groups/smart_groups.dart';
 import 'package:nocturne/features/tracks/track_actions_sheet.dart';
 import 'package:nocturne/l10n/l10n.dart';
 
@@ -29,7 +31,12 @@ void main() {
         format: AudioFormat.mp3,
       );
 
-  Future<_Radio> pump(WidgetTester tester, void Function(BuildContext) open, {Track? playing}) async {
+  Future<_Radio> pump(
+    WidgetTester tester,
+    void Function(BuildContext) open, {
+    Track? playing,
+    AnalysisProgress progress = const AnalysisProgress(done: 450, total: 450),
+  }) async {
     final radio = _Radio(playing);
     final queue = [track(1), track(2)];
     await tester.pumpWidget(ProviderScope(
@@ -40,6 +47,7 @@ void main() {
         queueProvider.overrideWith((_) => Stream.value(queue)),
         currentTrackProvider.overrideWith((_) => Stream.value(queue.first)),
         playbackStateProvider.overrideWith((_) => Stream.value(PlaybackState())),
+        analysisProgressProvider.overrideWith((_) => Stream.value(progress)),
       ],
       child: MaterialApp(
         home: Scaffold(
@@ -77,6 +85,16 @@ void main() {
 
     expect(radio.stopped, 1);
     expect(find.text(t.radioOf('Song 1')), findsNothing);
+  });
+
+  testWidgets('queue sheet: until every song is analyzed, says how many the radio picks from', (tester) async {
+    await pump(tester, showQueueSheet, playing: track(1), progress: const AnalysisProgress(done: 120, total: 450));
+    expect(find.text(t.radioPickingFrom(120, 450)), findsOneWidget);
+  });
+
+  testWidgets('queue sheet: all analyzed, no such line', (tester) async {
+    await pump(tester, showQueueSheet, playing: track(1));
+    expect(find.text(t.radioPickingFrom(450, 450)), findsNothing);
   });
 
   group('less like this (Now Playing)', () {

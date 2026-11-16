@@ -2885,6 +2885,54 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Fewer songs like that'**
   String get radioLessLikeThisDone;
+
+  /// No description provided for @turnOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get turnOn;
+
+  /// No description provided for @menuRadioPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting ready · {done} of {total} songs'**
+  String menuRadioPreparing(int done, int total);
+
+  /// No description provided for @menuRadioAnalysisOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Song analysis is off · {done} of {total} songs'**
+  String menuRadioAnalysisOff(int done, int total);
+
+  /// No description provided for @radioNotReadyTimeLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio is getting ready: {done} of {total} songs analyzed, about {time} left'**
+  String radioNotReadyTimeLeft(int done, int total, String time);
+
+  /// No description provided for @radioAnalysisOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio needs song analysis, and it\'s turned off'**
+  String get radioAnalysisOff;
+
+  /// No description provided for @radioAnalysisTurnedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Song analysis is on: radio will be ready soon'**
+  String get radioAnalysisTurnedOn;
+
+  /// No description provided for @radioTooFewSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio needs at least {count} songs it can analyze'**
+  String radioTooFewSongs(int count);
+
+  /// No description provided for @radioPickingFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Picking from {done} of {total} songs so far'**
+  String radioPickingFrom(int done, int total);
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

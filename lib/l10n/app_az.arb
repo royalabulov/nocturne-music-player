@@ -463,5 +463,13 @@
   "radioNotReady": "Radio üçün daha çox mahnı analiz olunmalıdır: hələlik {done}/{total}",
   "radioNothingPlaying": "Əvvəlcə bir mahnı oxut: radio ondan başlayacaq",
   "radioLessLikeThis": "Belə mahnı az olsun",
-  "radioLessLikeThisDone": "Belə mahnılar az olacaq"
+  "radioLessLikeThisDone": "Belə mahnılar az olacaq",
+  "turnOn": "Aç",
+  "menuRadioPreparing": "Hazırlanır · {done}/{total} mahnı",
+  "menuRadioAnalysisOff": "Mahnı analizi söndürülüb · {done}/{total} mahnı",
+  "radioNotReadyTimeLeft": "Radio hazırlanır: {done}/{total} mahnı analiz olunub, təxminən {time} qalıb",
+  "radioAnalysisOff": "Radio üçün mahnı analizi lazımdır, amma o söndürülüb",
+  "radioAnalysisTurnedOn": "Mahnı analizi açıldı: radio tezliklə hazır olacaq",
+  "radioTooFewSongs": "Radio üçün analiz oluna bilən ən azı {count} mahnı lazımdır",
+  "radioPickingFrom": "Hələlik {done}/{total} mahnı arasından seçir"
 }

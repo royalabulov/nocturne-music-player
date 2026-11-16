@@ -11,11 +11,14 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/duration_format.dart';
+import '../../domain/repositories/analysis_repository.dart';
 import '../../domain/repositories/library_repository.dart';
+import '../../domain/repositories/settings_repository.dart';
 import '../../shared/nocturne_mark.dart';
 import '../import/audio_import.dart';
 import '../library_scan/scan_controller.dart';
 import '../radio/radio_actions.dart';
+import '../smart_groups/smart_groups.dart';
 import '../../l10n/l10n.dart';
 
 
@@ -93,7 +96,10 @@ class SideMenu extends ConsumerWidget {
                   _Item(
                     icon: Icons.radio_rounded,
                     label: l10n.menuRadio,
-                    hint: l10n.menuRadioHint,
+                    hint: _radioHint(
+                      ref.watch(analysisProgressProvider).value,
+                      on: ref.watch(boolSettingProvider(SettingsKeys.smartAnalysis)).value ?? true,
+                    ),
                     onTap: () {
                       final container = ProviderScope.containerOf(context, listen: false);
                       Navigator.of(context).pop();
@@ -145,6 +151,13 @@ class SideMenu extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Until every song is analyzed the radio has only some of them to pick from: said before
+/// it's tapped, and whether it's on its way or analysis is off.
+String _radioHint(AnalysisProgress? p, {required bool on}) {
+  if (p == null || p.complete) return l10n.menuRadioHint;
+  return on ? l10n.menuRadioPreparing(p.done, p.total) : l10n.menuRadioAnalysisOff(p.done, p.total);
 }
 
 class _Group extends StatelessWidget {

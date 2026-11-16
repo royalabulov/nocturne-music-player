@@ -1090,5 +1090,63 @@
   },
   "radioNothingPlaying": "Play a song first: radio starts from it",
   "radioLessLikeThis": "Less like this",
-  "radioLessLikeThisDone": "Fewer songs like that"
+  "radioLessLikeThisDone": "Fewer songs like that",
+  "turnOn": "Turn on",
+  "menuRadioPreparing": "Getting ready · {done} of {total} songs",
+  "@menuRadioPreparing": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "menuRadioAnalysisOff": "Song analysis is off · {done} of {total} songs",
+  "@menuRadioAnalysisOff": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "radioNotReadyTimeLeft": "Radio is getting ready: {done} of {total} songs analyzed, about {time} left",
+  "@radioNotReadyTimeLeft": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "radioAnalysisOff": "Radio needs song analysis, and it's turned off",
+  "radioAnalysisTurnedOn": "Song analysis is on: radio will be ready soon",
+  "radioTooFewSongs": "Radio needs at least {count} songs it can analyze",
+  "@radioTooFewSongs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "radioPickingFrom": "Picking from {done} of {total} songs so far",
+  "@radioPickingFrom": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }
