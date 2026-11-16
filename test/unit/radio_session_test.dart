@@ -1,0 +1,222 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:nocturne/domain/entities/audio_format.dart';
+import 'package:nocturne/domain/analysis/embedding.dart';
+import 'package:nocturne/domain/analysis/song_radio.dart';
+import 'package:nocturne/domain/entities/track.dart';
+import 'package:nocturne/features/radio/radio_session.dart';
+import 'package:rxdart/rxdart.dart';
+
+/// Two styles of 30 songs: ids 0.. and 100.., every song by its own artist.
+({RadioLibrary lib, Map<int, Track> tracks}) _library({int perStyle = 30}) {
+  final rnd = Random(1);
+  final shared = [for (var j = 0; j < 64; j++) 1 + rnd.nextDouble()];
+  final style = [
+    for (var s = 0; s < 2; s++) [for (var j = 0; j < 64; j++) rnd.nextDouble() < .2 ? rnd.nextDouble() * .8 : 0.0],
+  ];
+  final songs = <RadioSong>[];
+  final tracks = <int, Track>{};
+  for (var s = 0; s < 2; s++) {
+    for (var i = 0; i < perStyle; i++) {
+      final id = s * 100 + i;
+      songs.add(RadioSong(
+        trackId: id,
+        artist: 'Artist $id',
+        embedding: encodeEmbedding([for (var j = 0; j < 64; j++) shared[j] + style[s][j] + rnd.nextDouble() * .15]),
+      ));
+      tracks[id] = Track(
+        id: id,
+        path: '/m/$id.mp3',
+        title: 'T$id',
+        artist: 'Artist $id',
+        album: 'B',
+        duration: const Duration(minutes: 3),
+        format: AudioFormat.mp3,
+      );
+    }
+  }
+  return (lib: RadioLibrary(songs), tracks: tracks);
+}
+
+class _Player implements RadioPlayer {
+  final current = BehaviorSubject<Track?>.seeded(null);
+  final queue = BehaviorSubject<List<Track>>.seeded(const []);
+  final pos = StreamController<Duration>.broadcast(sync: true);
+  int generation = 0;
+
+  @override
+  Stream<Track?> get currentTrack => current;
+  @override
+  Stream<List<Track>> get trackQueue => queue;
+  @override
+  Stream<Duration> get position => pos.stream;
+  @override
+  int get queueGeneration => generation;
+
+  @override
+  Future<void> playTracks(List<Track> tracks) async {
+    generation++;
+    queue.add(tracks);
+    current.add(tracks.first);
+  }
+
+  @override
+  Future<void> enqueue(List<Track> tracks) async => queue.add([...queue.value, ...tracks]);
+
+  /// Plays queue position [i], after the current song was heard up to [heard].
+  Future<void> moveTo(int i, {required Duration heard}) async {
+    pos
+      ..add(Duration.zero)
+      ..add(heard);
+    current.add(queue.value[i]);
+    await pumpEventQueue();
+  }
+
+  List<int> get ids => [for (final t in queue.value) t.id];
+}
+
+void main() {
+  late _Player player;
+  late RadioLibrary lib;
+  late Map<int, Track> tracks;
+  var ended = 0;
+
+  setUp(() {
+    player = _Player();
+    (:lib, :tracks) = _library();
+    ended = 0;
+  });
+
+  RadioSession session({int seed = 0}) => RadioSession(
+        player: player,
+        lib: lib,
+        tracks: tracks,
+        seed: tracks[seed]!,
+        picker: (p) async => pickRadioSongs(
+          p.lib,
+          direction: p.direction,
+          after: p.after,
+          exclude: p.exclude,
+          recentArtists: p.recentArtists,
+          penalty: p.penalty,
+          count: p.count,
+          random: Random(p.after),
+        ),
+        onEnded: () => ended++,
+      );
+
+  test('plays the first song, then ten that sound like it', () async {
+    final s = session();
+    expect(await s.start(), isTrue);
+    await pumpEventQueue();
+
+    expect(player.ids.first, 0);
+    expect(player.ids, hasLength(1 + RadioSession.firstBatch));
+    expect(player.ids.every((id) => id < 100), isTrue, reason: '${player.ids}');
+    expect(player.current.value?.id, 0);
+  });
+
+  test('three songs left: five more, never one already in this radio', () async {
+    final s = session();
+    await s.start();
+    await pumpEventQueue();
+    await player.moveTo(6, heard: const Duration(minutes: 3));
+    expect(player.ids, hasLength(11), reason: 'still 4 after the current one');
+    await player.moveTo(7, heard: const Duration(minutes: 3));
+
+    expect(player.ids, hasLength(16));
+    expect(player.ids.toSet(), hasLength(16));
+    expect(s.ended, isFalse);
+  });
+
+  test('a song left within 30 s counts as skipped, one heard to the end as liked', () async {
+    final s = session();
+    await s.start();
+    await pumpEventQueue();
+    final second = player.ids[1], third = player.ids[2];
+
+    await player.moveTo(1, heard: const Duration(minutes: 3)); // the first song: tells nothing
+    await player.moveTo(2, heard: const Duration(seconds: 12));
+    await player.moveTo(3, heard: const Duration(minutes: 2, seconds: 50));
+
+    expect(s.skipped, [second]);
+    expect(s.liked, [third]);
+  });
+
+  test("the previous song's place, arriving late, isn't counted for the new one", () async {
+    final s = session();
+    await s.start();
+    await pumpEventQueue();
+    final second = player.ids[1];
+
+    player.current.add(player.queue.value[1]);
+    player.pos.add(const Duration(minutes: 2, seconds: 59)); // the first song's, late
+    player.pos.add(const Duration(seconds: 1));
+    player.pos.add(const Duration(seconds: 8));
+    await pumpEventQueue();
+    await player.moveTo(2, heard: const Duration(seconds: 8));
+
+    expect(s.skipped, [second]);
+    expect(s.liked, isEmpty);
+  });
+
+  test('another list played or the player closed: the radio ends and adds nothing more', () async {
+    final s = session();
+    await s.start();
+    await pumpEventQueue();
+
+    await player.playTracks([tracks[105]!, tracks[106]!]);
+    await pumpEventQueue();
+    expect(s.ended, isTrue);
+    expect(ended, 1);
+
+    player.current.add(tracks[106]);
+    await pumpEventQueue();
+    expect(player.ids, [105, 106]);
+  });
+
+  test('"Play next" / "Add to queue" by the user keep the radio going', () async {
+    final s = session();
+    await s.start();
+    await pumpEventQueue();
+    await player.enqueue([tracks[100]!]);
+    await pumpEventQueue();
+    expect(s.ended, isFalse);
+  });
+
+  test('stop: once, and the queue stays', () async {
+    final s = session();
+    await s.start();
+    await pumpEventQueue();
+    s
+      ..stop()
+      ..stop();
+    expect(ended, 1);
+    expect(player.ids, hasLength(11));
+  });
+
+  test("a first song radio doesn't know: no radio, the queue untouched", () async {
+    final s = RadioSession(
+      player: player,
+      lib: lib,
+      tracks: tracks,
+      seed: Track(id: 999, path: '/x', title: 'x', artist: 'x', album: 'x', duration: const Duration(minutes: 3), format: AudioFormat.mp3),
+    );
+    expect(await s.start(), isFalse);
+    expect(player.generation, 0);
+  });
+
+  test('a small library that runs out: earlier songs come back rather than the radio stopping', () async {
+    (:lib, :tracks) = _library(perStyle: 12); // 24 songs in all
+    final s = session();
+    await s.start();
+    await pumpEventQueue();
+    for (var i = 1; i < 40; i++) {
+      await player.moveTo(i, heard: const Duration(minutes: 3));
+    }
+    expect(player.ids.length, greaterThan(40));
+    expect(s.ended, isFalse);
+  });
+}

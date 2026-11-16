@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nocturne/domain/analysis/embedding.dart';
 import 'package:nocturne/domain/analysis/song_radio.dart';
+import 'package:nocturne/domain/repositories/history_repository.dart';
 
 /// Songs like YAMNet's: never negative, a large part every song shares, plus what its style adds.
 /// Style s → ids s*100 + i.
@@ -151,6 +152,38 @@ void main() {
         toSeed += dir[j] * seed[j];
       }
       expect(toSeed, greaterThanOrEqualTo(.5));
+    });
+  });
+
+  group('radioPenalties', () {
+    final now = DateTime(2026, 11, 15, 20);
+    PlayRecord play(int id, Duration ago, {Duration? heard, Duration length = const Duration(minutes: 3)}) =>
+        PlayRecord(trackId: id, playedAt: now.subtract(ago), listened: heard, duration: length);
+
+    test('heard a moment ago: held back, less as it gets older; gone after 3 hours', () {
+      final p = radioPenalties([
+        play(1, const Duration(minutes: 1)),
+        play(2, const Duration(minutes: 90)),
+        play(3, const Duration(hours: 4)),
+      ], now: now);
+      expect(p[1], closeTo(1, .01));
+      expect(p[2], closeTo(.5, .01));
+      expect(p.containsKey(3), isFalse);
+    });
+
+    test('usually skipped: by how often; one skip, unmeasured plays and short songs don\'t count', () {
+      const s = Duration(seconds: 10), full = Duration(minutes: 3);
+      final p = radioPenalties([
+        for (var i = 0; i < 4; i++) play(1, Duration(days: i + 1), heard: s), // always skipped
+        play(2, const Duration(days: 1), heard: s),
+        play(2, const Duration(days: 2), heard: full), // half the time
+        play(3, const Duration(days: 1), heard: s), // skipped once
+        for (var i = 0; i < 3; i++) play(4, Duration(days: i + 1)), // before measuring
+        for (var i = 0; i < 3; i++) play(5, Duration(days: i + 1), heard: s, length: const Duration(seconds: 40)),
+      ], now: now);
+      expect(p[1], closeTo(.8, 1e-9));
+      expect(p[2], closeTo(.4, 1e-9));
+      expect(p.keys, unorderedEquals([1, 2]));
     });
   });
 

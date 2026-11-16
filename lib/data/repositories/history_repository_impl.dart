@@ -38,6 +38,26 @@ class HistoryRepositoryImpl implements HistoryRepository {
   Set<ResultSetImplementation<dynamic, dynamic>> get _historyTables => {db.tracks, db.playHistory};
 
   @override
+  Future<List<PlayRecord>> playsSince(DateTime since) async {
+    final rows = await db.customSelect(
+      'SELECT h.track_id, h.played_at, h.position_ms, t.duration_ms, '
+      '(h.played_at >= $_trackedSinceSql) AS tracked '
+      'FROM play_history h JOIN tracks t ON t.id = h.track_id WHERE h.played_at >= ?',
+      variables: [Variable.withInt(since.millisecondsSinceEpoch)],
+      readsFrom: _historyTables,
+    ).get();
+    return [
+      for (final r in rows)
+        PlayRecord(
+          trackId: r.read<int>('track_id'),
+          playedAt: DateTime.fromMillisecondsSinceEpoch(r.read<int>('played_at')),
+          listened: r.read<bool>('tracked') ? Duration(milliseconds: r.read<int>('position_ms')) : null,
+          duration: Duration(milliseconds: r.read<int>('duration_ms')),
+        ),
+    ];
+  }
+
+  @override
   Future<int> recordPlay(int trackId) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     await db.customStatement(

@@ -40,6 +40,19 @@ class ResumePoint {
   final Duration position;
 }
 
+/// One play, for song radio: songs heard a moment ago, songs usually skipped.
+class PlayRecord {
+  const PlayRecord({required this.trackId, required this.playedAt, required this.listened, required this.duration});
+  final int trackId;
+  final DateTime playedAt;
+
+  /// How long it was heard; null for plays from before that was measured.
+  final Duration? listened;
+
+  /// The song's length.
+  final Duration duration;
+}
+
 abstract interface class HistoryRepository {
   /// One row per play (onTrackStarted). Returns the row id for [saveListened].
   Future<int> recordPlay(int trackId);
@@ -63,6 +76,9 @@ abstract interface class HistoryRepository {
   Stream<List<PlayedTrack>> watchRecommended({int limit = 10});
 
   Stream<PlayStats> watchPlayStats({required DateTime since});
+
+  /// Every play after [since], hidden songs included (song radio). Read once, not watched.
+  Future<List<PlayRecord>> playsSince(DateTime since);
 
   /// Playback Memory: the player writes every ~5s, read when the app opens.
   Future<void> saveResumePoint(int trackId, Duration position);

@@ -129,6 +129,24 @@ void main() {
     expect((stats.plays, stats.songs), (3, 3));
   });
 
+  test('playsSince: every play after the date, with time heard only where it was measured', () async {
+    final song = await addTrack('song'); // 200 s
+    final short = await addTrack('short', durationMs: 20000); // hidden from lists, still a play
+    await playAt(song, DateTime.now().subtract(const Duration(days: 40)));
+    await playAt(song, DateTime.now().subtract(const Duration(days: 2))); // before tracking
+    final skipped = await history.recordPlay(song);
+    await history.saveListened(skipped, const Duration(seconds: 10));
+    await history.recordPlay(short);
+
+    final plays = await history.playsSince(DateTime.now().subtract(const Duration(days: 30)));
+    expect(plays.map((p) => (p.trackId, p.listened)), unorderedEquals([
+      (song, null),
+      (song, const Duration(seconds: 10)),
+      (short, Duration.zero),
+    ]));
+    expect(plays.firstWhere((p) => p.trackId == song).duration, const Duration(seconds: 200));
+  });
+
   test('period starts: midnight, Monday, the 1st', () {
     final wed = DateTime(2026, 11, 4, 15, 30); // Wednesday
     expect(PlayPeriod.day.start(wed), DateTime(2026, 11, 4));

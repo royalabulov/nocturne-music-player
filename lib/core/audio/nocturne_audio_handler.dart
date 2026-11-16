@@ -160,6 +160,12 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
           repeat: _q.repeat,
         );
 
+  /// Goes up each time the whole queue is replaced (a list played, a stored queue restored,
+  /// the player closed) — not when songs are added or removed. Song radio follows its own queue
+  /// only while this stays the same.
+  int get queueGeneration => _queueGeneration;
+  int _queueGeneration = 0;
+
   /// Where the current song starts when nothing is loaded yet (a restored queue, after
   /// stop). Null once it is loaded.
   Duration? _pendingStart;
@@ -199,6 +205,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     _cancelFade();
     _quickEnds = 0;
     _q.replace(tracks, startIndex: startIndex, shuffled: shuffle);
+    _queueGeneration++;
     _publishQueue();
     await _loadActive(_q.pos, autoplay: true);
   }
@@ -282,6 +289,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     _cancelFade();
     await _stopAll();
     _q.clear();
+    _queueGeneration++;
     _standbyPos = null;
     _pendingStart = null;
     _publishQueue();
@@ -297,6 +305,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
 
   void _restore(SavedQueue saved) {
     _q.restore(saved.tracks, saved.order, saved.pos, shuffled: saved.shuffle, repeatMode: saved.repeat);
+    _queueGeneration++;
     _standbyPos = null;
     _pendingStart = saved.position;
     _stopped = true; // nothing loaded: idle, not "loading"

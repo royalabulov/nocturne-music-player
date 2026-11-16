@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import '../repositories/history_repository.dart';
+
 /// Song radio: from one song, an endless queue of the songs that sound most like it.
 ///
 /// Sound is compared by the YAMNet embedding (see embedding.dart); tempo, key and loudness only
@@ -267,3 +269,32 @@ int _camelot(int key) => key >= 12 ? (7 * (key - 12 + 3)) % 12 : (7 * key) % 12;
 
 /// 1 = same loudness, ~0.4 at 6 dB apart.
 double loudnessCloseness(double? a, double? b) => a == null || b == null ? 0 : exp(-pow((a - b) / 6, 2));
+
+/// What [pickRadioSongs] holds back, from the play history: a song heard in the last
+/// [recent] (fading as it gets older) and a song usually skipped (heard under 30 s, at least
+/// twice). trackId → 0..1.
+Map<int, double> radioPenalties(
+  Iterable<PlayRecord> plays, {
+  required DateTime now,
+  Duration recent = const Duration(hours: 3),
+}) {
+  final out = <int, double>{};
+  final measured = <int, int>{}, skips = <int, int>{};
+  for (final p in plays) {
+    final age = now.difference(p.playedAt);
+    if (age < recent) {
+      final fresh = 1 - age.inSeconds / recent.inSeconds;
+      if (fresh > (out[p.trackId] ?? 0)) out[p.trackId] = fresh;
+    }
+    final heard = p.listened;
+    if (heard == null || p.duration < const Duration(seconds: 45)) continue;
+    measured.update(p.trackId, (n) => n + 1, ifAbsent: () => 1);
+    if (heard < const Duration(seconds: 30)) skips.update(p.trackId, (n) => n + 1, ifAbsent: () => 1);
+  }
+  for (final MapEntry(key: id, value: n) in measured.entries) {
+    final s = skips[id] ?? 0;
+    if (n < 2 || s == 0) continue;
+    out[id] = max(out[id] ?? 0, 0.8 * s / n);
+  }
+  return out;
+}
