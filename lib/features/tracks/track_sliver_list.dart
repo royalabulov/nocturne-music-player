@@ -25,6 +25,7 @@ class TrackSliverList extends ConsumerWidget {
     this.onRemove,
     this.emptyIcon = Icons.music_off_rounded,
     this.emptyTitle,
+    this.emptyAction,
     this.status,
     this.onRetry,
   });
@@ -38,6 +39,9 @@ class TrackSliverList extends ConsumerWidget {
 
   /// Empty-list title; null → [emptyText] is shown as the title.
   final String? emptyTitle;
+
+  /// Button under the empty text (playlist detail: "Add songs").
+  final Widget? emptyAction;
 
   /// Playlist detail: "Remove from playlist" in the long-press menu.
   final void Function(Track)? onRemove;
@@ -59,7 +63,8 @@ class TrackSliverList extends ConsumerWidget {
       final text = emptyText;
       if (text == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
       return SliverToBoxAdapter(
-        child: EmptyState(icon: emptyIcon, title: emptyTitle ?? text, message: emptyTitle == null ? null : text),
+        child: EmptyState(icon: emptyIcon, title: emptyTitle ?? text, message: emptyTitle == null ? null : text,
+            action: emptyAction),
       );
     }
     final currentId = ref.watch(currentTrackProvider.select((s) => s.value?.id));

@@ -12,6 +12,7 @@ import '../../core/audio/player_providers.dart';
 import '../../l10n/l10n.dart';
 import '../../core/utils/display_names.dart';
 import '../radio/radio_controller.dart';
+import '../smart_groups/smart_groups.dart';
 
 /// The queue — bottom sheet. Tap → jump to that track.
 Future<void> showQueueSheet(BuildContext context) => showModalBottomSheet(
@@ -169,7 +170,8 @@ class _QueueSheetState extends ConsumerState<_QueueSheet> {
 }
 
 /// While a radio plays: which song it started from, and a way to stop it (the songs already
-/// queued stay).
+/// queued stay). Until every song is analyzed, how many it can pick from: why its choices
+/// may not fit yet.
 class _RadioBar extends ConsumerWidget {
   const _RadioBar();
 
@@ -177,6 +179,7 @@ class _RadioBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final seed = ref.watch(radioProvider.select((r) => r.seed));
     if (seed == null) return const SizedBox.shrink();
+    final p = ref.watch(analysisProgressProvider).value;
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 0, AppSpacing.screenH - AppSpacing.xs, AppSpacing.sm),
       child: Row(
@@ -184,11 +187,24 @@ class _RadioBar extends ConsumerWidget {
           const Icon(Icons.radio_rounded, size: 18, color: AppColors.cyan),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
-            child: Text(
-              l10n.radioOf(seed.title),
-              style: AppTypography.labelMd.copyWith(color: AppColors.cyan),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.radioOf(seed.title),
+                  style: AppTypography.labelMd.copyWith(color: AppColors.cyan),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (p != null && !p.complete)
+                  Text(
+                    l10n.radioPickingFrom(p.done, p.total),
+                    style: AppTypography.labelSm.copyWith(color: AppColors.textMuted),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
             ),
           ),
           IconButton(

@@ -21,6 +21,7 @@ import '../../shared/glow_play_button.dart';
 import '../tracks/track_actions_sheet.dart';
 import '../../shared/locate_track.dart';
 import '../../shared/tap_target.dart';
+import '../radio/less_like_this_button.dart';
 import 'lyrics_controller.dart';
 import 'lyrics_view.dart';
 import '../../core/audio/player_providers.dart';
@@ -187,6 +188,7 @@ class NowPlayingScreen extends ConsumerWidget {
                                   ],
                                 ),
                               ),
+                              LessLikeThisButton(trackId: t.id),
                               const _LyricsButton(),
                               FavoriteButton(trackId: t.id, size: 24),
                             ],

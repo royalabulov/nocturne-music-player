@@ -852,7 +852,21 @@ class L10nEn extends L10n {
 
   @override
   String get playlistEmptyHint =>
-      'Tap ⋮ next to any song and choose \"Add to playlist\".';
+      'Pick songs from your library, or tap ⋮ next to any song.';
+
+  @override
+  String get addSongs => 'Add songs';
+
+  @override
+  String addSongsCount(int count) {
+    return 'Add ($count)';
+  }
+
+  @override
+  String get alreadyInPlaylist => 'Already in this playlist';
+
+  @override
+  String get noSongsFound => 'No songs found';
 
   @override
   String get noAlbums => 'No albums yet';
@@ -1658,4 +1672,46 @@ class L10nEn extends L10n {
 
   @override
   String get radioNothingPlaying => 'Play a song first: radio starts from it';
+
+  @override
+  String get radioLessLikeThis => 'Less like this';
+
+  @override
+  String get radioLessLikeThisDone => 'Fewer songs like that';
+
+  @override
+  String get turnOn => 'Turn on';
+
+  @override
+  String menuRadioPreparing(int done, int total) {
+    return 'Getting ready · $done of $total songs';
+  }
+
+  @override
+  String menuRadioAnalysisOff(int done, int total) {
+    return 'Song analysis is off · $done of $total songs';
+  }
+
+  @override
+  String radioNotReadyTimeLeft(int done, int total, String time) {
+    return 'Radio is getting ready: $done of $total songs analyzed, about $time left';
+  }
+
+  @override
+  String get radioAnalysisOff =>
+      'Radio needs song analysis, and it\'s turned off';
+
+  @override
+  String get radioAnalysisTurnedOn =>
+      'Song analysis is on: radio will be ready soon';
+
+  @override
+  String radioTooFewSongs(int count) {
+    return 'Radio needs at least $count songs it can analyze';
+  }
+
+  @override
+  String radioPickingFrom(int done, int total) {
+    return 'Picking from $done of $total songs so far';
+  }
 }

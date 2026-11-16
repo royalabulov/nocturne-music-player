@@ -140,6 +140,14 @@ void main() {
       expect(dot(lib.vector(3)!, dir), lessThan(dot(lib.vector(3)!, plain)));
     });
 
+    test('"less like this" pushes harder than a skip', () {
+      final lib = RadioLibrary(_library());
+      final skipped = radioDirection(lib, 0, skipped: [3])!;
+      final disliked = radioDirection(lib, 0, disliked: [3])!;
+      double dot(List<double> a, List<double> b) => [for (var j = 0; j < a.length; j++) a[j] * b[j]].reduce((x, y) => x + y);
+      expect(dot(lib.vector(3)!, disliked), lessThan(dot(lib.vector(3)!, skipped)));
+    });
+
     test("skips can't turn the radio away from the first song", () {
       final lib = RadioLibrary(_library());
       final seed = radioDirection(lib, 0)!;
@@ -184,6 +192,86 @@ void main() {
       expect(p[1], closeTo(.8, 1e-9));
       expect(p[2], closeTo(.4, 1e-9));
       expect(p.keys, unorderedEquals([1, 2]));
+    });
+  });
+
+  group('CoListening', () {
+    final at = DateTime(2026, 11, 15, 20);
+    const full = Duration(minutes: 3);
+    PlayRecord play(int id, int minute, {Duration? heard = full}) =>
+        PlayRecord(trackId: id, playedAt: at.add(Duration(minutes: minute)), listened: heard, duration: full);
+
+    test('one after another counts most; three apart still a little; four apart not at all', () {
+      final c = CoListening.fromPlays([play(1, 0), play(2, 4), play(3, 8), play(4, 12), play(5, 16)]);
+      expect(c.between(1, 2), greaterThan(c.between(1, 3)));
+      expect(c.between(1, 3), greaterThan(c.between(1, 4)));
+      expect(c.between(1, 4), greaterThan(0));
+      expect(c.between(1, 5), 0);
+      expect(c.between(2, 1), c.between(1, 2));
+    });
+
+    test('a long pause starts a new session: songs on both sides of it are not together', () {
+      final c = CoListening.fromPlays([play(1, 0), play(2, 4), play(3, 60), play(4, 64)]);
+      expect(c.between(2, 3), 0);
+      expect(c.between(1, 3), 0);
+      expect(c.between(3, 4), greaterThan(0));
+    });
+
+    test("a song left within 30 s isn't played with its neighbours; unmeasured plays count", () {
+      final c = CoListening.fromPlays([
+        play(1, 0),
+        play(2, 4, heard: const Duration(seconds: 10)),
+        play(3, 5, heard: null),
+      ]);
+      expect(c.around(2), isEmpty);
+      // The skip is left out, so 1 and 3 are now next to each other
+      expect(c.between(1, 3), greaterThan(0));
+    });
+
+    test('played together again and again: closer; a song played with everything: no closer to each', () {
+      final often = CoListening.fromPlays([
+        for (var day = 0; day < 6; day++) ...[play(1, day * 1440), play(2, day * 1440 + 4)],
+      ]);
+      final once = CoListening.fromPlays([play(1, 0), play(2, 4)]);
+      expect(once.between(1, 2), closeTo(.5, 1e-9));
+      expect(often.between(1, 2), greaterThan(.8));
+
+      final hub = CoListening.fromPlays([
+        for (var i = 0; i < 10; i++) ...[play(99, i * 1440), play(10 + i, i * 1440 + 4)],
+        play(1, 20000),
+        play(2, 20004),
+      ]);
+      expect(hub.between(99, 10), lessThan(hub.between(1, 2)));
+    });
+
+    test('a radio leans toward songs played with its first song, and half as much with the liked ones', () {
+      final c = CoListening.fromPlays([play(1, 0), play(2, 4), play(50, 1000), play(51, 1004)]);
+      final a = c.affinity(1, liked: [50]);
+      expect(a[2], closeTo(.5, 1e-9));
+      expect(a[51], closeTo(.25, 1e-9));
+      expect(c.affinity(7), isEmpty);
+    });
+
+    test('no history: empty, and the picks are the same as by sound alone', () {
+      final c = CoListening.fromPlays(const []);
+      expect(c.isEmpty, isTrue);
+      final lib = RadioLibrary(_library());
+      final dir = radioDirection(lib, 0)!;
+      List<int> pick(Map<int, double> affinity) =>
+          pickRadioSongs(lib, direction: dir, after: 0, exclude: {}, affinity: affinity, count: 8, random: Random(4));
+      expect(pick(c.affinity(0)), pick(const {}));
+    });
+
+    test('lifts a song played with the first one over songs that sound a little closer — not over another style', () {
+      final lib = RadioLibrary(_library());
+      final dir = radioDirection(lib, 0)!;
+      final bySound = pickRadioSongs(lib, direction: dir, after: 0, exclude: {}, count: 19, random: Random(2));
+      final last = bySound.last; // the style-0 song that sounds least like song 0
+      final lifted = pickRadioSongs(lib, direction: dir, after: 0, exclude: {}, affinity: {last: 1}, count: 19, random: Random(2));
+      expect(lifted.indexOf(last), lessThan(bySound.indexOf(last)));
+      // A style-1 song played with it still doesn't come in among style 0
+      final other = pickRadioSongs(lib, direction: dir, after: 0, exclude: {}, affinity: {105: 1}, count: 10, random: Random(2));
+      expect(other, isNot(contains(105)));
     });
   });
 

@@ -122,13 +122,15 @@ class RadioLibrary {
 }
 
 /// Where the radio is heading: the first song, pulled toward the songs listened to the end and
-/// away from the ones skipped. Likes and skips count by their average, so the first song always
-/// weighs most; and if the skips would turn the radio away from it, it starts over from it.
+/// away from the ones skipped and, harder, from the ones marked "less like this" ([disliked]).
+/// Each kind counts by its average, so the first song always weighs most; and the radio never
+/// turns more than 60° away from it (cosine 0.5).
 Float64List? radioDirection(
   RadioLibrary lib,
   int seedId, {
   Iterable<int> liked = const [],
   Iterable<int> skipped = const [],
+  Iterable<int> disliked = const [],
 }) {
   final seed = lib.vector(seedId);
   if (seed == null) return null;
@@ -144,12 +146,41 @@ Float64List? radioDirection(
 
   add(liked, radioLikedWeight);
   add(skipped, -radioSkippedWeight);
-  var n = 0.0, toSeed = 0.0;
-  for (var j = 0; j < d.length; j++) {
-    n += d[j] * d[j];
-    toSeed += d[j] * seed[j];
+  add(disliked, -radioDislikedWeight);
+
+  // Turned too far from the first song (cosine under 0.5): turn only as far as allowed — still
+  // away from what was skipped, never away from the first song. Starting over from it instead
+  // dropped a "less like this" on a song much like the first one altogether.
+  final steer = Float64List.fromList([for (var j = 0; j < d.length; j++) d[j] - seed[j]]);
+  bool fits(double k) {
+    var n = 0.0, toSeed = 0.0;
+    for (var j = 0; j < d.length; j++) {
+      final x = seed[j] + k * steer[j];
+      n += x * x;
+      toSeed += x * seed[j];
+    }
+    return n > 1e-12 && toSeed / sqrt(n) >= 0.5;
   }
-  if (n < 1e-12 || toSeed / sqrt(n) < 0.5) return seed;
+
+  var k = 1.0;
+  if (!fits(1)) {
+    // k = 0 is the first song itself, which always fits: the furthest k that does
+    var lo = 0.0, hi = 1.0;
+    for (var i = 0; i < 20; i++) {
+      final mid = (lo + hi) / 2;
+      if (fits(mid)) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    k = lo;
+  }
+  var n = 0.0;
+  for (var j = 0; j < d.length; j++) {
+    d[j] = seed[j] + k * steer[j];
+    n += d[j] * d[j];
+  }
   n = 1 / sqrt(n);
   for (var j = 0; j < d.length; j++) {
     d[j] *= n;
@@ -163,6 +194,9 @@ const radioMemory = 10;
 const radioLikedWeight = 0.6;
 const radioSkippedWeight = 0.6;
 
+/// "Less like this": said on purpose, so it weighs more than a skip — as much as the first song.
+const radioDislikedWeight = 1.0;
+
 /// The next [count] songs for a radio heading in [direction], [after] being the song they
 /// follow (for tempo, key and loudness).
 ///
@@ -170,6 +204,8 @@ const radioSkippedWeight = 0.6;
 /// * [recentArtists]: the artists just before, newest first — the next song is never by the
 ///   same artist as the one before it, and an artist comes back only after a few songs.
 /// * [penalty]: trackId → 0..1, for songs heard a moment ago or usually skipped.
+/// * [affinity]: trackId → 0..1, for songs this listener plays together with the radio's
+///   songs ([CoListening]); empty for a new listener, and then radio goes by sound alone.
 /// * [random]: the picks vary a little each time, among the best matches only.
 List<int> pickRadioSongs(
   RadioLibrary lib, {
@@ -178,6 +214,7 @@ List<int> pickRadioSongs(
   required Set<int> exclude,
   List<String> recentArtists = const [],
   Map<int, double> penalty = const {},
+  Map<int, double> affinity = const {},
   int count = 5,
   Random? random,
 }) {
@@ -192,6 +229,7 @@ List<int> pickRadioSongs(
     var score = sims[i];
     if (prev != null) score += _transition(prev, s);
     score -= 0.3 * (penalty[s.trackId] ?? 0).clamp(0, 1);
+    score += radioCoListenWeight * (affinity[s.trackId] ?? 0).clamp(0, 1);
     scored.add((i, score));
   }
   scored.sort((a, b) => b.$2.compareTo(a.$2));
@@ -297,4 +335,83 @@ Map<int, double> radioPenalties(
     out[id] = max(out[id] ?? 0, 0.8 * s / n);
   }
   return out;
+}
+
+/// How much [CoListening] adds to a song's score (0..this). On FMA small (8000 songs) the
+/// nearest song by sound scores ~0.80, the 10th ~0.70, the 50th ~0.60, the 200th ~0.47: songs
+/// often played together climb from about the 100th into the first ten, while a song that
+/// sounds nothing like the radio's stays out.
+const radioCoListenWeight = 0.25;
+
+/// Songs this listener plays together: one after another, within a listening session.
+///
+/// Sound alone can't tell languages or scenes apart; what a listener plays side by side can.
+/// Every listener's own history, so it fits anyone with no setup; with no history it is empty
+/// and radio goes by sound alone.
+///
+/// Two songs count when they are at most [window] plays apart in one session (plays less than
+/// [sessionGap] apart), closer counting more (1, ½, ⅓). Songs left within 30 s don't count:
+/// a skip says the two don't go together. [between] is scaled by both songs' totals, so a song
+/// played with everything doesn't come out close to everything.
+class CoListening {
+  CoListening.fromPlays(
+    Iterable<PlayRecord> plays, {
+    Duration sessionGap = const Duration(minutes: 30),
+    int window = 3,
+  }) {
+    final sorted = [for (final p in plays) if (_heard(p)) p]..sort((a, b) => a.playedAt.compareTo(b.playedAt));
+    for (var i = 0; i < sorted.length; i++) {
+      for (var d = 1; d <= window && i + d < sorted.length; d++) {
+        final a = sorted[i + d - 1], b = sorted[i + d];
+        // The session ends at the first long gap
+        if (b.playedAt.difference(a.playedAt) > sessionGap) break;
+        final x = sorted[i].trackId, y = b.trackId;
+        if (x == y) continue;
+        _add(x, y, 1 / d);
+        _add(y, x, 1 / d);
+      }
+    }
+  }
+
+  final _pairs = <int, Map<int, double>>{};
+  final _totals = <int, double>{};
+
+  bool get isEmpty => _pairs.isEmpty;
+
+  static bool _heard(PlayRecord p) {
+    final heard = p.listened;
+    // Plays from before listening was measured count: most were heard
+    if (heard == null) return true;
+    return heard >= const Duration(seconds: 30) || heard * 2 >= p.duration;
+  }
+
+  void _add(int a, int b, double w) {
+    final m = _pairs.putIfAbsent(a, () => {});
+    m[b] = (m[b] ?? 0) + w;
+    _totals[a] = (_totals[a] ?? 0) + w;
+  }
+
+  /// 0..1: how much [a] and [b] are played together. Once together → 0.5; again and again,
+  /// and with little else → near 1.
+  double between(int a, int b) {
+    final w = _pairs[a]?[b];
+    if (w == null) return 0;
+    return min(1, w / (sqrt(_totals[a]! * _totals[b]!) + 1));
+  }
+
+  /// [between] for every song played with [id].
+  Map<int, double> around(int id) => {for (final b in (_pairs[id] ?? const <int, double>{}).keys) b: between(id, b)};
+
+  /// What a radio leans toward: songs played with its first song, and — half as much — with
+  /// the songs heard to the end in it, newest first. The highest of these for each song.
+  Map<int, double> affinity(int seedId, {Iterable<int> liked = const []}) {
+    final out = around(seedId);
+    for (final id in liked.take(3)) {
+      for (final MapEntry(key: b, value: v) in around(id).entries) {
+        if (b == seedId) continue;
+        if (v / 2 > (out[b] ?? 0)) out[b] = v / 2;
+      }
+    }
+    return out;
+  }
 }

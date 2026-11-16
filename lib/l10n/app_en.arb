@@ -542,7 +542,16 @@
   "playAll": "Play all",
   "shuffle": "Shuffle",
   "playlistEmpty": "This playlist is empty",
-  "playlistEmptyHint": "Tap ⋮ next to any song and choose \"Add to playlist\".",
+  "playlistEmptyHint": "Pick songs from your library, or tap ⋮ next to any song.",
+  "addSongs": "Add songs",
+  "addSongsCount": "Add ({count})",
+  "@addSongsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "alreadyInPlaylist": "Already in this playlist",
+  "noSongsFound": "No songs found",
   "noAlbums": "No albums yet",
   "noArtists": "No artists yet",
   "albumCount": "{count, plural, =1{1 album} other{{count} albums}}",
@@ -1079,5 +1088,65 @@
       }
     }
   },
-  "radioNothingPlaying": "Play a song first: radio starts from it"
+  "radioNothingPlaying": "Play a song first: radio starts from it",
+  "radioLessLikeThis": "Less like this",
+  "radioLessLikeThisDone": "Fewer songs like that",
+  "turnOn": "Turn on",
+  "menuRadioPreparing": "Getting ready · {done} of {total} songs",
+  "@menuRadioPreparing": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "menuRadioAnalysisOff": "Song analysis is off · {done} of {total} songs",
+  "@menuRadioAnalysisOff": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "radioNotReadyTimeLeft": "Radio is getting ready: {done} of {total} songs analyzed, about {time} left",
+  "@radioNotReadyTimeLeft": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "radioAnalysisOff": "Radio needs song analysis, and it's turned off",
+  "radioAnalysisTurnedOn": "Song analysis is on: radio will be ready soon",
+  "radioTooFewSongs": "Radio needs at least {count} songs it can analyze",
+  "@radioTooFewSongs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "radioPickingFrom": "Picking from {done} of {total} songs so far",
+  "@radioPickingFrom": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -1516,8 +1516,32 @@ abstract class L10n {
   /// No description provided for @playlistEmptyHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap ⋮ next to any song and choose \"Add to playlist\".'**
+  /// **'Pick songs from your library, or tap ⋮ next to any song.'**
   String get playlistEmptyHint;
+
+  /// No description provided for @addSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Add songs'**
+  String get addSongs;
+
+  /// No description provided for @addSongsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add ({count})'**
+  String addSongsCount(int count);
+
+  /// No description provided for @alreadyInPlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in this playlist'**
+  String get alreadyInPlaylist;
+
+  /// No description provided for @noSongsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No songs found'**
+  String get noSongsFound;
 
   /// No description provided for @noAlbums.
   ///
@@ -2849,6 +2873,66 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Play a song first: radio starts from it'**
   String get radioNothingPlaying;
+
+  /// No description provided for @radioLessLikeThis.
+  ///
+  /// In en, this message translates to:
+  /// **'Less like this'**
+  String get radioLessLikeThis;
+
+  /// No description provided for @radioLessLikeThisDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer songs like that'**
+  String get radioLessLikeThisDone;
+
+  /// No description provided for @turnOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get turnOn;
+
+  /// No description provided for @menuRadioPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting ready · {done} of {total} songs'**
+  String menuRadioPreparing(int done, int total);
+
+  /// No description provided for @menuRadioAnalysisOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Song analysis is off · {done} of {total} songs'**
+  String menuRadioAnalysisOff(int done, int total);
+
+  /// No description provided for @radioNotReadyTimeLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio is getting ready: {done} of {total} songs analyzed, about {time} left'**
+  String radioNotReadyTimeLeft(int done, int total, String time);
+
+  /// No description provided for @radioAnalysisOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio needs song analysis, and it\'s turned off'**
+  String get radioAnalysisOff;
+
+  /// No description provided for @radioAnalysisTurnedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Song analysis is on: radio will be ready soon'**
+  String get radioAnalysisTurnedOn;
+
+  /// No description provided for @radioTooFewSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio needs at least {count} songs it can analyze'**
+  String radioTooFewSongs(int count);
+
+  /// No description provided for @radioPickingFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Picking from {done} of {total} songs so far'**
+  String radioPickingFrom(int done, int total);
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

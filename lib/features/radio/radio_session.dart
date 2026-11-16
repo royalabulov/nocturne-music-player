@@ -17,6 +17,10 @@ abstract interface class RadioPlayer {
 
   Future<void> playTracks(List<Track> tracks);
   Future<void> enqueue(List<Track> tracks);
+
+  /// Takes a song out of the queue (not the whole queue: the radio goes on).
+  Future<void> removeTrack(int trackId);
+  Future<void> skipToNext();
 }
 
 /// One pick for [pickRadioSongs], whole, so it can be sent to another isolate.
@@ -28,6 +32,7 @@ class RadioPick {
     required this.exclude,
     required this.recentArtists,
     required this.penalty,
+    this.affinity = const {},
     required this.count,
   });
   final RadioLibrary lib;
@@ -36,6 +41,7 @@ class RadioPick {
   final Set<int> exclude;
   final List<String> recentArtists;
   final Map<int, double> penalty;
+  final Map<int, double> affinity;
   final int count;
 }
 
@@ -51,6 +57,7 @@ List<int> _pick(RadioPick p) => pickRadioSongs(
       exclude: p.exclude,
       recentArtists: p.recentArtists,
       penalty: p.penalty,
+      affinity: p.affinity,
       count: p.count,
     );
 
@@ -67,6 +74,7 @@ class RadioSession {
     required this.tracks,
     required this.seed,
     this.penalty = const {},
+    this.together,
     RadioPicker? picker,
     this.onEnded,
   }) : _picker = picker ?? pickInBackground;
@@ -78,6 +86,9 @@ class RadioSession {
   final Map<int, Track> tracks;
   final Track seed;
   final Map<int, double> penalty;
+
+  /// What this listener plays together; null (or empty) = by sound alone.
+  final CoListening? together;
   final RadioPicker _picker;
   final void Function()? onEnded;
 
@@ -89,7 +100,7 @@ class RadioSession {
 
   /// Everything this radio queued, oldest first.
   final _queued = <int>[];
-  final _liked = <int>[], _skipped = <int>[]; // newest first
+  final _liked = <int>[], _skipped = <int>[], _disliked = <int>[]; // newest first
 
   /// How far into each radio song the listener got.
   final _heard = <int, Duration>{};
@@ -103,6 +114,9 @@ class RadioSession {
   Track? _current;
   List<Track> _queue = const [];
   bool _refilling = false;
+
+  /// Completes when the refill or "less like this" under way is done.
+  Completer<void>? _busy;
   bool _ended = false;
 
   bool get ended => _ended;
@@ -110,6 +124,56 @@ class RadioSession {
   List<int> get liked => List.unmodifiable(_liked);
   @visibleForTesting
   List<int> get skipped => List.unmodifiable(_skipped);
+  @visibleForTesting
+  List<int> get disliked => List.unmodifiable(_disliked);
+
+  /// Whether "less like this" fits [trackId]: a song this radio chose — not its first song,
+  /// not one the listener added.
+  bool canDislike(int trackId) =>
+      !_ended && trackId != seed.id && _queued.contains(trackId) && !_disliked.contains(trackId);
+
+  /// "Less like this" on the song playing: the radio turns away from it right now. The songs it
+  /// had lined up after it are picked again in the new direction (songs the listener added
+  /// stay), and the song is skipped.
+  Future<void> lessLikeThis() async {
+    final cur = _current;
+    if (cur == null || !canDislike(cur.id)) return;
+    while (_refilling) {
+      await _busy?.future;
+    }
+    if (_ended || _current?.id != cur.id) return;
+    _refilling = true;
+    _busy = Completer();
+    try {
+      _disliked.insert(0, cur.id);
+      final at = _queue.lastIndexWhere((t) => t.id == cur.id);
+      final ahead = <int>{
+        for (final t in _queue.skip(at + 1))
+          if (_queued.contains(t.id)) t.id,
+      };
+      for (final id in ahead) {
+        await player.removeTrack(id);
+      }
+      // Lined up by the old direction, not heard: they may come back if the new one fits them
+      _queued.removeWhere(ahead.contains);
+      final rest = [
+        ..._queue.take(at + 1),
+        for (final t in _queue.skip(at + 1))
+          if (!ahead.contains(t.id)) t,
+      ];
+      final more = await _pickMore(rest, at: at, count: max(ahead.length, batch));
+      if (_ended || player.queueGeneration != _generation) return;
+      if (more.isNotEmpty) {
+        _queued.addAll(more.map((t) => t.id));
+        await player.enqueue(more);
+      }
+      await player.skipToNext();
+    } finally {
+      _refilling = false;
+      _busy?.complete();
+      _busy = null;
+    }
+  }
 
   /// Plays the first songs. False when nothing to play comes up (the seed isn't analyzed,
   /// the library has nothing else); then the queue is left as it was.
@@ -171,6 +235,8 @@ class RadioSession {
   /// (under 45 s) and songs the user added themselves tell nothing.
   void _judge(Track t) {
     final heard = _heard.remove(t.id) ?? Duration.zero;
+    // "Less like this" already said more than a skip would
+    if (_disliked.contains(t.id)) return;
     if (t.id == seed.id || !_queued.contains(t.id) || t.duration < const Duration(seconds: 45)) return;
     if (heard < const Duration(seconds: 30)) {
       _skipped.insert(0, t.id);
@@ -188,38 +254,47 @@ class RadioSession {
     if (at < 0 || _queue.length - 1 - at > refillAt) return;
 
     _refilling = true;
+    _busy = Completer();
     try {
-      final direction = radioDirection(lib, seed.id, liked: _liked, skipped: _skipped)!;
-      final last = _queue.last;
-      final inQueue = {for (final t in _queue) t.id};
-      final artists = [for (final t in _queue.reversed.take(5)) t.artist];
-      var ids = await _picker(_request(
-        direction,
-        after: last.id,
-        count: batch,
-        exclude: {..._queued, ...inQueue},
-        recentArtists: artists,
-      ));
-      if (ids.isEmpty && _queued.length > repeatAfter) {
-        // The library ran out: let songs from long ago come back (not the ones still ahead)
-        ids = await _picker(_request(
-          direction,
-          after: last.id,
-          count: batch,
-          exclude: {
-            ..._queued.skip(_queued.length - repeatAfter),
-            for (final t in _queue.skip(at)) t.id,
-          },
-          recentArtists: artists,
-        ));
-      }
-      final more = [for (final id in ids) ?tracks[id]];
+      final more = await _pickMore(_queue, at: at, count: batch);
       if (more.isEmpty || _ended || player.queueGeneration != _generation) return;
       _queued.addAll(more.map((t) => t.id));
       await player.enqueue(more);
     } finally {
       _refilling = false;
+      _busy?.complete();
+      _busy = null;
     }
+  }
+
+  /// [count] songs to follow [queue] (the current song at [at]), in the radio's direction now.
+  Future<List<Track>> _pickMore(List<Track> queue, {required int at, required int count}) async {
+    final direction = radioDirection(lib, seed.id, liked: _liked, skipped: _skipped, disliked: _disliked)!;
+    final last = queue.last;
+    final inQueue = {for (final t in queue) t.id};
+    final artists = [for (final t in queue.reversed.take(5)) t.artist];
+    var ids = await _picker(_request(
+      direction,
+      after: last.id,
+      count: count,
+      exclude: {..._queued, ...inQueue, ..._disliked},
+      recentArtists: artists,
+    ));
+    if (ids.isEmpty && _queued.length > repeatAfter) {
+      // The library ran out: let songs from long ago come back (not the ones still ahead)
+      ids = await _picker(_request(
+        direction,
+        after: last.id,
+        count: count,
+        exclude: {
+          ..._queued.skip(_queued.length - repeatAfter),
+          for (final t in queue.skip(at)) t.id,
+          ..._disliked,
+        },
+        recentArtists: artists,
+      ));
+    }
+    return [for (final id in ids) ?tracks[id]];
   }
 
   RadioPick _request(
@@ -236,6 +311,7 @@ class RadioSession {
         exclude: {seed.id, ...exclude},
         recentArtists: recentArtists,
         penalty: penalty,
+        affinity: together?.affinity(seed.id, liked: _liked) ?? const {},
         count: min(count, max(lib.length - 1, 0)),
       );
 }
