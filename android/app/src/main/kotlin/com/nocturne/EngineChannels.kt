@@ -40,6 +40,7 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
         setUpAnalysisChannel(messenger)
         setUpKnockChannel(messenger)
         setUpServiceChannel(messenger)
+        setUpDeviceChannel(messenger)
         widgets.setMethodCallHandler { call, result ->
             when (call.method) {
                 "update" -> {
@@ -144,6 +145,11 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
                     )
                     result.success(null)
                 }
+                // Developer mode on/off: only then is the knock log kept; off deletes it.
+                "logging" -> {
+                    KnockLog.setEnabled(call.argument<Boolean>("on") ?: false)
+                    result.success(null)
+                }
                 // Permanent knock log → Download folder. Null = nothing recorded yet.
                 "exportLog" -> background(result) {
                     KnockLog.export()?.let {
@@ -162,6 +168,16 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
                 "paused" -> result.success(PlaybackServiceControl.paused())
                 "stopped" -> result.success(PlaybackServiceControl.stopped())
                 "equalizerWorks" -> background(result) { EqualizerProbe.works(context) }
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    /// The phone's own settings the app needs to know about.
+    private fun setUpDeviceChannel(messenger: BinaryMessenger) {
+        MethodChannel(messenger, "com.nocturne/device").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "developerOptionsOn" -> result.success(DeveloperOptions.isOn(context))
                 else -> result.notImplemented()
             }
         }

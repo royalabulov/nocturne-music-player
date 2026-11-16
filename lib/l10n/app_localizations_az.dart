@@ -461,6 +461,23 @@ class L10nAz extends L10n {
       'Bu cihazda qeydə alınan çökmələr və oxutma xətaları';
 
   @override
+  String get groupDeveloper => 'Tərtibatçı';
+
+  @override
+  String get developerMode => 'Tərtibatçı rejimi';
+
+  @override
+  String get developerModeHint =>
+      'Tətbiqi yoxlamaq üçün alətlər. Söndürəndə vurma qeydləri silinir';
+
+  @override
+  String get developerModeOn => 'Tərtibatçı rejimi açıldı';
+
+  @override
+  String get developerModeNeedsPhone =>
+      'Əvvəlcə telefonun ayarlarında Developer options-u açın';
+
+  @override
   String get view => 'Bax';
 
   @override

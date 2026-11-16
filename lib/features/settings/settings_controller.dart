@@ -5,13 +5,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/audio/audio_effects.dart';
 import '../../core/audio/pocket_knock.dart';
 import '../../core/di/providers.dart';
+import '../../core/diagnostics/phone_developer_options.dart';
 import '../../core/audio/player_providers.dart';
 import '../../domain/repositories/settings_repository.dart';
 import 'audio_settings.dart';
 
+/// Hidden tools for testing the app (Settings → tap the version 7 times). Off by default.
+final developerModeProvider = StreamProvider<bool>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchSetting(SettingsKeys.developerMode).map((v) => v == 'true'),
+);
+
+/// Asks whether the phone's own Developer options are on; a provider so tests can answer.
+final phoneDeveloperOptionsProvider = Provider<Future<bool> Function()>((_) => phoneDeveloperOptionsOn);
+
 final pocketKnockProvider = Provider<PocketKnock>((ref) {
   final k = PocketKnock(ref.watch(audioHandlerProvider));
   ref.onDispose(k.dispose);
+  // The knock log is a developer tool: written only in developer mode, deleted when it's off.
+  // Only a value read from the DB counts: "still loading" must not delete the log.
+  ref.listen(developerModeProvider, (_, mode) {
+    if (mode.hasValue) k.setLogging(mode.requireValue);
+  }, fireImmediately: true);
   return k;
 });
 

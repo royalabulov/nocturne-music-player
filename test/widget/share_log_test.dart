@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nocturne/app.dart';
 import 'package:nocturne/core/constants.dart';
+import 'package:nocturne/domain/repositories/settings_repository.dart';
 import 'package:nocturne/core/di/providers.dart';
 import 'package:nocturne/core/router/routes.dart';
 import 'package:nocturne/domain/repositories/device_files.dart';
@@ -37,6 +40,9 @@ void main() {
   final t = lookupL10n(const Locale('en'));
 
   Future<void> openLog(WidgetTester tester, DemoApp app) async {
+    // The error log is in Settings → Developer
+    final container = ProviderScope.containerOf(tester.element(find.byType(NocturneApp)));
+    await container.read(settingsRepositoryProvider).setSetting(SettingsKeys.developerMode, 'true');
     await app.go(Routes.settings);
     final row = find.text(t.errorLogHint);
     await tester.scrollUntilVisible(row, 300, scrollable: find.byType(Scrollable).at(0));

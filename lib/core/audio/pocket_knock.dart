@@ -37,6 +37,17 @@ class PocketKnock {
     return _ch.invokeMethod<String>('exportLog', {'name': name});
   }
 
+  bool? _logging;
+
+  /// Developer mode: the detector keeps its log only while this is on; off deletes it.
+  void setLogging(bool on) {
+    if (kIsWeb || on == _logging) return;
+    _logging = on;
+    unawaited(_ch.invokeMethod<void>('logging', {'on': on}).catchError(
+      (Object e) => debugPrint('pocket knock logging: $e'),
+    ));
+  }
+
   void _push() {
     if (kIsWeb) return;
     unawaited(_ch.invokeMethod<void>('update', {'on': _enabled && _playing, 'sensitivity': _sensitivity}).catchError(

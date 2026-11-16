@@ -153,9 +153,9 @@ Play-in tərifləri vaxtaşırı dəyişir — göndərməzdən əvvəl Play Con
 - Is all user data encrypted in transit? **Yes** (HTTPS).
 - Do you provide a way for users to request that their data is deleted? **No** — developer heç bir data saxlamır; telefondakı data tətbiq silinəndə silinir (aylıq backup faylından başqa, onu istifadəçi özü silir).
 - Online rejimdəki boş internet yoxlaması istifadəçi məlumatı daşımır.
-- "Vuraraq mahnı dəyiş"in sensor göstəriciləri telefonda qalır, ona görə "collected" sayılmır. İstifadəçi qeydləri Download-a ixrac edəndə də fayl telefonda qalır.
+- "Vuraraq mahnı dəyiş"in sensor qeydləri yalnız gizli tərtibatçı rejimində yazılır (standart olaraq söndürülüb, söndürəndə silinir) və telefonda qalır, ona görə "collected" sayılmır. Download-a ixrac edəndə də fayl telefonda qalır.
 - **Aylıq avtomatik backup** (`Download/Nocturne`, standart olaraq açıq, ən son 2 fayl): bəyənilənlər, pleylistlər, tarixçə, əhval/janr düzəlişləri. Fayl telefondan çıxmır, ona görə "collected" sayılmır, amma tətbiq silinəndən sonra qalır — məxfilik siyasətinin "Backups" bölməsində yazılıb.
-- **Xəta jurnalının paylaşılması** (Ayarlar → Xəta jurnalı → Paylaş): istifadəçi özü seçdiyi tətbiqlə göndərir (e-poçt, messencer); tətbiq heç yerə avtomatik göndərmir, ona görə "collected" sayılmır.
+- **Xəta jurnalının paylaşılması** (Ayarlar → Tərtibatçı → Xəta jurnalı → Paylaş, və ya tətbiq açıla bilməyəndə çıxan ekran): istifadəçi özü seçdiyi tətbiqlə göndərir (e-poçt, messencer); tətbiq heç yerə avtomatik göndərmir, ona görə "collected" sayılmır.
 
 ### Government apps / Financial features / Health / News
 - Hamısı: **No / Not applicable**.

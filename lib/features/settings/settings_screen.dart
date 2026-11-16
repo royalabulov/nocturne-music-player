@@ -78,7 +78,7 @@ class SettingsScreen extends StatelessWidget {
 
           _GroupTitle(l10n.groupAbout),
           _Group(children: [
-            _InfoRow(title: 'Nocturne', subtitle: l10n.versionLabel(kAppVersion)),
+            const _VersionRow(),
             _InfoRow(title: l10n.privacy, subtitle: l10n.privacyText),
             // The fonts' and the model's licences ask for their text to go along with the app
             InkWell(
@@ -95,8 +95,119 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ]),
+
+          // Right under the version row it is opened from; nothing at all while it is off
+          const _DeveloperGroup(),
         ],
       ),
+    );
+  }
+}
+
+// ───────────────────────── developer mode ─────────────────────────
+
+/// "Nocturne · Version …": 7 taps in a row turn developer mode on, like Android's build number,
+/// and only while the phone's own Developer options are on.
+class _VersionRow extends ConsumerStatefulWidget {
+  const _VersionRow();
+
+  @override
+  ConsumerState<_VersionRow> createState() => _VersionRowState();
+}
+
+class _VersionRowState extends ConsumerState<_VersionRow> {
+  static const _tapsNeeded = 7;
+
+  /// Taps further apart than this start the count again.
+  static const _gap = Duration(seconds: 2);
+
+  int _taps = 0;
+  DateTime? _last;
+
+  Future<void> _tap() async {
+    if (ref.read(developerModeProvider).value ?? false) return;
+    final now = DateTime.now();
+    _taps = _last != null && now.difference(_last!) <= _gap ? _taps + 1 : 1;
+    _last = now;
+    if (_taps < _tapsNeeded) return;
+    _taps = 0;
+    // Only with the phone's own Developer options on: nobody opens it by accident
+    final settings = ref.read(settingsRepositoryProvider);
+    if (!await ref.read(phoneDeveloperOptionsProvider)()) {
+      showToast(l10n.developerModeNeedsPhone);
+      return;
+    }
+    await settings.setSetting(SettingsKeys.developerMode, 'true');
+    showToast(l10n.developerModeOn);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: _tap,
+      child: _InfoRow(title: 'Nocturne', subtitle: l10n.versionLabel(kAppVersion)),
+    );
+  }
+}
+
+/// Tools for testing the app, hidden from everyone who hasn't opened developer mode.
+class _DeveloperGroup extends ConsumerWidget {
+  const _DeveloperGroup();
+
+  Future<void> _exportVibes(WidgetRef ref) async {
+    showToast(l10n.preparingExport);
+    try {
+      final songs = await ref.read(dataTransferProvider).exportVibes();
+      if (songs != null) showToast(l10n.exportSaved(l10n.songCount(songs)));
+    } catch (e) {
+      debugPrint('vibe export failed: $e');
+      showToast(l10n.exportFailed, error: true);
+    }
+  }
+
+  Future<void> _exportKnockLog() async {
+    try {
+      final saved = await PocketKnock.exportLog(stampedFileName('nocturne-knock-log', 'txt', DateTime.now()));
+      showToast(saved == null ? l10n.knockLogEmpty : l10n.knockLogSaved(saved));
+    } catch (e) {
+      debugPrint('knock log export failed: $e');
+      showToast(l10n.exportFailed, error: true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!(ref.watch(developerModeProvider).value ?? false)) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _GroupTitle(l10n.groupDeveloper),
+        _Group(children: [
+          _ToggleRow(
+            title: l10n.developerMode,
+            subtitle: l10n.developerModeHint,
+            value: true,
+            onChanged: (_) =>
+                ref.read(settingsRepositoryProvider).setSetting(SettingsKeys.developerMode, 'false'),
+          ),
+          _InfoRow(
+            title: l10n.errorLog,
+            subtitle: l10n.errorLogHint,
+            trailing: _SmallButton(
+                label: l10n.view, icon: Icons.bug_report_outlined, onTap: () => _showErrorLog(context, ref)),
+          ),
+          _InfoRow(
+            title: l10n.exportSmartData,
+            subtitle: l10n.exportSmartDataHint,
+            trailing: _SmallButton(label: 'CSV', icon: Icons.table_chart_outlined, onTap: () => _exportVibes(ref)),
+          ),
+          _InfoRow(
+            title: l10n.knockLogExport,
+            subtitle: l10n.knockLogExportHint,
+            trailing: _SmallButton(label: l10n.save, icon: Icons.download_rounded, onTap: _exportKnockLog),
+          ),
+        ]),
+      ],
     );
   }
 }
@@ -619,37 +730,15 @@ class _AudioGroup extends ConsumerWidget {
       AnimatedSize(
         duration: const Duration(milliseconds: 200),
         child: s.pocketKnock
-            ? Column(
-                children: [
-                  _ChoiceRow(
-                    title: l10n.knockSensitivity,
-                    options: [l10n.knockLow, l10n.knockMedium, l10n.knockHigh],
-                    selected: s.knockSensitivity,
-                    onSelected: ctrl.setKnockSensitivity,
-                  ),
-                  InkWell(
-                    onTap: _exportKnockLog,
-                    child: _InfoRow(
-                      title: l10n.knockLogExport,
-                      subtitle: l10n.knockLogExportHint,
-                      trailing: const Icon(Icons.download_rounded, color: AppColors.textSecondary),
-                    ),
-                  ),
-                ],
+            ? _ChoiceRow(
+                title: l10n.knockSensitivity,
+                options: [l10n.knockLow, l10n.knockMedium, l10n.knockHigh],
+                selected: s.knockSensitivity,
+                onSelected: ctrl.setKnockSensitivity,
               )
             : const SizedBox.shrink(),
       ),
     ]);
-  }
-
-  Future<void> _exportKnockLog() async {
-    try {
-      final saved = await PocketKnock.exportLog(stampedFileName('nocturne-knock-log', 'txt', DateTime.now()));
-      showToast(saved == null ? l10n.knockLogEmpty : l10n.knockLogSaved(saved));
-    } catch (e) {
-      debugPrint('knock log export failed: $e');
-      showToast(l10n.exportFailed, error: true);
-    }
   }
 }
 
@@ -702,17 +791,6 @@ class _DataGroup extends ConsumerWidget {
     }
   }
 
-  Future<void> _exportVibes(BuildContext context, WidgetRef ref) async {
-    showToast(l10n.preparingExport);
-    try {
-      final songs = await ref.read(dataTransferProvider).exportVibes();
-      if (songs != null) showToast(l10n.exportSaved(l10n.songCount(songs)));
-    } catch (e) {
-      debugPrint('vibe export failed: $e');
-      showToast(l10n.exportFailed, error: true);
-    }
-  }
-
   Future<void> _restore(BuildContext context, WidgetRef ref) async {
     try {
       final report = await ref.read(dataTransferProvider).pickAndRestore();
@@ -743,87 +821,78 @@ class _DataGroup extends ConsumerWidget {
         subtitle: l10n.restoreBackupHint,
         trailing: _SmallButton(label: l10n.open, icon: Icons.restore_rounded, onTap: () => _restore(context, ref)),
       ),
-      _InfoRow(
-        title: l10n.exportSmartData,
-        subtitle: l10n.exportSmartDataHint,
-        trailing: _SmallButton(label: 'CSV', icon: Icons.table_chart_outlined, onTap: () => _exportVibes(context, ref)),
-      ),
-      _InfoRow(
-        title: l10n.errorLog,
-        subtitle: l10n.errorLogHint,
-        trailing: _SmallButton(label: l10n.view, icon: Icons.bug_report_outlined, onTap: () => _showLog(context, ref)),
-      ),
     ]);
   }
+}
 
-  static Future<void> _showLog(BuildContext context, WidgetRef ref) async {
-    final text = await CrashLog.read();
-    if (!context.mounted) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl))),
-      builder: (ctx) => SafeArea(
-        child: SizedBox(
-          height: MediaQuery.sizeOf(ctx).height * .8,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.xs, 0),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(l10n.errorLog, style: AppTypography.headlineMd)),
-                    // The only way a Dart error reaches the developer: Play's crash reports see
-                    // native crashes only. Sent by the app the user picks, never on its own.
-                    IconButton(
-                      tooltip: l10n.share,
-                      icon: const Icon(Icons.share_rounded, color: AppColors.textPrimary),
-                      onPressed: () async {
-                        final shared = await ref
-                            .read(deviceFilesProvider)
-                            .shareText(text, title: 'Nocturne v$kAppVersion — ${l10n.errorLog}');
-                        if (!shared) {
-                          await Clipboard.setData(ClipboardData(text: text));
-                          showToast(l10n.shareFailed);
-                        }
-                        if (ctx.mounted) Navigator.pop(ctx);
-                      },
-                    ),
-                    IconButton(
-                      tooltip: l10n.copy,
-                      icon: const Icon(Icons.copy_rounded, color: AppColors.textPrimary),
-                      onPressed: () {
-                        unawaited(Clipboard.setData(ClipboardData(text: text)));
-                        Navigator.pop(ctx);
-                      },
-                    ),
-                    IconButton(
-                      tooltip: l10n.clear,
-                      icon: const Icon(Icons.delete_sweep_outlined, color: AppColors.textPrimary),
-                      onPressed: () async {
-                        await CrashLog.clear();
-                        if (ctx.mounted) Navigator.pop(ctx);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  reverse: true, // newest at the end
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: SelectableText(
-                    text,
-                    style: AppTypography.labelXs.copyWith(color: AppColors.textSecondary, height: 1.4),
+/// Settings → Developer → Error log: the log in a sheet, with Share, Copy and Clear.
+Future<void> _showErrorLog(BuildContext context, WidgetRef ref) async {
+  final text = await CrashLog.read();
+  if (!context.mounted) return;
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl))),
+    builder: (ctx) => SafeArea(
+      child: SizedBox(
+        height: MediaQuery.sizeOf(ctx).height * .8,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.xs, 0),
+              child: Row(
+                children: [
+                  Expanded(child: Text(l10n.errorLog, style: AppTypography.headlineMd)),
+                  // The only way a Dart error reaches the developer: Play's crash reports see
+                  // native crashes only. Sent by the app the user picks, never on its own.
+                  IconButton(
+                    tooltip: l10n.share,
+                    icon: const Icon(Icons.share_rounded, color: AppColors.textPrimary),
+                    onPressed: () async {
+                      final shared = await ref
+                          .read(deviceFilesProvider)
+                          .shareText(text, title: 'Nocturne v$kAppVersion — ${l10n.errorLog}');
+                      if (!shared) {
+                        await Clipboard.setData(ClipboardData(text: text));
+                        showToast(l10n.shareFailed);
+                      }
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    },
                   ),
+                  IconButton(
+                    tooltip: l10n.copy,
+                    icon: const Icon(Icons.copy_rounded, color: AppColors.textPrimary),
+                    onPressed: () {
+                      unawaited(Clipboard.setData(ClipboardData(text: text)));
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                  IconButton(
+                    tooltip: l10n.clear,
+                    icon: const Icon(Icons.delete_sweep_outlined, color: AppColors.textPrimary),
+                    onPressed: () async {
+                      await CrashLog.clear();
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                reverse: true, // newest at the end
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: SelectableText(
+                  text,
+                  style: AppTypography.labelXs.copyWith(color: AppColors.textSecondary, height: 1.4),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
