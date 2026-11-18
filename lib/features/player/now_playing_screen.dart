@@ -27,6 +27,8 @@ import 'lyrics_view.dart';
 import '../../core/audio/player_providers.dart';
 import 'queue_sheet.dart';
 import 'sleep_timer.dart';
+import 'sound_effect_sheet.dart';
+import '../../core/audio/sound_effect.dart';
 import '../../l10n/l10n.dart';
 import '../../core/utils/display_names.dart';
 
@@ -182,6 +184,8 @@ class NowPlayingScreen extends ConsumerWidget {
                                       [
                                         t.qualityLabel,
                                         if (t.sampleRateHz != null) '${t.sampleRateHz! ~/ 1000}kHz',
+                                        // The effect stays on for every song: said where it is heard
+                                        ?soundEffectLabel(ref.watch(soundEffectProvider)),
                                       ].join('  ·  '),
                                       style: AppTypography.monoSm.copyWith(color: AppColors.textMuted),
                                     ),
@@ -189,6 +193,7 @@ class NowPlayingScreen extends ConsumerWidget {
                                 ),
                               ),
                               LessLikeThisButton(trackId: t.id),
+                              const SoundEffectButton(),
                               const _LyricsButton(),
                               FavoriteButton(trackId: t.id, size: 24),
                             ],

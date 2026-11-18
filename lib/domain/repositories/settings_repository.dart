@@ -49,9 +49,13 @@ abstract final class SettingsKeys {
   /// version in Settings 7 times.
   static const developerMode = 'developerMode';
 
+  /// Slowed / sped up and reverb, JSON {speed, reverb} (core/audio/sound_effect.dart).
+  static const soundEffect = 'soundEffect';
+
   /// The user's choices: they come back with a backup.
   static const backedUp = {
     audioSettings,
+    soundEffect,
     autoScan,
     language,
     lyricsOnline,

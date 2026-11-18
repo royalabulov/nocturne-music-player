@@ -28,6 +28,30 @@ class PlaybackServiceSource {
     }
   }
 
+  /// Whether the phone can put a reverb on a player (Kotlin `SessionReverb`). Unknown and
+  /// anything but Android: no, the effect screen then offers speed only.
+  Future<bool> reverbWorks() async {
+    if (kIsWeb || !Platform.isAndroid) return false;
+    try {
+      return await _ch.invokeMethod<bool>('reverbWorks') ?? false;
+    } catch (e) {
+      debugPrint('reverb probe: $e');
+      return false;
+    }
+  }
+
+  /// Reverb [amount] (0..1, 0 = off) on the player with audio [session]. False when it
+  /// couldn't be made.
+  Future<bool> setReverb(int session, double amount) async {
+    if (kIsWeb || !Platform.isAndroid) return false;
+    try {
+      return await _ch.invokeMethod<bool>('setReverb', {'session': session, 'amount': amount}) ?? false;
+    } catch (e) {
+      debugPrint('reverb on session $session: $e');
+      return false;
+    }
+  }
+
   Future<void> _call(String method) async {
     if (kIsWeb || !Platform.isAndroid) return;
     try {

@@ -18,6 +18,7 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
     private val library = MediaLibrary(context)
     private val importer = AudioImporter(context)
     private val analyzer = AudioAnalyzer(context)
+    private val reverb = SessionReverb()
     private val media = MethodChannel(messenger, "com.nocturne/media_store")
 
     /// Home screen widgets: the app sends what they show, they send back shuffle / repeat /
@@ -57,6 +58,7 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
     fun close() {
         context.contentResolver.unregisterContentObserver(audioObserver)
         analyzer.close()
+        reverb.releaseAll()
     }
 
     /// "Open with" brought new files while the app runs.
@@ -168,6 +170,11 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
                 "paused" -> result.success(PlaybackServiceControl.paused())
                 "stopped" -> result.success(PlaybackServiceControl.stopped())
                 "equalizerWorks" -> background(result) { EqualizerProbe.works(context) }
+                "reverbWorks" -> background(result) { SessionReverb.works(context) }
+                // On this thread: the same one every reverb is made and released on
+                "setReverb" -> result.success(
+                    reverb.set(call.argument<Int>("session")!!, call.argument<Double>("amount")!!)
+                )
                 else -> result.notImplemented()
             }
         }

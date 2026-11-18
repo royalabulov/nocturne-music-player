@@ -958,6 +958,23 @@
   "variousArtists": "Various Artists",
   "showLyrics": "Lyrics",
   "showCover": "Show cover",
+  "soundEffect": "Sound effect",
+  "soundEffectHint": "Stays on for every song until you set it back",
+  "soundNormal": "Normal",
+  "soundSlowedReverb": "Slowed + Reverb",
+  "soundSpedUp": "Sped up",
+  "speed": "Speed",
+  "speedValue": "{value}×",
+  "@speedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "reverb": "Reverb",
+  "reverbMax": "Max",
+  "reverbUnavailable": "This phone has no reverb effect: speed only",
   "lyricsSearching": "Looking for lyrics…",
   "lyricsNotFound": "No lyrics found for this song",
   "lyricsInstrumental": "This song has no words",

@@ -15,6 +15,7 @@ import 'app.dart';
 import 'core/audio/audio_effects.dart';
 import 'core/audio/listen_tracker.dart';
 import 'core/audio/nocturne_audio_handler.dart';
+import 'core/audio/sound_effect.dart';
 import 'core/audio/playback_memory.dart';
 import 'core/audio/service_release.dart';
 import 'core/diagnostics/crash_log.dart';
@@ -90,6 +91,8 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
         sourceBuilder: sourceBuilder,
         // Play with nothing queued (a Bluetooth button after the app was ended): the last queue
         savedQueue: () => memory.load(evenClosed: true),
+        // Slowed + reverb: just_audio has no reverb, the Kotlin side puts one on each player
+        sessionReverb: PlaybackServiceSource().setReverb,
       ),
       config: AudioServiceConfig(
         androidNotificationChannelId: kPlaybackChannelId,
@@ -143,6 +146,8 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
 
   // Audio settings (EQ / crossfade / ReplayGain) are loaded from the DB and applied to the player.
   container.read(audioSettingsProvider);
+  // And slowed / sped up with reverb, if it was left on
+  container.read(soundEffectProvider);
 
   // Playback memory: the queue and the place in the song, so both survive the app being ended.
   memory = PlaybackMemory(

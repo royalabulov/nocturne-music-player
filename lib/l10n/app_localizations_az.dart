@@ -1459,6 +1459,39 @@ class L10nAz extends L10n {
   String get showCover => 'Üz qabığını göstər';
 
   @override
+  String get soundEffect => 'Səs effekti';
+
+  @override
+  String get soundEffectHint => 'Geri qaytarana qədər bütün mahnılarda qalır';
+
+  @override
+  String get soundNormal => 'Normal';
+
+  @override
+  String get soundSlowedReverb => 'Slowed + Reverb';
+
+  @override
+  String get soundSpedUp => 'Sped up';
+
+  @override
+  String get speed => 'Sürət';
+
+  @override
+  String speedValue(String value) {
+    return '$value×';
+  }
+
+  @override
+  String get reverb => 'Reverb';
+
+  @override
+  String get reverbMax => 'Maks';
+
+  @override
+  String get reverbUnavailable =>
+      'Bu telefonda reverb effekti yoxdur: yalnız sürət dəyişir';
+
+  @override
   String get lyricsSearching => 'Sözlər axtarılır…';
 
   @override

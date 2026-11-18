@@ -2514,6 +2514,66 @@ abstract class L10n {
   /// **'Show cover'**
   String get showCover;
 
+  /// No description provided for @soundEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound effect'**
+  String get soundEffect;
+
+  /// No description provided for @soundEffectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Stays on for every song until you set it back'**
+  String get soundEffectHint;
+
+  /// No description provided for @soundNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get soundNormal;
+
+  /// No description provided for @soundSlowedReverb.
+  ///
+  /// In en, this message translates to:
+  /// **'Slowed + Reverb'**
+  String get soundSlowedReverb;
+
+  /// No description provided for @soundSpedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sped up'**
+  String get soundSpedUp;
+
+  /// No description provided for @speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get speed;
+
+  /// No description provided for @speedValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}×'**
+  String speedValue(String value);
+
+  /// No description provided for @reverb.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverb'**
+  String get reverb;
+
+  /// No description provided for @reverbMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get reverbMax;
+
+  /// No description provided for @reverbUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has no reverb effect: speed only'**
+  String get reverbUnavailable;
+
   /// No description provided for @lyricsSearching.
   ///
   /// In en, this message translates to:

@@ -1463,6 +1463,38 @@ class L10nEn extends L10n {
   String get showCover => 'Show cover';
 
   @override
+  String get soundEffect => 'Sound effect';
+
+  @override
+  String get soundEffectHint => 'Stays on for every song until you set it back';
+
+  @override
+  String get soundNormal => 'Normal';
+
+  @override
+  String get soundSlowedReverb => 'Slowed + Reverb';
+
+  @override
+  String get soundSpedUp => 'Sped up';
+
+  @override
+  String get speed => 'Speed';
+
+  @override
+  String speedValue(String value) {
+    return '$value×';
+  }
+
+  @override
+  String get reverb => 'Reverb';
+
+  @override
+  String get reverbMax => 'Max';
+
+  @override
+  String get reverbUnavailable => 'This phone has no reverb effect: speed only';
+
+  @override
   String get lyricsSearching => 'Looking for lyrics…';
 
   @override
