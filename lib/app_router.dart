@@ -16,6 +16,9 @@ import 'shared/scroll_to_top.dart';
 import 'features/shell/shell_screen.dart';
 import 'features/smart_groups/vibes_screen.dart';
 import 'features/smart_groups/vibe_review_screen.dart';
+import 'features/wrapped/wrapped_screen.dart';
+import 'features/wrapped/wrapped_story_screen.dart';
+import 'domain/analysis/wrapped.dart';
 import 'shared/collapsing_title.dart';
 
 /// Builds every screen, so only the app's entry points import this file (see routes.dart).
@@ -43,6 +46,7 @@ final appRouter = GoRouter(
                 ),
                 GoRoute(path: 'vibe-review', builder: (_, _) => const VibeReviewScreen()),
                 GoRoute(path: 'vibes', builder: (_, _) => const VibesScreen()),
+                GoRoute(path: 'wrapped', builder: (_, _) => const WrappedScreen()),
                 GoRoute(
                   path: 'forgotten',
                   // ?t= : opened from a reminder → that song is shown on top
@@ -86,6 +90,25 @@ final appRouter = GoRouter(
           ],
         ),
       ],
+    ),
+
+    // Wrapped's stories: full screen, fading in over the app
+    GoRoute(
+      path: kWrappedStoryRoute,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final now = DateTime.now();
+        final period = WrappedPeriod.parse(state.uri.queryParameters['p']) ?? WrappedPeriod.month(now.year, now.month);
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: WrappedStoryScreen(period: period),
+          transitionDuration: const Duration(milliseconds: 400),
+          transitionsBuilder: (_, anim, _, child) => FadeTransition(
+            opacity: anim,
+            child: ScaleTransition(scale: Tween(begin: .96, end: 1.0).animate(anim), child: child),
+          ),
+        );
+      },
     ),
 
     // Full-screen player opened on top of the shell (slides up from the bottom)

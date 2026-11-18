@@ -69,6 +69,22 @@ class MediaStoreSource implements DeviceFiles {
     }
   }
 
+  @override
+  Future<String?> saveImage(String name, Uint8List png) async {
+    if (!Platform.isAndroid) return null;
+    return _ch.invokeMethod<String>('saveImage', {'name': name, 'bytes': png});
+  }
+
+  @override
+  Future<bool> shareImage(String uri, {required String title}) async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _ch.invokeMethod<bool>('shareImage', {'uri': uri, 'title': title}) ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   // ── open with / import ──────────────────────────────────
 
   @override

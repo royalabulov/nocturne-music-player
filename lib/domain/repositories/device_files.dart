@@ -28,6 +28,14 @@ abstract interface class DeviceFiles {
   /// False where there is no share sheet (not Android) or no app took it.
   Future<bool> shareText(String text, {required String title});
 
+  /// Saves a PNG to Pictures/Nocturne, where the gallery shows it. Result: a URI [shareImage]
+  /// takes; null where there is no gallery to write to (not Android).
+  Future<String?> saveImage(String name, Uint8List png);
+
+  /// Opens the system share sheet with an image [saveImage] gave. False where there is no
+  /// share sheet or no app took it.
+  Future<bool> shareImage(String uri, {required String title});
+
   /// Events from native code (while the app is open):
   /// - "Open with Nocturne" / Share brings a new file → [onOpened]
   /// - audio changes in MediaStore (a new song was downloaded) → [onMediaChanged]

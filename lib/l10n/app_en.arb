@@ -975,6 +975,118 @@
   "reverb": "Reverb",
   "reverbMax": "Max",
   "reverbUnavailable": "This phone has no reverb effect: speed only",
+  "menuWrapped": "Nocturne Wrapped",
+  "menuWrappedHint": "Your month in music",
+  "wrappedHint": "Your top songs, artists, mood and listening habits, month by month. Worked out on this phone; nothing is sent anywhere.",
+  "wrappedYear": "THE YEAR",
+  "wrappedSoFar": "So far: the month isn't over",
+  "wrappedNotYet": "Your first Wrapped is on its way",
+  "wrappedPlaysToGo": "{count, plural, =1{1 more play this month and it's ready} other{{count} more plays this month and it's ready}}",
+  "@wrappedPlaysToGo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedNotEnough": "Not enough plays in this period for a Wrapped yet",
+  "wrappedClose": "Close",
+  "wrappedIntro": "{period} in music",
+  "@wrappedIntro": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedMinutes": "minutes of music",
+  "wrappedIntroStats": "{plays} plays  ·  {songs} songs  ·  {days} days with music",
+  "@wrappedIntroStats": {
+    "placeholders": {
+      "plays": {
+        "type": "int"
+      },
+      "songs": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedTopSong": "Your #1 song",
+  "wrappedTopSongs": "Your top songs",
+  "wrappedTopArtist": "Your top artist",
+  "wrappedThen": "Then {names}",
+  "@wrappedThen": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedMood": "Your mood",
+  "wrappedWhen": "When you listen",
+  "wrappedPeakHour": "Most of all around {hour}",
+  "@wrappedPeakHour": {
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedMorning": "Early bird",
+  "wrappedAfternoon": "Daytime listener",
+  "wrappedEvening": "Evening listener",
+  "wrappedNight": "Night owl",
+  "wrappedNew": "New for you",
+  "wrappedNewCount": "{count, plural, =1{song you heard for the first time} other{songs you heard for the first time}}",
+  "@wrappedNewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedNoNew": "No new songs: you stayed with your favorites",
+  "wrappedStreak": "Longest streak",
+  "wrappedStreakDays": "{count, plural, =1{1 day} other{{count} days in a row}}",
+  "@wrappedStreakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedStreakDaysWord": "{count, plural, =1{day with music} other{days in a row with music}}",
+  "@wrappedStreakDaysWord": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedActiveDays": "{count, plural, =1{Music on 1 day of this period} other{Music on {count} days of this period}}",
+  "@wrappedActiveDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedSaved": "Saved to Pictures/Nocturne",
+  "wrappedCardFailed": "Couldn't make the card",
+  "wrappedCardFooter": "Made on my phone with Nocturne",
+  "wrappedBanner": "Your {month} Wrapped is ready",
+  "@wrappedBanner": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedBannerHint": "Top songs, artists and your mood",
+  "monthNames": "January,February,March,April,May,June,July,August,September,October,November,December",
   "lyricsSearching": "Looking for lyrics…",
   "lyricsNotFound": "No lyrics found for this song",
   "lyricsInstrumental": "This song has no words",

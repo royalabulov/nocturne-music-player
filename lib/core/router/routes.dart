@@ -18,6 +18,11 @@ abstract final class Routes {
 const kForgottenRoute = '/home/forgotten';
 const kVibeReviewRoute = '/home/vibe-review';
 const kVibesRoute = '/home/vibes';
+const kWrappedRoute = '/home/wrapped';
+
+/// Wrapped's stories, full screen over the app (no tabs).
+const kWrappedStoryRoute = '/wrapped';
+String wrappedStoryRoute(String periodId) => '$kWrappedStoryRoute?p=${Uri.encodeQueryComponent(periodId)}';
 
 String playlistRoute(int id) => '/playlists/$id';
 String albumRoute(String key) => '/home/album?k=${Uri.encodeQueryComponent(key)}';

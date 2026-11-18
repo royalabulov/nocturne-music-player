@@ -30,6 +30,7 @@ import '../../core/audio/player_providers.dart';
 import '../../shared/scroll_to_top.dart';
 import '../../l10n/l10n.dart';
 import '../../core/utils/display_names.dart';
+import '../wrapped/wrapped_screen.dart';
 
 /// Home: greeting, search, Recommended (from play history) and the Library
 /// (Songs / Albums / Artists) — all from the local database.
@@ -260,6 +261,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SliverList.list(
               children: [
                 const SizedBox(height: AppSpacing.md),
+                // First days of a month: last month's Wrapped is ready
+                const WrappedBanner(),
                 if (recommended.length >= 3) ...[
                   SectionHeader(
                     title: l10n.recommendedForYou,

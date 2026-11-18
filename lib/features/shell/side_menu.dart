@@ -81,6 +81,13 @@ class SideMenu extends ConsumerWidget {
                 children: [
                   _Group(l10n.menuDiscover),
                   _Item(
+                    icon: Icons.auto_stories_rounded,
+                    label: l10n.menuWrapped,
+                    hint: l10n.menuWrappedHint,
+                    active: location.startsWith(kWrappedRoute),
+                    onTap: () => go(kWrappedRoute),
+                  ),
+                  _Item(
                     icon: Icons.auto_awesome_mosaic_rounded,
                     label: l10n.menuYourVibes,
                     hint: l10n.menuYourVibesHint,
