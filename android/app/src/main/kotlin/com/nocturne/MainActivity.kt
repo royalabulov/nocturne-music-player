@@ -33,10 +33,21 @@ class MainActivity : AudioServiceActivity(), EngineChannels.Window {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         IncomingUriPolicy.dropUnreadableExtras(intent)
+        val previous = EngineChannels.activity as? MainActivity
         EngineChannels.activity = this
         super.onCreate(savedInstanceState)
+        closeDuplicate(previous)
         // On recreate (rotation etc.) don't handle the same intent twice
         if (savedInstanceState == null) collectOpened(intent)
+    }
+
+    /// singleTask allows one window, but a task left empty in Recents (process killed by an
+    /// update) can be reopened next to a newer one. Both share the one audio_service engine:
+    /// it moves to the new window and the old one stays black. Close the old window and its card.
+    private fun closeDuplicate(previous: MainActivity?) {
+        if (previous == null || previous === this) return
+        if (previous.isFinishing || previous.isDestroyed || previous.isChangingConfigurations) return
+        previous.finishAndRemoveTask()
     }
 
     override fun onNewIntent(intent: Intent) {
