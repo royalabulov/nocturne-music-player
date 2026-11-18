@@ -716,6 +716,12 @@ class _AudioGroup extends ConsumerWidget {
             : const SizedBox.shrink(),
       ),
       _ToggleRow(
+        title: l10n.smoothShuffle,
+        subtitle: l10n.smoothShuffleHint,
+        value: s.smoothShuffle,
+        onChanged: ctrl.setSmoothShuffle,
+      ),
+      _ToggleRow(
         title: l10n.replayGain,
         subtitle: l10n.replayGainHint,
         value: s.replayGain,

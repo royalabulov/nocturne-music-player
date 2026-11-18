@@ -359,6 +359,16 @@ class L10nEn extends L10n {
       'Evens out loudness between tracks (needs ReplayGain tags in the file)';
 
   @override
+  String get smoothShuffle => 'Smooth shuffle';
+
+  @override
+  String get smoothShuffleHint =>
+      'Shuffle plays each song after ones that sound like it, so the music flows. Works once songs are analyzed';
+
+  @override
+  String get smoothShuffleQueue => 'Smooth shuffle · ordered by sound';
+
+  @override
   String get pocketKnock => 'Knock to skip';
 
   @override

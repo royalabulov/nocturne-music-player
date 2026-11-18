@@ -108,6 +108,24 @@ class _QueueSheetState extends ConsumerState<_QueueSheet> {
                 ),
               ),
               const _RadioBar(),
+              if (shuffle && handler.smoothShuffled)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 0, AppSpacing.screenH, AppSpacing.sm),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.waves_rounded, size: 18, color: AppColors.cyan),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          l10n.smoothShuffleQueue,
+                          style: AppTypography.labelMd.copyWith(color: AppColors.cyan),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Expanded(
                 // The tap ripple is drawn on the nearest Material: without this one it was the
                 // sheet's, under the coloured Container above, and never showed

@@ -679,6 +679,24 @@ abstract class L10n {
   /// **'Evens out loudness between tracks (needs ReplayGain tags in the file)'**
   String get replayGainHint;
 
+  /// No description provided for @smoothShuffle.
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth shuffle'**
+  String get smoothShuffle;
+
+  /// No description provided for @smoothShuffleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle plays each song after ones that sound like it, so the music flows. Works once songs are analyzed'**
+  String get smoothShuffleHint;
+
+  /// No description provided for @smoothShuffleQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth shuffle · ordered by sound'**
+  String get smoothShuffleQueue;
+
   /// No description provided for @pocketKnock.
   ///
   /// In en, this message translates to:

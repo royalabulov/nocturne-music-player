@@ -360,6 +360,16 @@ class L10nAz extends L10n {
       'Bəzi mahnılar digərlərindən bərk çalırsa, səsi bərabərləşdirir (faylda ReplayGain məlumatı olmalıdır)';
 
   @override
+  String get smoothShuffle => 'Axıcı qarışdırma';
+
+  @override
+  String get smoothShuffleHint =>
+      'Qarışdıranda hər mahnının ardınca səsi ona bənzəyən mahnı gəlir, musiqi axıcı keçir. Mahnılar analiz olunandan sonra işləyir';
+
+  @override
+  String get smoothShuffleQueue => 'Axıcı qarışdırma · səsə görə düzülüb';
+
+  @override
   String get pocketKnock => 'Vuraraq mahnı dəyiş';
 
   @override
