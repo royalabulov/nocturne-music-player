@@ -17,6 +17,7 @@ class AudioSettings {
     this.replayGain = true,
     this.pocketKnock = false,
     this.knockSensitivity = 1,
+    this.smoothShuffle = true,
   });
 
   /// Far beyond any device's equalizer; the player clamps gains to the real range.
@@ -54,6 +55,9 @@ class AudioSettings {
   /// 0 = low, 1 = medium, 2 = high.
   final int knockSensitivity;
 
+  /// Shuffle puts each song next to ones that sound like it (core/audio/sound_library.dart).
+  final bool smoothShuffle;
+
   /// The preset applied right now (auto → by output).
   EqPreset effectivePreset(OutputKind output) => EqPreset.byName(
         autoPreset ? (presetByOutput[output.name] ?? defaultPresetByOutput[output.name]) : preset,
@@ -73,6 +77,7 @@ class AudioSettings {
     bool? replayGain,
     bool? pocketKnock,
     int? knockSensitivity,
+    bool? smoothShuffle,
   }) =>
       AudioSettings(
         crossfade: crossfade ?? this.crossfade,
@@ -86,6 +91,7 @@ class AudioSettings {
         replayGain: replayGain ?? this.replayGain,
         pocketKnock: pocketKnock ?? this.pocketKnock,
         knockSensitivity: knockSensitivity ?? this.knockSensitivity,
+        smoothShuffle: smoothShuffle ?? this.smoothShuffle,
       );
 
   Map<String, dynamic> toJson() => {
@@ -100,6 +106,7 @@ class AudioSettings {
         'replayGain': replayGain,
         'pocketKnock': pocketKnock,
         'knockSensitivity': knockSensitivity,
+        'smoothShuffle': smoothShuffle,
       };
 
   /// Also reads what a backup file brought in, so every number is brought into range.
@@ -120,6 +127,7 @@ class AudioSettings {
         replayGain: j['replayGain'] as bool? ?? true,
         pocketKnock: j['pocketKnock'] as bool? ?? false,
         knockSensitivity: ((j['knockSensitivity'] as num?)?.toInt() ?? 1).clamp(0, 2),
+        smoothShuffle: j['smoothShuffle'] as bool? ?? true,
       );
 
   String encode() => jsonEncode(toJson());

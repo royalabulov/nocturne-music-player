@@ -138,6 +138,14 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   // ── replay gain ──
   bool replayGain = false;
 
+  // ── smooth shuffle ──
+  /// Puts a just-shuffled queue in smooth order (each song sounding like the one before);
+  /// null = plain shuffle (the setting is off, or in tests).
+  ShuffleOrderer? shuffleOrderer;
+
+  /// The shuffled queue was put in smooth order: the queue sheet says so.
+  bool get smoothShuffled => _q.shuffle && _q.smooth;
+
   /// For play history — called when the track changes.
   final void Function(Track track)? onTrackStarted;
 
@@ -207,7 +215,36 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     _q.replace(tracks, startIndex: startIndex, shuffled: shuffle);
     _queueGeneration++;
     _publishQueue();
+    _smoothen();
     await _loadActive(_q.pos, autoplay: true);
+  }
+
+  /// Smooth shuffle: the order just shuffled is replaced in the background by one where each
+  /// song sounds like the one before. Playback doesn't wait: the first song starts at once and
+  /// only the songs still to come move. If the queue changes meanwhile (another list, a song
+  /// added or removed, shuffle off), the result is dropped.
+  void _smoothen() {
+    final orderer = shuffleOrderer;
+    if (orderer == null || !_q.shuffle || _q.isEmpty) return;
+    final order = _q.order;
+    final tracks = _q.tracks;
+    unawaited(() async {
+      final List<int>? better;
+      try {
+        better = await orderer(tracks, order.first);
+      } catch (e) {
+        debugPrint('NocturneAudioHandler: smooth shuffle failed: $e');
+        return;
+      }
+      if (better == null) return;
+      await _serial(() async {
+        if (!identical(_q.order, order) || !_q.shuffle) return;
+        if (!_q.reorderUpcoming(better!)) return;
+        _standbyPos = null; // next changed
+        _publishQueue();
+        await _preloadStandby();
+      });
+    }());
   }
 
   /// Right after the current song.
@@ -488,7 +525,10 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   Future<void> _applyModes({required bool shuffle, required AudioServiceRepeatMode repeat}) async {
     final rebuilt = _q.setModes(shuffled: shuffle, repeatMode: repeat);
     if (_q.isEmpty) return _publishState();
-    if (rebuilt) _publishQueue();
+    if (rebuilt) {
+      _publishQueue();
+      _smoothen();
+    }
     _standbyPos = null;
     _publishState();
     await _preloadStandby();
@@ -998,3 +1038,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
 
 /// The mode shown by the single button in the notification.
 enum PlayMode { sequential, repeatOne, shuffle }
+
+/// A smooth play order for [tracks] starting with the song at index [first]: every index once,
+/// in the order to play them. Null = keep the plain shuffle (too little of it analyzed).
+typedef ShuffleOrderer = Future<List<int>?> Function(List<Track> tracks, int first);

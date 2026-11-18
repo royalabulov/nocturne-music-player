@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/audio/nocturne_audio_handler.dart';
 import '../../core/audio/player_providers.dart';
+import '../../core/audio/sound_library.dart';
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/crash_log.dart';
 import '../../domain/analysis/song_radio.dart';
@@ -83,23 +84,7 @@ class RadioController extends Notifier<RadioState> {
     if (!embeddings.containsKey(seed.id)) return RadioStart.notAnalyzed;
     if (embeddings.length - 1 < minSongs) return RadioStart.notReady;
 
-    final vibes = {for (final d in await analysis.watchVibeData().first) d.trackId: d};
-    final tracks = {
-      for (final t in await ref.read(libraryRepositoryProvider).getTracks(embeddings.keys.toList())) t.id: t,
-    };
-    final songs = [
-      for (final MapEntry(key: id, value: embedding) in embeddings.entries)
-        if (tracks[id] case final t?)
-          RadioSong(
-            trackId: id,
-            artist: t.artist,
-            embedding: embedding,
-            bpm: vibes[id]?.scores?['_bpm'],
-            key: vibes[id]?.scores?['_key']?.round(),
-            keyClarity: vibes[id]?.scores?['_keyClarity'],
-            rmsDb: vibes[id]?.rmsDb,
-          ),
-    ];
+    final (:songs, :tracks) = await ref.read(soundLibraryProvider).songs(embeddings);
     final lib = await compute(_buildLibrary, songs);
     final now = DateTime.now();
     final plays = await ref.read(historyRepositoryProvider).playsSince(now.subtract(const Duration(days: 90)));

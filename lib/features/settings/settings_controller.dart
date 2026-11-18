@@ -7,6 +7,7 @@ import '../../core/audio/pocket_knock.dart';
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/phone_developer_options.dart';
 import '../../core/audio/player_providers.dart';
+import '../../core/audio/sound_library.dart';
 import '../../domain/repositories/settings_repository.dart';
 import 'audio_settings.dart';
 
@@ -60,6 +61,7 @@ class AudioSettingsController extends Notifier<AudioSettings> {
     final h = ref.read(audioHandlerProvider);
     h.crossfade = state.crossfadeDuration;
     h.replayGain = state.replayGain;
+    h.shuffleOrderer = state.smoothShuffle ? ref.read(smoothShuffleOrdererProvider) : null;
     ref.read(pocketKnockProvider).configure(enabled: state.pocketKnock, sensitivity: state.knockSensitivity);
     await h.applyGainNow();
     await _applyEq();
@@ -91,6 +93,7 @@ class AudioSettingsController extends Notifier<AudioSettings> {
   Future<void> setCrossfade(bool on) => _update(state.copyWith(crossfade: on));
   Future<void> setCrossfadeSec(double sec) => _update(state.copyWith(crossfadeSec: sec));
   Future<void> setReplayGain(bool on) => _update(state.copyWith(replayGain: on));
+  Future<void> setSmoothShuffle(bool on) => _update(state.copyWith(smoothShuffle: on));
   Future<void> setEqEnabled(bool on) => _update(state.copyWith(eqEnabled: on));
   Future<void> setAutoPreset(bool on) => _update(state.copyWith(autoPreset: on));
   Future<void> setBassBoost(double v) => _update(state.copyWith(bassBoost: v.clamp(0, 1)));

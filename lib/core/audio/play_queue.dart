@@ -23,6 +23,10 @@ class PlayQueue {
   bool shuffle = false;
   AudioServiceRepeatMode repeat = AudioServiceRepeatMode.none;
 
+  /// The shuffled order was put in smooth order ([reorderUpcoming]); false again on any new
+  /// order.
+  bool smooth = false;
+
   bool get isEmpty => tracks.isEmpty;
 
   Track? trackAt(int? orderPos) =>
@@ -103,12 +107,30 @@ class PlayQueue {
     pos = position;
     shuffle = shuffled;
     repeat = repeatMode;
+    smooth = false;
   }
 
   void clear() {
     tracks = const [];
     order = const [];
     pos = -1;
+    smooth = false;
+  }
+
+  /// Smooth shuffle: the songs still to come follow [better], a play order of every index in
+  /// [tracks] (worked out while the songs already in the order kept playing). The songs played
+  /// so far and the current one stay where they are. False when [better] doesn't fit this queue.
+  bool reorderUpcoming(List<int> better) {
+    if (isEmpty || pos < 0 || better.length != tracks.length) return false;
+    final seen = List.filled(tracks.length, false);
+    for (final i in better) {
+      if (i < 0 || i >= tracks.length || seen[i]) return false;
+      seen[i] = true;
+    }
+    final played = order.sublist(0, pos + 1).toSet();
+    order = [...order.sublist(0, pos + 1), for (final i in better) if (!played.contains(i)) i];
+    smooth = true;
+    return true;
   }
 
   /// The current song stays put. True if the order was rebuilt.
@@ -122,6 +144,7 @@ class PlayQueue {
   }
 
   void _rebuildOrder({required int firstTrackIndex}) {
+    smooth = false;
     final all = List.generate(tracks.length, (i) => i);
     if (shuffle) {
       all

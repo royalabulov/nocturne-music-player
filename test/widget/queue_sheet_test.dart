@@ -25,8 +25,8 @@ void main() {
         format: AudioFormat.mp3,
       );
 
-  Future<_Handler> open(WidgetTester tester, {required int count, required int current, bool shuffle = false}) async {
-    final handler = _Handler();
+  Future<_Handler> open(WidgetTester tester, {required int count, required int current, bool shuffle = false, bool smooth = false}) async {
+    final handler = _Handler()..smoothShuffled = smooth;
     final queue = [for (var i = 1; i <= count; i++) track(i)];
     await tester.pumpWidget(ProviderScope(
       overrides: [
@@ -76,6 +76,18 @@ void main() {
     expect(dimmed(tester, 'Song 2'), isFalse);
   });
 
+  testWidgets('a smooth shuffle says so in the queue', (tester) async {
+    await open(tester, count: 5, current: 0, shuffle: true, smooth: true);
+    expect(find.text(t.smoothShuffleQueue), findsOneWidget);
+  });
+
+  testWidgets('no smooth shuffle line without smooth order or with shuffle off', (tester) async {
+    await open(tester, count: 5, current: 0, shuffle: true);
+    expect(find.text(t.smoothShuffleQueue), findsNothing);
+    await open(tester, count: 5, current: 0, smooth: true);
+    expect(find.text(t.smoothShuffleQueue), findsNothing);
+  });
+
   testWidgets('a tap plays that song', (tester) async {
     final handler = await open(tester, count: 5, current: 0);
 
@@ -94,6 +106,9 @@ void main() {
 
 class _Handler implements NocturneAudioHandler {
   final picked = <int>[];
+
+  @override
+  bool smoothShuffled = false;
 
   @override
   Future<void> playTrackAt(int index) async => picked.add(index);

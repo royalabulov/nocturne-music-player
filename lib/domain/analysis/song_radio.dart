@@ -227,7 +227,7 @@ List<int> pickRadioSongs(
     final s = lib._songs[i];
     if (exclude.contains(s.trackId) || s.trackId == after) continue;
     var score = sims[i];
-    if (prev != null) score += _transition(prev, s);
+    if (prev != null) score += transitionBonus(prev, s);
     score -= 0.3 * (penalty[s.trackId] ?? 0).clamp(0, 1);
     score += radioCoListenWeight * (affinity[s.trackId] ?? 0).clamp(0, 1);
     scored.add((i, score));
@@ -270,7 +270,7 @@ String _artistKey(String a) => a.trim().toLowerCase();
 }
 
 /// A bonus (0..~0.2) for a smooth step from [a] to [b].
-double _transition(RadioSong a, RadioSong b) =>
+double transitionBonus(RadioSong a, RadioSong b) =>
     0.10 * tempoCloseness(a.bpm, b.bpm) + 0.06 * keyCloseness(a, b) + 0.06 * loudnessCloseness(a.rmsDb, b.rmsDb);
 
 /// 1 = same tempo, 0 = far apart. Double / half time counts as the same: 70 and 140 BPM match.

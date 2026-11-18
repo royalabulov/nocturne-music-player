@@ -68,6 +68,20 @@ void main() {
     expect(effects.sent.last, curve(EqPreset.rock));
   });
 
+  test('smooth shuffle is on for a new user; off gives the player a plain shuffle, also after a restart', () async {
+    final handler = c.read(audioHandlerProvider);
+    expect(c.read(audioSettingsProvider).smoothShuffle, isTrue);
+    expect(handler.shuffleOrderer, isNotNull);
+
+    await settings().setSmoothShuffle(false);
+    expect(handler.shuffleOrderer, isNull);
+
+    c = open();
+    await pumpEventQueue();
+    expect(c.read(audioSettingsProvider).smoothShuffle, isFalse);
+    expect(c.read(audioHandlerProvider).shuffleOrderer, isNull);
+  });
+
   test('moving one slider switches to Custom and starts from the sound that was playing', () async {
     await settings().setEqEnabled(true);
     await settings().setAutoPreset(false); // one preset for every output
@@ -173,6 +187,9 @@ class _Handler implements NocturneAudioHandler {
 
   @override
   bool replayGain = false;
+
+  @override
+  ShuffleOrderer? shuffleOrderer;
 
   @override
   Stream<Track?> get currentTrack => const Stream.empty();
