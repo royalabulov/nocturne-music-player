@@ -154,6 +154,26 @@ void main() {
     expect(currentId(), 5);
   });
 
+  // Found on the phone (v0.7.x): Previous led to the last song and Next stayed there for good
+  for (final mode in PlayMode.values) {
+    test('$mode: Next after Previous on the first song moves on again', () async {
+      await h.playTracks(five);
+      await h.setPlayMode(mode);
+      await settle();
+      final first = currentId();
+      await h.skipToPrevious();
+      await settle();
+      final last = currentId();
+      expect(last, isNot(first));
+      await h.skipToNext();
+      await settle();
+      expect(currentId(), first, reason: 'Next from the last song goes back to the first');
+      await h.skipToNext();
+      await settle();
+      expect(currentId(), isNot(first));
+    });
+  }
+
   test('shuffle keeps the current track and plays every track once', () async {
     await h.playTracks(five, startIndex: 1);
     await settle();

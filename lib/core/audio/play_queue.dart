@@ -45,6 +45,12 @@ class PlayQueue {
   /// At the start of the list, the last song: with shuffle the first song is always at position 0.
   int get previous => pos > 0 ? pos - 1 : order.length - 1;
 
+  /// The Next button: like [next] (manual), but at the end of the list it goes to the first
+  /// song, the mirror of [previous]. Without it Previous on the first song led to the last
+  /// one and Next couldn't get out of there (always in shuffle: the current song is at 0).
+  /// The queue still ends there when a song finishes on its own ([next]).
+  int? get skipForward => next(manual: true) ?? (order.isEmpty ? null : 0);
+
   /// A new list. Empty is ignored.
   void replace(List<Track> list, {int startIndex = 0, bool shuffled = false}) {
     if (list.isEmpty) return;

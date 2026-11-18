@@ -59,6 +59,15 @@ void main() {
     expect(q.previous, 2);
   });
 
+  test('the Next button wraps from the last song to the first; a song ending does not', () {
+    q.replace(five, startIndex: 4);
+    expect(q.skipForward, 0);
+    expect(q.next(), isNull);
+    q.pos = 1;
+    expect(q.skipForward, 2);
+    expect(PlayQueue().skipForward, isNull);
+  });
+
   group('replace', () {
     test('an empty list changes nothing', () {
       q

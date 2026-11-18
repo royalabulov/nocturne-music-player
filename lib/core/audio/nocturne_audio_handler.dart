@@ -427,7 +427,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
   }
 
   Future<void> _skipToNext() => _serial(() async {
-    final next = _q.next(manual: true);
+    final next = _q.skipForward;
     if (next == null) return;
     _cancelFade();
     _q.pos = next;
