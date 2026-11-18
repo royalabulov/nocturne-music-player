@@ -34,6 +34,7 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     Stream<AudioInterruptionEvent>? interruptions,
     Stream<void>? becomingNoisy,
     this._loadTimeout = const Duration(seconds: 20),
+    this.sessionReverb,
   })  : effects = effects ?? NocturneEffects(),
         _sourceFor = sourceBuilder ?? _fileSource {
     // manageAudioSession=false: the audio_session plugin is not available in tests.
@@ -71,7 +72,10 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
       // A file that breaks while it plays (SD card out, deleted by another app) arrives only
       // here: just_audio doesn't skip on its own (maxSkipsOnError is 0).
       p.errorStream.listen((e) => _onPlayerError(p, e)),
+      // The session exists only once the player has loaded: the reverb goes on then
+      p.androidAudioSessionIdStream.listen((id) => _onSession(p, id)),
     ];
+    if (_speed != 1) unawaited(_applySpeed(p));
     return p;
   }
 
@@ -84,6 +88,9 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     for (final s in _listening.remove(stuck) ?? const <StreamSubscription<void>>[]) {
       unawaited(s.cancel());
     }
+    // Its session goes with it: so does the reverb on it
+    final session = _sessions.remove(stuck);
+    if (session != null && _reverb > 0) unawaited(_reverbOn(session, 0));
     // It may never answer this either
     unawaited(stuck.dispose().catchError((Object e) => debugPrint('NocturneAudioHandler: dispose failed: $e')));
     final fresh = _players[slot] = _newPlayer(effects.renew(slot));
@@ -137,6 +144,70 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
 
   // ── replay gain ──
   bool replayGain = false;
+
+  // ── sound effect (slowed / sped up, reverb) ──
+  /// Puts a reverb on a player's audio session (Kotlin SessionReverb); null where there is
+  /// none (tests, the web demo): speed still works.
+  final SessionReverbSink? sessionReverb;
+
+  /// 1 = normal. Speed and pitch move together, like a record played slower or faster: the
+  /// sound of "slowed" and "sped up" edits.
+  double get effectSpeed => _speed;
+  double _speed = 1;
+
+  /// 0 = off .. 1 = most.
+  double get effectReverb => _reverb;
+  double _reverb = 0;
+
+  /// The audio session of each player, once it has loaded.
+  final _sessions = <AudioPlayer, int>{};
+
+  /// For every song from now on, on both players (the crossfade blends two).
+  Future<void> setSoundEffect({required double speed, required double reverb}) async {
+    final s = speed.clamp(minEffectSpeed, maxEffectSpeed).toDouble();
+    final r = reverb.clamp(0.0, 1.0).toDouble();
+    final speedChanged = s != _speed, reverbChanged = r != _reverb;
+    _speed = s;
+    _reverb = r;
+    if (speedChanged) {
+      await Future.wait([for (final p in _players) _applySpeed(p)]);
+      // At once, not when just_audio's own event gets here: the lock screen's progress moves
+      // at this speed
+      _publishState();
+    }
+    if (reverbChanged) {
+      await Future.wait([for (final session in _sessions.values) _reverbOn(session, r)]);
+    }
+  }
+
+  static const minEffectSpeed = 0.5, maxEffectSpeed = 1.5;
+
+  Future<void> _applySpeed(AudioPlayer p) async {
+    try {
+      await Future.wait([p.setSpeed(_speed), p.setPitch(_speed)]);
+    } catch (e) {
+      debugPrint('NocturneAudioHandler: speed $_speed failed: $e');
+    }
+  }
+
+  void _onSession(AudioPlayer p, int? id) {
+    if (id == null || _sessions[p] == id) return;
+    final old = _sessions[p];
+    _sessions[p] = id;
+    if (_reverb <= 0) return;
+    if (old != null) unawaited(_reverbOn(old, 0));
+    unawaited(_reverbOn(id, _reverb));
+  }
+
+  Future<void> _reverbOn(int session, double amount) async {
+    final sink = sessionReverb;
+    if (sink == null) return;
+    try {
+      await sink(session, amount);
+    } catch (e) {
+      debugPrint('NocturneAudioHandler: reverb on $session failed: $e');
+    }
+  }
 
   // ── smooth shuffle ──
   /// Puts a just-shuffled queue in smooth order (each song sounding like the one before);
@@ -1042,3 +1113,7 @@ enum PlayMode { sequential, repeatOne, shuffle }
 /// A smooth play order for [tracks] starting with the song at index [first]: every index once,
 /// in the order to play them. Null = keep the plain shuffle (too little of it analyzed).
 typedef ShuffleOrderer = Future<List<int>?> Function(List<Track> tracks, int first);
+
+/// Reverb [amount] (0..1, 0 = off) on the player with audio [session]; false when the phone
+/// couldn't make it.
+typedef SessionReverbSink = Future<bool> Function(int session, double amount);

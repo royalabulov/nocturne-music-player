@@ -23,9 +23,13 @@ class FakeJustAudio extends JustAudioPlatform {
   /// load again (the native side stopped answering: a stalled card, a hung decoder).
   static const stuckMarker = 'stuck';
 
+  /// Players get an Android audio session id (100, 101, ...), as on a phone; off by default.
+  bool sessions = false;
+  int _nextSession = 100;
+
   @override
   Future<AudioPlayerPlatform> init(InitRequest request) async =>
-      players[request.id] = FakePlayer(request.id);
+      players[request.id] = FakePlayer(request.id, sessionId: sessions ? _nextSession++ : null);
 
   @override
   Future<DisposePlayerResponse> disposePlayer(DisposePlayerRequest request) async {
@@ -56,7 +60,11 @@ class FakeJustAudio extends JustAudioPlatform {
 }
 
 class FakePlayer extends AudioPlayerPlatform {
-  FakePlayer(super.id);
+  FakePlayer(super.id, {this.sessionId});
+
+  /// Its Android audio session; sent with every event once it has loaded.
+  final int? sessionId;
+  double speed = 1, pitch = 1;
 
   final _events = StreamController<PlaybackEventMessage>.broadcast();
   bool playing = false;
@@ -77,7 +85,7 @@ class FakePlayer extends AudioPlayerPlatform {
         duration: state == ProcessingStateMessage.idle ? null : duration,
         icyMetadata: null,
         currentIndex: 0,
-        androidAudioSessionId: null,
+        androidAudioSessionId: sessionId,
       ));
 
   void complete() {
@@ -168,9 +176,15 @@ class FakePlayer extends AudioPlayerPlatform {
     return SetVolumeResponse();
   }
   @override
-  Future<SetSpeedResponse> setSpeed(SetSpeedRequest request) async => SetSpeedResponse();
+  Future<SetSpeedResponse> setSpeed(SetSpeedRequest request) async {
+    speed = request.speed;
+    return SetSpeedResponse();
+  }
   @override
-  Future<SetPitchResponse> setPitch(SetPitchRequest request) async => SetPitchResponse();
+  Future<SetPitchResponse> setPitch(SetPitchRequest request) async {
+    pitch = request.pitch;
+    return SetPitchResponse();
+  }
   @override
   Future<SetSkipSilenceResponse> setSkipSilence(SetSkipSilenceRequest request) async => SetSkipSilenceResponse();
   @override
