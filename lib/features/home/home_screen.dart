@@ -204,17 +204,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       bottom: false,
       child: Stack(
         children: [
-      // Draggable thumb on the right: 400+ songs → grab it to jump anywhere
-      // (shows while scrolling, fades out after). Hidden while the A–Z rail is there.
-      RawScrollbar(
-        controller: _scroll,
-        interactive: !rail,
-        thickness: 6,
-        minThumbLength: 56,
-        radius: const Radius.circular(3),
-        thumbColor: rail ? Colors.transparent : AppColors.electric.withValues(alpha: .7),
-        padding: const EdgeInsets.only(bottom: AppSpacing.dockOffset + AppSpacing.miniPlayerHeight),
-        child: CustomScrollView(
+      // No scrollbar: the blue line on the right while scrolling was unwanted (2026-11-18).
+      // The A–Z rail is the way to jump in the Songs list.
+      CustomScrollView(
         controller: _scroll,
         slivers: [
           SliverList.list(
@@ -303,7 +295,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ],
-      ),
       ),
           // A–Z rail over the right edge, only while the Songs list is on screen
           if (rail)
