@@ -18,6 +18,9 @@ import java.util.concurrent.atomic.AtomicInteger
 /// What the app reads from and adds to the phone's media index.
 class MediaLibrary(context: Context) {
     companion object {
+        /// Pictures/<this>: the app's own images (Wrapped cards).
+        const val IMAGE_FOLDER = "Nocturne"
+
         /// Music, or anything long enough to be a song, whatever the system thinks it is. Except
         /// voice recordings, which are the person's own (Android 12 and later can tell).
         fun audioSelection(sdk: Int = Build.VERSION.SDK_INT): String {
@@ -128,6 +131,30 @@ class MediaLibrary(context: Context) {
             if (left.decrementAndGet() == 0) finish()
         }
         main.postDelayed({ finish() }, 5000)
+    }
+
+    /// A PNG to Pictures/Nocturne, where the gallery shows it (Wrapped's card). Result: its
+    /// content URI, which the share sheet can hand to other apps. MediaStore, no permission
+    /// (minSdk 29).
+    fun saveImage(name: String, bytes: ByteArray): String {
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, name)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/$IMAGE_FOLDER")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            ?: error("MediaStore insert failed")
+        try {
+            (resolver.openOutputStream(uri) ?: error("cannot write")).use { it.write(bytes) }
+        } catch (e: Exception) {
+            runCatching { resolver.delete(uri, null, null) }
+            throw e
+        }
+        values.clear()
+        values.put(MediaStore.Images.Media.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+        return uri.toString()
     }
 
     /// Writes a file to the shared Download folder (in [folder] inside it, if given); result: the

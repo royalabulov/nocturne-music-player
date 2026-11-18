@@ -1495,6 +1495,167 @@ class L10nEn extends L10n {
   String get reverbUnavailable => 'This phone has no reverb effect: speed only';
 
   @override
+  String get menuWrapped => 'Nocturne Wrapped';
+
+  @override
+  String get menuWrappedHint => 'Your month in music';
+
+  @override
+  String get wrappedHint =>
+      'Your top songs, artists, mood and listening habits, month by month. Worked out on this phone; nothing is sent anywhere.';
+
+  @override
+  String get wrappedYear => 'THE YEAR';
+
+  @override
+  String get wrappedSoFar => 'So far: the month isn\'t over';
+
+  @override
+  String get wrappedNotYet => 'Your first Wrapped is on its way';
+
+  @override
+  String wrappedPlaysToGo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more plays this month and it\'s ready',
+      one: '1 more play this month and it\'s ready',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedNotEnough =>
+      'Not enough plays in this period for a Wrapped yet';
+
+  @override
+  String get wrappedClose => 'Close';
+
+  @override
+  String wrappedIntro(String period) {
+    return '$period in music';
+  }
+
+  @override
+  String get wrappedMinutes => 'minutes of music';
+
+  @override
+  String wrappedIntroStats(int plays, int songs, int days) {
+    return '$plays plays  ·  $songs songs  ·  $days days with music';
+  }
+
+  @override
+  String get wrappedTopSong => 'Your #1 song';
+
+  @override
+  String get wrappedTopSongs => 'Your top songs';
+
+  @override
+  String get wrappedTopArtist => 'Your top artist';
+
+  @override
+  String wrappedThen(String names) {
+    return 'Then $names';
+  }
+
+  @override
+  String get wrappedMood => 'Your mood';
+
+  @override
+  String get wrappedWhen => 'When you listen';
+
+  @override
+  String wrappedPeakHour(String hour) {
+    return 'Most of all around $hour';
+  }
+
+  @override
+  String get wrappedMorning => 'Early bird';
+
+  @override
+  String get wrappedAfternoon => 'Daytime listener';
+
+  @override
+  String get wrappedEvening => 'Evening listener';
+
+  @override
+  String get wrappedNight => 'Night owl';
+
+  @override
+  String get wrappedNew => 'New for you';
+
+  @override
+  String wrappedNewCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'songs you heard for the first time',
+      one: 'song you heard for the first time',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedNoNew => 'No new songs: you stayed with your favorites';
+
+  @override
+  String get wrappedStreak => 'Longest streak';
+
+  @override
+  String wrappedStreakDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days in a row',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedStreakDaysWord(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'days in a row with music',
+      one: 'day with music',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedActiveDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Music on $count days of this period',
+      one: 'Music on 1 day of this period',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedSaved => 'Saved to Pictures/Nocturne';
+
+  @override
+  String get wrappedCardFailed => 'Couldn\'t make the card';
+
+  @override
+  String get wrappedCardFooter => 'Made on my phone with Nocturne';
+
+  @override
+  String wrappedBanner(String month) {
+    return 'Your $month Wrapped is ready';
+  }
+
+  @override
+  String get wrappedBannerHint => 'Top songs, artists and your mood';
+
+  @override
+  String get monthNames =>
+      'January,February,March,April,May,June,July,August,September,October,November,December';
+
+  @override
   String get lyricsSearching => 'Looking for lyrics…';
 
   @override

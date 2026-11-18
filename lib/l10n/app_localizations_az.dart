@@ -1492,6 +1492,167 @@ class L10nAz extends L10n {
       'Bu telefonda reverb effekti yoxdur: yalnız sürət dəyişir';
 
   @override
+  String get menuWrapped => 'Nocturne Wrapped';
+
+  @override
+  String get menuWrappedHint => 'Ayının musiqi xülasəsi';
+
+  @override
+  String get wrappedHint =>
+      'Ən çox dinlədiyin mahnılar, ifaçılar, əhvalın və dinləmə vərdişlərin, ay-ay. Hamısı bu telefonda hesablanır, heç yerə göndərilmir.';
+
+  @override
+  String get wrappedYear => 'İL';
+
+  @override
+  String get wrappedSoFar => 'Hələlik: ay hələ bitməyib';
+
+  @override
+  String get wrappedNotYet => 'İlk Wrapped-in yoldadır';
+
+  @override
+  String wrappedPlaysToGo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Bu ay daha $count dinləmə, sonra hazırdır',
+      one: 'Bu ay daha 1 dinləmə, sonra hazırdır',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedNotEnough =>
+      'Bu dövrdə Wrapped üçün hələ kifayət qədər dinləmə yoxdur';
+
+  @override
+  String get wrappedClose => 'Bağla';
+
+  @override
+  String wrappedIntro(String period) {
+    return '$period: musiqidə';
+  }
+
+  @override
+  String get wrappedMinutes => 'dəqiqə musiqi';
+
+  @override
+  String wrappedIntroStats(int plays, int songs, int days) {
+    return '$plays dinləmə  ·  $songs mahnı  ·  musiqili $days gün';
+  }
+
+  @override
+  String get wrappedTopSong => 'Sənin #1 mahnın';
+
+  @override
+  String get wrappedTopSongs => 'Ən çox dinlədiyin mahnılar';
+
+  @override
+  String get wrappedTopArtist => 'Ən çox dinlədiyin ifaçı';
+
+  @override
+  String wrappedThen(String names) {
+    return 'Ardınca: $names';
+  }
+
+  @override
+  String get wrappedMood => 'Sənin əhvalın';
+
+  @override
+  String get wrappedWhen => 'Nə vaxt dinləyirsən';
+
+  @override
+  String wrappedPeakHour(String hour) {
+    return 'Ən çox saat $hour radələrində';
+  }
+
+  @override
+  String get wrappedMorning => 'Səhər quşu';
+
+  @override
+  String get wrappedAfternoon => 'Gündüz dinləyicisi';
+
+  @override
+  String get wrappedEvening => 'Axşam dinləyicisi';
+
+  @override
+  String get wrappedNight => 'Gecə bayquşu';
+
+  @override
+  String get wrappedNew => 'Yeni kəşflər';
+
+  @override
+  String wrappedNewCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'mahnını ilk dəfə dinlədin',
+      one: 'mahnını ilk dəfə dinlədin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedNoNew => 'Yeni mahnı yox: sevdiklərinə sadiq qaldın';
+
+  @override
+  String get wrappedStreak => 'Ən uzun seriya';
+
+  @override
+  String wrappedStreakDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ardıcıl $count gün',
+      one: '1 gün',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedStreakDaysWord(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'gün ardıcıl musiqi ilə',
+      one: 'gün musiqi ilə',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedActiveDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Bu dövrdə $count gün musiqi dinlədin',
+      one: 'Bu dövrdə 1 gün musiqi dinlədin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedSaved => 'Şəkillər/Nocturne qovluğuna saxlandı';
+
+  @override
+  String get wrappedCardFailed => 'Kartı hazırlamaq olmadı';
+
+  @override
+  String get wrappedCardFooter => 'Telefonumda Nocturne ilə hazırlandı';
+
+  @override
+  String wrappedBanner(String month) {
+    return '$month Wrapped-in hazırdır';
+  }
+
+  @override
+  String get wrappedBannerHint => 'Top mahnılar, ifaçılar və əhvalın';
+
+  @override
+  String get monthNames =>
+      'Yanvar,Fevral,Mart,Aprel,May,İyun,İyul,Avqust,Sentyabr,Oktyabr,Noyabr,Dekabr';
+
+  @override
   String get lyricsSearching => 'Sözlər axtarılır…';
 
   @override

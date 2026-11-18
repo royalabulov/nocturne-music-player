@@ -2574,6 +2574,222 @@ abstract class L10n {
   /// **'This phone has no reverb effect: speed only'**
   String get reverbUnavailable;
 
+  /// No description provided for @menuWrapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Nocturne Wrapped'**
+  String get menuWrapped;
+
+  /// No description provided for @menuWrappedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your month in music'**
+  String get menuWrappedHint;
+
+  /// No description provided for @wrappedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your top songs, artists, mood and listening habits, month by month. Worked out on this phone; nothing is sent anywhere.'**
+  String get wrappedHint;
+
+  /// No description provided for @wrappedYear.
+  ///
+  /// In en, this message translates to:
+  /// **'THE YEAR'**
+  String get wrappedYear;
+
+  /// No description provided for @wrappedSoFar.
+  ///
+  /// In en, this message translates to:
+  /// **'So far: the month isn\'t over'**
+  String get wrappedSoFar;
+
+  /// No description provided for @wrappedNotYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your first Wrapped is on its way'**
+  String get wrappedNotYet;
+
+  /// No description provided for @wrappedPlaysToGo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more play this month and it\'s ready} other{{count} more plays this month and it\'s ready}}'**
+  String wrappedPlaysToGo(int count);
+
+  /// No description provided for @wrappedNotEnough.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough plays in this period for a Wrapped yet'**
+  String get wrappedNotEnough;
+
+  /// No description provided for @wrappedClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get wrappedClose;
+
+  /// No description provided for @wrappedIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'{period} in music'**
+  String wrappedIntro(String period);
+
+  /// No description provided for @wrappedMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'minutes of music'**
+  String get wrappedMinutes;
+
+  /// No description provided for @wrappedIntroStats.
+  ///
+  /// In en, this message translates to:
+  /// **'{plays} plays  ·  {songs} songs  ·  {days} days with music'**
+  String wrappedIntroStats(int plays, int songs, int days);
+
+  /// No description provided for @wrappedTopSong.
+  ///
+  /// In en, this message translates to:
+  /// **'Your #1 song'**
+  String get wrappedTopSong;
+
+  /// No description provided for @wrappedTopSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Your top songs'**
+  String get wrappedTopSongs;
+
+  /// No description provided for @wrappedTopArtist.
+  ///
+  /// In en, this message translates to:
+  /// **'Your top artist'**
+  String get wrappedTopArtist;
+
+  /// No description provided for @wrappedThen.
+  ///
+  /// In en, this message translates to:
+  /// **'Then {names}'**
+  String wrappedThen(String names);
+
+  /// No description provided for @wrappedMood.
+  ///
+  /// In en, this message translates to:
+  /// **'Your mood'**
+  String get wrappedMood;
+
+  /// No description provided for @wrappedWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'When you listen'**
+  String get wrappedWhen;
+
+  /// No description provided for @wrappedPeakHour.
+  ///
+  /// In en, this message translates to:
+  /// **'Most of all around {hour}'**
+  String wrappedPeakHour(String hour);
+
+  /// No description provided for @wrappedMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Early bird'**
+  String get wrappedMorning;
+
+  /// No description provided for @wrappedAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Daytime listener'**
+  String get wrappedAfternoon;
+
+  /// No description provided for @wrappedEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Evening listener'**
+  String get wrappedEvening;
+
+  /// No description provided for @wrappedNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Night owl'**
+  String get wrappedNight;
+
+  /// No description provided for @wrappedNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New for you'**
+  String get wrappedNew;
+
+  /// No description provided for @wrappedNewCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{song you heard for the first time} other{songs you heard for the first time}}'**
+  String wrappedNewCount(int count);
+
+  /// No description provided for @wrappedNoNew.
+  ///
+  /// In en, this message translates to:
+  /// **'No new songs: you stayed with your favorites'**
+  String get wrappedNoNew;
+
+  /// No description provided for @wrappedStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest streak'**
+  String get wrappedStreak;
+
+  /// No description provided for @wrappedStreakDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days in a row}}'**
+  String wrappedStreakDays(int count);
+
+  /// No description provided for @wrappedStreakDaysWord.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{day with music} other{days in a row with music}}'**
+  String wrappedStreakDaysWord(int count);
+
+  /// No description provided for @wrappedActiveDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Music on 1 day of this period} other{Music on {count} days of this period}}'**
+  String wrappedActiveDays(int count);
+
+  /// No description provided for @wrappedSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to Pictures/Nocturne'**
+  String get wrappedSaved;
+
+  /// No description provided for @wrappedCardFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t make the card'**
+  String get wrappedCardFailed;
+
+  /// No description provided for @wrappedCardFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Made on my phone with Nocturne'**
+  String get wrappedCardFooter;
+
+  /// No description provided for @wrappedBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {month} Wrapped is ready'**
+  String wrappedBanner(String month);
+
+  /// No description provided for @wrappedBannerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Top songs, artists and your mood'**
+  String get wrappedBannerHint;
+
+  /// No description provided for @monthNames.
+  ///
+  /// In en, this message translates to:
+  /// **'January,February,March,April,May,June,July,August,September,October,November,December'**
+  String get monthNames;
+
   /// No description provided for @lyricsSearching.
   ///
   /// In en, this message translates to:

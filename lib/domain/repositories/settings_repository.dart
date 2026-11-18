@@ -52,6 +52,9 @@ abstract final class SettingsKeys {
   /// Slowed / sped up and reverb, JSON {speed, reverb} (core/audio/sound_effect.dart).
   static const soundEffect = 'soundEffect';
 
+  /// The Wrapped period ("2026-11") whose Home banner was opened or closed.
+  static const wrappedBannerHidden = 'wrappedBannerHidden';
+
   /// The user's choices: they come back with a backup.
   static const backedUp = {
     audioSettings,
@@ -95,6 +98,8 @@ abstract final class SettingsKeys {
     uploaderArtists,
     // Travels in a backup too, in its own checked section (BackupFile.artists).
     artistOverrides,
+    // A banner seen on this phone; the history it is about belongs to this install too.
+    wrappedBannerHidden,
     // A backup is a file from outside the app: it must not switch the knock log on.
     developerMode,
   };

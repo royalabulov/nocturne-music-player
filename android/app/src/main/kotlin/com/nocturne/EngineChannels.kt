@@ -100,6 +100,21 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
                 library.keepNewestInDownloads(BACKUP_FOLDER, call.argument<String>("prefix")!!, call.argument<Int>("keep") ?: 2)
                 path
             }
+            "saveImage" -> background(result) {
+                library.saveImage(call.argument<String>("name")!!, call.argument<ByteArray>("bytes")!!)
+            }
+            "shareImage" -> try {
+                val uri = android.net.Uri.parse(call.argument<String>("uri")!!)
+                // Only an image this app saved: a content URI from MediaStore's images
+                if (uri.scheme != "content" || uri.authority != android.provider.MediaStore.AUTHORITY) {
+                    result.success(false)
+                } else {
+                    context.startActivity(ShareImage.chooser(uri, call.argument<String>("title") ?: ""))
+                    result.success(true)
+                }
+            } catch (e: RuntimeException) {
+                result.success(false)
+            }
             "shareText" -> try {
                 context.startActivity(
                     ShareText.chooser(call.argument<String>("text") ?: "", call.argument<String>("title") ?: ""),
