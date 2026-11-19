@@ -139,12 +139,6 @@ abstract class L10n {
   /// **'{count, plural, =1{1 track} other{{count} tracks}}'**
   String trackCount(int count);
 
-  /// No description provided for @menuDiscover.
-  ///
-  /// In en, this message translates to:
-  /// **'Discover'**
-  String get menuDiscover;
-
   /// No description provided for @menuYourVibes.
   ///
   /// In en, this message translates to:
@@ -3257,6 +3251,24 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Picking from {done} of {total} songs so far'**
   String radioPickingFrom(int done, int total);
+
+  /// No description provided for @menuForYou.
+  ///
+  /// In en, this message translates to:
+  /// **'For you'**
+  String get menuForYou;
+
+  /// No description provided for @menuSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get menuSound;
+
+  /// No description provided for @menuImportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add songs from anywhere on the phone'**
+  String get menuImportHint;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

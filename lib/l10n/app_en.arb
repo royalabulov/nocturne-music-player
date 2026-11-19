@@ -21,7 +21,6 @@
       }
     }
   },
-  "menuDiscover": "Discover",
   "menuYourVibes": "Your Vibes",
   "menuYourVibesHint": "Mood & genre groups",
   "checkAccuracy": "Check accuracy",
@@ -555,7 +554,9 @@
   "addSongsCount": "Add ({count})",
   "@addSongsCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "alreadyInPlaylist": "Already in this playlist",
@@ -1285,5 +1286,8 @@
         "type": "int"
       }
     }
-  }
+  },
+  "menuForYou": "For you",
+  "menuSound": "Sound",
+  "menuImportHint": "Add songs from anywhere on the phone"
 }
