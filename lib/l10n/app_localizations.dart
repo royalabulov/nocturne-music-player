@@ -3269,6 +3269,102 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'Add songs from anywhere on the phone'**
   String get menuImportHint;
+
+  /// No description provided for @shortcutShuffle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle all'**
+  String get shortcutShuffle;
+
+  /// No description provided for @shortcutShuffleLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle all your songs'**
+  String get shortcutShuffleLong;
+
+  /// No description provided for @shortcutContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get shortcutContinue;
+
+  /// No description provided for @shortcutContinueLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue: {title}'**
+  String shortcutContinueLong(String title);
+
+  /// No description provided for @shortcutRadioLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio from your last song'**
+  String get shortcutRadioLong;
+
+  /// No description provided for @shortcutSearchLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Search your music'**
+  String get shortcutSearchLong;
+
+  /// No description provided for @shortcutNothingToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to continue yet: play a song first'**
+  String get shortcutNothingToContinue;
+
+  /// No description provided for @menuDuplicates.
+  ///
+  /// In en, this message translates to:
+  /// **'Find duplicates'**
+  String get menuDuplicates;
+
+  /// No description provided for @menuDuplicatesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The same song saved more than once'**
+  String get menuDuplicatesHint;
+
+  /// No description provided for @duplicatesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Files that hold the same song. The best one is marked to keep; tap another file to keep that one instead.'**
+  String get duplicatesHint;
+
+  /// No description provided for @duplicatesNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No duplicates found'**
+  String get duplicatesNone;
+
+  /// No description provided for @duplicatesNoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Songs are compared by name and length, and by sound once they are analyzed.'**
+  String get duplicatesNoneHint;
+
+  /// No description provided for @duplicatesKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get duplicatesKeep;
+
+  /// No description provided for @duplicatesNotSame.
+  ///
+  /// In en, this message translates to:
+  /// **'Not the same song'**
+  String get duplicatesNotSame;
+
+  /// No description provided for @duplicatesFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 file} other{{count} files}}'**
+  String duplicatesFiles(int count);
+
+  /// No description provided for @duplicatesDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Delete 1 copy} other{Delete {count} copies}}'**
+  String duplicatesDelete(int count);
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

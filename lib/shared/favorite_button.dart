@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/di/providers.dart';
 import '../core/theme/app_colors.dart';
 import '../l10n/l10n.dart';
+import 'cover_accent.dart';
 
 /// Heart — writes to/removes from the favorites table. Each tile watches its own id.
 /// Full 48 px touch size (it was 40 in every song row).
@@ -26,7 +27,8 @@ class FavoriteButton extends ConsumerWidget {
       iconSize: size,
       icon: Icon(
         isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        color: quiet && !isFav ? AppColors.textMuted : AppColors.cyan,
+        // The cover's colour in Now Playing (CoverAccent), the brand blue everywhere else
+        color: quiet && !isFav ? AppColors.textMuted : CoverAccent.of(context).line,
       ),
     );
   }

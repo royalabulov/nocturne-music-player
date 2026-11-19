@@ -527,5 +527,21 @@
   "radioPickingFrom": "Hələlik {done}/{total} mahnı arasından seçir",
   "menuForYou": "Sənin üçün",
   "menuSound": "Səs",
-  "menuImportHint": "Telefonun istənilən yerindən mahnı əlavə et"
+  "menuImportHint": "Telefonun istənilən yerindən mahnı əlavə et",
+  "shortcutShuffle": "Qarışdır",
+  "shortcutShuffleLong": "Bütün mahnıları qarışdır",
+  "shortcutContinue": "Davam et",
+  "shortcutContinueLong": "Davam et: {title}",
+  "shortcutRadioLong": "Son mahnından radio",
+  "shortcutSearchLong": "Musiqini axtar",
+  "shortcutNothingToContinue": "Davam etdiriləcək heç nə yoxdur: əvvəlcə bir mahnı çal",
+  "menuDuplicates": "Dublikatları tap",
+  "menuDuplicatesHint": "Eyni mahnının bir neçə faylı",
+  "duplicatesHint": "Eyni mahnını saxlayan fayllar. Ən yaxşısı saxlanmaq üçün seçilib; başqasını saxlamaq üçün ona toxun.",
+  "duplicatesNone": "Dublikat tapılmadı",
+  "duplicatesNoneHint": "Mahnılar ad və müddətə görə, analiz olunandan sonra isə səsə görə də müqayisə olunur.",
+  "duplicatesKeep": "Saxla",
+  "duplicatesNotSame": "Eyni mahnı deyil",
+  "duplicatesFiles": "{count, plural, =1{1 fayl} other{{count} fayl}}",
+  "duplicatesDelete": "{count, plural, =1{1 nüsxəni sil} other{{count} nüsxəni sil}}"
 }

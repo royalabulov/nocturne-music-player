@@ -55,6 +55,9 @@ abstract final class SettingsKeys {
   /// The Wrapped period ("2026-11") whose Home banner was opened or closed.
   static const wrappedBannerHidden = 'wrappedBannerHidden';
 
+  /// Duplicate groups the user said are not one song: JSON list of sorted id lists.
+  static const duplicatesIgnored = 'duplicatesIgnored';
+
   /// The user's choices: they come back with a backup.
   static const backedUp = {
     audioSettings,
@@ -100,6 +103,8 @@ abstract final class SettingsKeys {
     artistOverrides,
     // A banner seen on this phone; the history it is about belongs to this install too.
     wrappedBannerHidden,
+    // Track ids: they change after a reinstall.
+    duplicatesIgnored,
     // A backup is a file from outside the app: it must not switch the knock log on.
     developerMode,
   };

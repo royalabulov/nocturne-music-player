@@ -137,6 +137,13 @@ class SideMenu extends ConsumerWidget {
                     hint: scanning ? l10n.scanning : l10n.menuImportHint,
                     onTap: scanning ? null : () => run(() => ref.read(audioImportProvider).pickAndImport()),
                   ),
+                  _Item(
+                    icon: Icons.content_copy_rounded,
+                    label: l10n.menuDuplicates,
+                    hint: l10n.menuDuplicatesHint,
+                    active: location.startsWith(kDuplicatesRoute),
+                    onTap: () => go(kDuplicatesRoute),
+                  ),
                 ],
               ),
             ),

@@ -1940,4 +1940,73 @@ class L10nEn extends L10n {
 
   @override
   String get menuImportHint => 'Add songs from anywhere on the phone';
+
+  @override
+  String get shortcutShuffle => 'Shuffle all';
+
+  @override
+  String get shortcutShuffleLong => 'Shuffle all your songs';
+
+  @override
+  String get shortcutContinue => 'Continue';
+
+  @override
+  String shortcutContinueLong(String title) {
+    return 'Continue: $title';
+  }
+
+  @override
+  String get shortcutRadioLong => 'Radio from your last song';
+
+  @override
+  String get shortcutSearchLong => 'Search your music';
+
+  @override
+  String get shortcutNothingToContinue =>
+      'Nothing to continue yet: play a song first';
+
+  @override
+  String get menuDuplicates => 'Find duplicates';
+
+  @override
+  String get menuDuplicatesHint => 'The same song saved more than once';
+
+  @override
+  String get duplicatesHint =>
+      'Files that hold the same song. The best one is marked to keep; tap another file to keep that one instead.';
+
+  @override
+  String get duplicatesNone => 'No duplicates found';
+
+  @override
+  String get duplicatesNoneHint =>
+      'Songs are compared by name and length, and by sound once they are analyzed.';
+
+  @override
+  String get duplicatesKeep => 'Keep';
+
+  @override
+  String get duplicatesNotSame => 'Not the same song';
+
+  @override
+  String duplicatesFiles(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files',
+      one: '1 file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String duplicatesDelete(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Delete $count copies',
+      one: 'Delete 1 copy',
+    );
+    return '$_temp0';
+  }
 }

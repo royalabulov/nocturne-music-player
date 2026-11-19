@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/cover_accent.dart';
 import '../../shared/nocturne_sheet.dart';
 import '../../shared/tap_target.dart';
 
@@ -21,7 +22,7 @@ class SoundEffectButton extends ConsumerWidget {
       tooltip: l10n.soundEffect,
       onPressed: () => showSoundEffectSheet(context),
       icon: Icon(on ? Icons.slow_motion_video_rounded : Icons.slow_motion_video_outlined, size: 24),
-      color: on ? AppColors.cyan : AppColors.textSecondary,
+      color: on ? CoverAccent.of(context).line : AppColors.textSecondary,
     );
   }
 }

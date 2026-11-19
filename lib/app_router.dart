@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/router/routes.dart';
+import 'features/duplicates/duplicates_screen.dart';
 import 'features/favorites/favorites_screen.dart';
 import 'features/forgotten/forgotten_screen.dart';
 import 'features/home/home_screen.dart';
@@ -47,6 +48,7 @@ final appRouter = GoRouter(
                 GoRoute(path: 'vibe-review', builder: (_, _) => const VibeReviewScreen()),
                 GoRoute(path: 'vibes', builder: (_, _) => const VibesScreen()),
                 GoRoute(path: 'wrapped', builder: (_, _) => const WrappedScreen()),
+                GoRoute(path: 'duplicates', builder: (_, _) => const DuplicatesScreen()),
                 GoRoute(
                   path: 'forgotten',
                   // ?t= : opened from a reminder → that song is shown on top

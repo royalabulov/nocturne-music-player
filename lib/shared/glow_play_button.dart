@@ -14,12 +14,16 @@ class GlowPlayButton extends StatelessWidget {
     this.filled = true,
     this.playing = false,
     this.onTap,
+    this.color,
   });
 
   final double size;
   final bool filled;
   final bool playing;
   final VoidCallback? onTap;
+
+  /// The filled orb's colour (Now Playing: the cover's, see CoverAccent); null = brand blue.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +36,14 @@ class GlowPlayButton extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: filled ? AppColors.playGradient : null,
-          color: filled ? null : AppColors.surfaceHigh,
+          gradient: filled && color == null ? AppColors.playGradient : null,
+          color: filled ? color : AppColors.surfaceHigh,
           border: filled ? null : Border.all(color: AppColors.borderLevel1),
-          boxShadow: filled ? Glow.orb : null,
+          boxShadow: !filled
+              ? null
+              : color == null
+                  ? Glow.orb
+                  : [BoxShadow(color: color!.withValues(alpha: .45), blurRadius: 20)],
         ),
         child: Icon(
           playing ? Icons.pause_rounded : Icons.play_arrow_rounded,

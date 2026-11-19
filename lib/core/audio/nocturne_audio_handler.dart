@@ -9,6 +9,7 @@ import 'package:rxdart/rxdart.dart';
 
 import '../../domain/entities/track.dart';
 import 'audio_effects.dart';
+import 'media_catalog.dart';
 import 'play_queue.dart';
 import 'queue_snapshot.dart';
 import '../../l10n/l10n.dart';
@@ -207,6 +208,36 @@ class NocturneAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     } catch (e) {
       debugPrint('NocturneAudioHandler: reverb on $session failed: $e');
     }
+  }
+
+  // ── browsing: Android Auto, Assistant, the system's media controls ──
+  /// The library as they browse it; null = nothing to browse (tests, the web demo).
+  MediaCatalog? catalog;
+
+  @override
+  Future<List<MediaItem>> getChildren(String parentMediaId, [Map<String, dynamic>? options]) async =>
+      await catalog?.children(parentMediaId) ?? const [];
+
+  @override
+  Future<MediaItem?> getMediaItem(String mediaId) async => catalog?.item(mediaId);
+
+  @override
+  Future<List<MediaItem>> search(String query, [Map<String, dynamic>? extras]) async =>
+      await catalog?.searchItems(query) ?? const [];
+
+  /// A song picked in the car: its list plays from it, as a tap does in the app.
+  @override
+  Future<void> playFromMediaId(String mediaId, [Map<String, dynamic>? extras]) async {
+    final picked = await catalog?.resolve(mediaId);
+    if (picked != null) await playTracks(picked.queue, startIndex: picked.index);
+  }
+
+  /// "Play … on Nocturne": the songs that match, or the whole library shuffled for "play music".
+  @override
+  Future<void> playFromSearch(String query, [Map<String, dynamic>? extras]) async {
+    final found = await catalog?.search(query) ?? const <Track>[];
+    if (found.isEmpty) return;
+    await playTracks(found, shuffle: query.trim().isEmpty);
   }
 
   // ── smooth shuffle ──

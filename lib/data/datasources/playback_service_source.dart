@@ -52,6 +52,11 @@ class PlaybackServiceSource {
     }
   }
 
+  /// Library browsing (Android Auto) answers only the callers that need it (Kotlin
+  /// BrowseGuard). Asked after AudioService.init, when the plugin's listener exists, and again
+  /// on every return to the app in case the plugin set a new one.
+  Future<void> guardBrowse() => _call('guardBrowse');
+
   Future<void> _call(String method) async {
     if (kIsWeb || !Platform.isAndroid) return;
     try {

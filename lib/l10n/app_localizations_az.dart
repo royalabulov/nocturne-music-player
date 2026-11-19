@@ -1938,4 +1938,73 @@ class L10nAz extends L10n {
 
   @override
   String get menuImportHint => 'Telefonun istənilən yerindən mahnı əlavə et';
+
+  @override
+  String get shortcutShuffle => 'Qarışdır';
+
+  @override
+  String get shortcutShuffleLong => 'Bütün mahnıları qarışdır';
+
+  @override
+  String get shortcutContinue => 'Davam et';
+
+  @override
+  String shortcutContinueLong(String title) {
+    return 'Davam et: $title';
+  }
+
+  @override
+  String get shortcutRadioLong => 'Son mahnından radio';
+
+  @override
+  String get shortcutSearchLong => 'Musiqini axtar';
+
+  @override
+  String get shortcutNothingToContinue =>
+      'Davam etdiriləcək heç nə yoxdur: əvvəlcə bir mahnı çal';
+
+  @override
+  String get menuDuplicates => 'Dublikatları tap';
+
+  @override
+  String get menuDuplicatesHint => 'Eyni mahnının bir neçə faylı';
+
+  @override
+  String get duplicatesHint =>
+      'Eyni mahnını saxlayan fayllar. Ən yaxşısı saxlanmaq üçün seçilib; başqasını saxlamaq üçün ona toxun.';
+
+  @override
+  String get duplicatesNone => 'Dublikat tapılmadı';
+
+  @override
+  String get duplicatesNoneHint =>
+      'Mahnılar ad və müddətə görə, analiz olunandan sonra isə səsə görə də müqayisə olunur.';
+
+  @override
+  String get duplicatesKeep => 'Saxla';
+
+  @override
+  String get duplicatesNotSame => 'Eyni mahnı deyil';
+
+  @override
+  String duplicatesFiles(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fayl',
+      one: '1 fayl',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String duplicatesDelete(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nüsxəni sil',
+      one: '1 nüsxəni sil',
+    );
+    return '$_temp0';
+  }
 }

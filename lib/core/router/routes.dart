@@ -19,6 +19,7 @@ const kForgottenRoute = '/home/forgotten';
 const kVibeReviewRoute = '/home/vibe-review';
 const kVibesRoute = '/home/vibes';
 const kWrappedRoute = '/home/wrapped';
+const kDuplicatesRoute = '/home/duplicates';
 
 /// Wrapped's stories, full screen over the app (no tabs).
 const kWrappedStoryRoute = '/wrapped';

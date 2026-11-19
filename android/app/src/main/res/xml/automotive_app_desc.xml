@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android Auto: Nocturne is a media app (its library is browsed through AudioService,
+     answered only for Android Auto and the system: BrowseGuard.kt) -->
+<automotiveApp>
+    <uses name="media" />
+</automotiveApp>
