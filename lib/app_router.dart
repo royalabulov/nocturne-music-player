@@ -45,6 +45,10 @@ final appRouter = GoRouter(
                   path: 'artist',
                   builder: (_, s) => ArtistDetailScreen(artistKey: s.uri.queryParameters['k'] ?? ''),
                 ),
+                GoRoute(
+                  path: 'folder',
+                  builder: (_, s) => FolderDetailScreen(folderKey: s.uri.queryParameters['k'] ?? ''),
+                ),
                 GoRoute(path: 'vibe-review', builder: (_, _) => const VibeReviewScreen()),
                 GoRoute(path: 'vibes', builder: (_, _) => const VibesScreen()),
                 GoRoute(path: 'wrapped', builder: (_, _) => const WrappedScreen()),

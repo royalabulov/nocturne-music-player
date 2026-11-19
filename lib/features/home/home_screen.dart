@@ -50,7 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Timer? _debounce;
   List<Track> _lastLibrary = const [];
 
-  /// Library section: Songs | Albums | Artists.
+  /// Library section: Songs | Albums | Artists | Folders.
   LibraryView _view = LibraryView.songs;
 
   @override
@@ -70,7 +70,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _pickGroupSort() async {
-    final title = _view == LibraryView.albums ? l10n.sortAlbumsBy : l10n.sortArtistsBy;
+    final title = switch (_view) {
+      LibraryView.albums => l10n.sortAlbumsBy,
+      LibraryView.folders => l10n.sortFoldersBy,
+      _ => l10n.sortArtistsBy,
+    };
     final picked = await showSortSheet(context,
         title: title, values: GroupSort.values, current: ref.read(_groupSortProvider), label: (s) => s.label);
     if (picked == null || !mounted) return;
@@ -171,6 +175,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final albums = albumsRaw == null ? null : sortGroups(albumsRaw, groupSort, (a) => a.tracks);
     final artistsRaw = _view == LibraryView.artists ? ref.watch(artistsProvider) : null;
     final artists = artistsRaw == null ? null : sortGroups(artistsRaw, groupSort, (a) => a.tracks);
+    final foldersRaw = _view == LibraryView.folders ? ref.watch(foldersProvider) : null;
+    final folders = foldersRaw == null ? null : sortGroups(foldersRaw, groupSort, (f) => f.tracks);
     ref.listen(locateTrackProvider, (_, id) {
       if (id == null) return;
       ref.read(locateTrackProvider.notifier).clear();
@@ -272,7 +278,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     icon: Icons.library_music_outlined,
                     action: switch (_view) {
                       LibraryView.songs => '${sort.label}  ▾',
-                      LibraryView.albums || LibraryView.artists => '${groupSort.label}  ▾',
+                      LibraryView.albums || LibraryView.artists || LibraryView.folders => '${groupSort.label}  ▾',
                     },
                     onAction: _view == LibraryView.songs ? _pickSort : _pickGroupSort,
                   ),
@@ -286,6 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               LibraryView.songs => TrackSliverList(key: _libraryKey, tracks: library, status: tracksAsync, onRetry: retryTracks),
               LibraryView.albums => AlbumGridSliver(albums: albums ?? const []),
               LibraryView.artists => ArtistListSliver(artists: artists ?? const []),
+              LibraryView.folders => FolderListSliver(folders: folders ?? const []),
             },
           ],
 

@@ -17,6 +17,7 @@ import '../../core/audio/player_providers.dart';
 import '../smart_groups/smart_groups.dart';
 import '../smart_groups/vibes_screen.dart';
 import 'library_groups.dart';
+import 'library_views.dart';
 import '../../l10n/l10n.dart';
 import '../../core/utils/display_names.dart';
 import '../../shared/screen_back_button.dart';
@@ -76,6 +77,29 @@ class ArtistDetailScreen extends ConsumerWidget {
       tracks: a.tracks,
       subtitleOf: (t) => t.albumLabel,
       albums: albums.length > 1 ? albums : const [],
+    );
+  }
+}
+
+/// Home → Library → Folders → a folder: its songs by title.
+class FolderDetailScreen extends ConsumerWidget {
+  const FolderDetailScreen({super.key, required this.folderKey});
+  final String folderKey;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final folders = ref.watch(foldersProvider);
+    if (folders == null) return const _Loading();
+    final f = folders.where((x) => x.key == folderKey).firstOrNull;
+    if (f == null) return _NotFound(title: l10n.notFoundFolder);
+    return _DetailScaffold(
+      label: l10n.folderLabel,
+      title: f.name,
+      subtitle: f.place,
+      meta: '${l10n.trackCount(f.tracks.length)} • ${f.totalDuration.hm}',
+      art: FolderArt(folder: f, size: 112),
+      tracks: f.tracks,
+      subtitleOf: (t) => t.artistLabel,
     );
   }
 }
