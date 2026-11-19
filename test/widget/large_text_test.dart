@@ -14,6 +14,7 @@ import 'package:nocturne/demo/demo_overrides.dart';
 import 'package:nocturne/app_router.dart';
 import 'package:nocturne/core/audio/player_providers.dart';
 import 'package:nocturne/core/router/routes.dart';
+import 'package:nocturne/core/ui/toast.dart';
 import 'package:nocturne/l10n/l10n.dart';
 
 import '../player/fake_just_audio.dart';
@@ -88,6 +89,23 @@ void main() {
           await settle();
         }
       }
+
+      // Side menu: every row laid out, down to the last one. The sleep timer isn't in it: it is
+      // set in Now Playing, where the song is (2026-11-19)
+      appRouter.go(Routes.home);
+      await settle();
+      tester.stateList<ScaffoldState>(find.byType(Scaffold)).firstWhere((s) => s.hasDrawer).openDrawer();
+      await settle();
+      expect(find.text(upper(t.menuForYou)), findsOneWidget);
+      expect(find.text(t.checkAccuracy), findsNothing);
+      // At large text the menu scrolls
+      final drawerList = find.descendant(of: find.byType(Drawer), matching: find.byType(Scrollable));
+      await tester.scrollUntilVisible(find.text(t.importAudioFiles), 100, scrollable: drawerList);
+      expect(find.descendant(of: find.byType(Drawer), matching: find.text(t.sleepTimer)), findsNothing);
+      // A toast from earlier (e.g. analysis) can sit over the lowest row
+      rootMessengerKey.currentState?.removeCurrentSnackBar();
+      Navigator.of(tester.element(find.byType(Drawer))).pop();
+      await settle();
 
       appRouter.go(Routes.nowPlaying);
       await settle();

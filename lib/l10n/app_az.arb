@@ -7,7 +7,6 @@
   "navMenu": "Menyu",
   "songCount": "{count, plural, other{{count} mahnı}}",
   "trackCount": "{count, plural, other{{count} mahnı}}",
-  "menuDiscover": "Kəşf et",
   "menuYourVibes": "Əhval və janr",
   "menuYourVibesHint": "Ağıllı qruplar",
   "checkAccuracy": "Dəqiqliyi yoxla",
@@ -525,5 +524,8 @@
   "radioAnalysisOff": "Radio üçün mahnı analizi lazımdır, amma o söndürülüb",
   "radioAnalysisTurnedOn": "Mahnı analizi açıldı: radio tezliklə hazır olacaq",
   "radioTooFewSongs": "Radio üçün analiz oluna bilən ən azı {count} mahnı lazımdır",
-  "radioPickingFrom": "Hələlik {done}/{total} mahnı arasından seçir"
+  "radioPickingFrom": "Hələlik {done}/{total} mahnı arasından seçir",
+  "menuForYou": "Sənin üçün",
+  "menuSound": "Səs",
+  "menuImportHint": "Telefonun istənilən yerindən mahnı əlavə et"
 }

@@ -47,9 +47,6 @@ class L10nEn extends L10n {
   }
 
   @override
-  String get menuDiscover => 'Discover';
-
-  @override
   String get menuYourVibes => 'Your Vibes';
 
   @override
@@ -1934,4 +1931,13 @@ class L10nEn extends L10n {
   String radioPickingFrom(int done, int total) {
     return 'Picking from $done of $total songs so far';
   }
+
+  @override
+  String get menuForYou => 'For you';
+
+  @override
+  String get menuSound => 'Sound';
+
+  @override
+  String get menuImportHint => 'Add songs from anywhere on the phone';
 }

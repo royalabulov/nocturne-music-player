@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/audio/output_detector.dart';
+import '../../core/audio/player_providers.dart';
 import '../../core/constants.dart';
 import '../../core/di/providers.dart';
 import '../../core/router/routes.dart';
@@ -17,13 +19,17 @@ import '../../domain/repositories/settings_repository.dart';
 import '../../shared/nocturne_mark.dart';
 import '../import/audio_import.dart';
 import '../library_scan/scan_controller.dart';
+import '../settings/settings_controller.dart';
 import '../radio/radio_actions.dart';
 import '../smart_groups/smart_groups.dart';
 import '../../l10n/l10n.dart';
 
 
-/// Menu that slides in from the left: extra screens and actions that don't fit the bottom menu.
-/// New features (notifications, weather mix) are added here first.
+/// Menu that slides in from the left. One rule (2026-11-18): the bottom tabs are the
+/// everyday music, the menu is places to go and main actions, Settings is how the app
+/// works. Nothing from Settings is repeated here (Check accuracy and Rescan were).
+/// Every row has a one-line hint; Equalizer shows its current state. The sleep timer is set
+/// where the song plays (Now Playing), not here (user, 2026-11-19).
 class SideMenu extends ConsumerWidget {
   const SideMenu({super.key, required this.location});
 
@@ -34,6 +40,8 @@ class SideMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(libraryStatsProvider).value ?? LibraryStats.empty;
     final scanning = ref.watch(scanControllerProvider.select((s) => s.isRunning));
+    final audio = ref.watch(audioSettingsProvider);
+    final output = ref.watch(outputKindProvider).value ?? OutputKind.speaker;
     final router = GoRouter.of(context);
 
     // Close the menu, then navigate (navigating while the drawer is open breaks the animation)
@@ -79,27 +87,7 @@ class SideMenu extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
                 children: [
-                  _Group(l10n.menuDiscover),
-                  _Item(
-                    icon: Icons.auto_stories_rounded,
-                    label: l10n.menuWrapped,
-                    hint: l10n.menuWrappedHint,
-                    active: location.startsWith(kWrappedRoute),
-                    onTap: () => go(kWrappedRoute),
-                  ),
-                  _Item(
-                    icon: Icons.auto_awesome_mosaic_rounded,
-                    label: l10n.menuYourVibes,
-                    hint: l10n.menuYourVibesHint,
-                    active: location.startsWith(kVibesRoute),
-                    onTap: () => go(kVibesRoute),
-                  ),
-                  _Item(
-                    icon: Icons.fact_check_outlined,
-                    label: l10n.checkAccuracy,
-                    active: location.startsWith(kVibeReviewRoute),
-                    onTap: () => go(kVibeReviewRoute),
-                  ),
+                  _Group(l10n.menuForYou),
                   _Item(
                     icon: Icons.radio_rounded,
                     label: l10n.menuRadio,
@@ -114,30 +102,40 @@ class SideMenu extends ConsumerWidget {
                     },
                   ),
                   _Item(
+                    icon: Icons.auto_awesome_mosaic_rounded,
+                    label: l10n.menuYourVibes,
+                    hint: l10n.menuYourVibesHint,
+                    active: location.startsWith(kVibesRoute),
+                    onTap: () => go(kVibesRoute),
+                  ),
+                  _Item(
                     icon: Icons.history_toggle_off_rounded,
                     label: l10n.menuForgotten,
                     hint: l10n.menuForgottenHint,
                     active: location.startsWith(kForgottenRoute),
                     onTap: () => go(kForgottenRoute),
                   ),
+                  _Item(
+                    icon: Icons.auto_stories_rounded,
+                    label: l10n.menuWrapped,
+                    hint: l10n.menuWrappedHint,
+                    active: location.startsWith(kWrappedRoute),
+                    onTap: () => go(kWrappedRoute),
+                  ),
+                  _Group(l10n.menuSound),
+                  _Item(
+                    icon: Icons.equalizer_rounded,
+                    label: l10n.equalizer,
+                    hint: audio.eqEnabled ? l10n.eqPresetLine(audio.effectivePreset(output).label) : l10n.off,
+                    active: location.startsWith('${Routes.settings}/eq'),
+                    onTap: () => go('${Routes.settings}/eq'),
+                  ),
                   _Group(l10n.library),
                   _Item(
                     icon: Icons.library_add_rounded,
                     label: l10n.importAudioFiles,
+                    hint: scanning ? l10n.scanning : l10n.menuImportHint,
                     onTap: scanning ? null : () => run(() => ref.read(audioImportProvider).pickAndImport()),
-                  ),
-                  _Item(
-                    icon: Icons.radar_rounded,
-                    label: scanning ? l10n.scanning : l10n.rescanLibrary,
-                    onTap: scanning
-                        ? null
-                        : () => run(() => ref.read(scanControllerProvider.notifier).requestAndScan()),
-                  ),
-                  _Item(
-                    icon: Icons.equalizer_rounded,
-                    label: l10n.equalizer,
-                    active: location.startsWith('${Routes.settings}/eq'),
-                    onTap: () => go('${Routes.settings}/eq'),
                   ),
                 ],
               ),

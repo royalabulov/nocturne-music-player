@@ -45,9 +45,6 @@ class L10nAz extends L10n {
   }
 
   @override
-  String get menuDiscover => 'Kəşf et';
-
-  @override
   String get menuYourVibes => 'Əhval və janr';
 
   @override
@@ -1932,4 +1929,13 @@ class L10nAz extends L10n {
   String radioPickingFrom(int done, int total) {
     return 'Hələlik $done/$total mahnı arasından seçir';
   }
+
+  @override
+  String get menuForYou => 'Sənin üçün';
+
+  @override
+  String get menuSound => 'Səs';
+
+  @override
+  String get menuImportHint => 'Telefonun istənilən yerindən mahnı əlavə et';
 }
