@@ -9,7 +9,8 @@ const kMaxTextScale = 1.5;
 /// v7: quoted names aren't split, a "01 " track number is dropped.
 /// v8: "- Topic" is cleaned from album names too.
 /// v9: .m4a told apart (AAC or ALAC by bitrate), AIFF and APE named.
-const kTagReaderVersion = 9;
+/// v10: MP3 length from the audio frames when the tag's TLEN can't be true (cut clips).
+const kTagReaderVersion = 10;
 
 /// Version of the smart-groups audio analysis (Kotlin AudioAnalyzer + stored
 /// classes). When it goes up, every song is re-analyzed in the background.
