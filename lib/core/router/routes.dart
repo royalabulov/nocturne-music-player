@@ -28,6 +28,7 @@ String wrappedStoryRoute(String periodId) => '$kWrappedStoryRoute?p=${Uri.encode
 String playlistRoute(int id) => '/playlists/$id';
 String albumRoute(String key) => '/home/album?k=${Uri.encodeQueryComponent(key)}';
 String artistRoute(String key) => '/home/artist?k=${Uri.encodeQueryComponent(key)}';
+String folderRoute(String dir) => '/home/folder?k=${Uri.encodeQueryComponent(dir)}';
 String smartGroupRoute(String key) => '/home/vibe?k=${Uri.encodeQueryComponent(key)}';
 
 /// Root navigator — for dialogs that don't depend on a context (e.g. delete confirmation).

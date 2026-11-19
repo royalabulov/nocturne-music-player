@@ -601,6 +601,9 @@ class L10nEn extends L10n {
   String get sortArtistsBy => 'Sort artists by';
 
   @override
+  String get sortFoldersBy => 'Sort folders by';
+
+  @override
   String get sortFavoritesBy => 'Sort favorites by';
 
   @override
@@ -780,6 +783,9 @@ class L10nEn extends L10n {
   String get tabArtists => 'Artists';
 
   @override
+  String get tabFolders => 'Folders';
+
+  @override
   String shuffleAll(int count) {
     return 'Shuffle All ($count)';
   }
@@ -899,6 +905,9 @@ class L10nEn extends L10n {
   String get noArtists => 'No artists yet';
 
   @override
+  String get noFolders => 'No folders yet';
+
+  @override
   String albumCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -916,6 +925,9 @@ class L10nEn extends L10n {
   String get artistLabel => 'ARTIST';
 
   @override
+  String get folderLabel => 'FOLDER';
+
+  @override
   String get moodLabel => 'MOOD';
 
   @override
@@ -929,6 +941,16 @@ class L10nEn extends L10n {
 
   @override
   String get notFoundArtist => 'This artist is no longer in your library';
+
+  @override
+  String get notFoundFolder =>
+      'This folder no longer has songs in your library';
+
+  @override
+  String get storagePhone => 'Phone';
+
+  @override
+  String get storageSdCard => 'SD card';
 
   @override
   String get notFoundGroup => 'This group is no longer in your library';

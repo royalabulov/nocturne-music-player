@@ -41,6 +41,7 @@ void main() {
   final demo = DemoLibrary.tracks();
   final albums = groupAlbums(demo);
   final artists = groupArtists(demo);
+  final folders = groupFolders(demo);
 
   testWidgets('album grid + artist list render at 384 px', (tester) async {
     await pumpApp(
@@ -80,6 +81,35 @@ void main() {
   testWidgets('unknown album key shows a message instead of popping', (tester) async {
     await pumpApp(tester, const AlbumDetailScreen(albumKey: 'no-such-album'));
     expect(find.textContaining('no longer in your library'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('folder list renders at 384 px and a folder shows its songs', (tester) async {
+    await pumpApp(
+      tester,
+      Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: LibraryViewSwitcher(value: LibraryView.folders, onChanged: (_) {})),
+            FolderListSliver(folders: folders),
+          ],
+        ),
+      ),
+    );
+    expect(find.text('Folders'), findsOneWidget);
+    expect(find.byType(FolderTile), findsWidgets);
+    await finish(tester);
+
+    final f = folders.first;
+    await pumpApp(tester, FolderDetailScreen(folderKey: f.key));
+    expect(find.text('FOLDER'), findsOneWidget);
+    expect(find.text(f.tracks.first.title), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('a folder with no songs left shows a message', (tester) async {
+    await pumpApp(tester, const FolderDetailScreen(folderKey: '/storage/emulated/0/Gone'));
+    expect(find.textContaining('no longer has songs'), findsOneWidget);
     await finish(tester);
   });
 }

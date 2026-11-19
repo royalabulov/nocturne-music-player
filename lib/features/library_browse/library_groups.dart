@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
@@ -42,6 +43,95 @@ class ArtistGroup {
     for (final t in tracks)
       if (t.album != kUnknownAlbum) normalizeName(t.album),
   }.length;
+}
+
+/// A folder on the phone that holds songs, by the folder the file is in (not its subfolders).
+class FolderGroup {
+  FolderGroup({required this.key, required this.name, required this.place, required this.tracks});
+
+  /// The folder's full path (route parameter).
+  final String key;
+
+  /// Its own name, or "Phone" / "SD card" for the top of a storage.
+  final String name;
+
+  /// Where it is, in words: "Phone › Download", "WhatsApp", "SD card".
+  final String place;
+
+  /// By title.
+  final List<Track> tracks;
+
+  String? get coverPath => tracks.map((t) => t.coverPath).nonNulls.firstOrNull;
+  Duration get totalDuration => tracks.fold(Duration.zero, (a, t) => a + t.duration);
+}
+
+/// Apps whose music sits in `Android/media/<package>`: shown by the app's name.
+const _mediaApps = {
+  'com.whatsapp': 'WhatsApp',
+  'com.whatsapp.w4b': 'WhatsApp Business',
+  'org.telegram.messenger': 'Telegram',
+  'org.telegram.messenger.web': 'Telegram',
+  'org.thunderdog.challegram': 'Telegram X',
+};
+
+/// [dir]'s name and where it is, in words. The phone's own storage is `/storage/emulated/<user>`,
+/// a card /storage/XXXX-XXXX; anything else (the web demo) is shown as it is.
+@visibleForTesting
+({String name, String place}) describeFolder(String dir) {
+  final parts = dir.split('/').where((p) => p.isNotEmpty).toList();
+  final int rootLen;
+  final String root;
+  if (parts.length >= 3 && parts[0] == 'storage' && parts[1] == 'emulated') {
+    rootLen = 3;
+    root = l10n.storagePhone;
+  } else if (parts.length >= 2 && parts[0] == 'storage' && parts[1] != 'emulated' && parts[1] != 'self') {
+    rootLen = 2;
+    root = l10n.storageSdCard;
+  } else {
+    final name = parts.isEmpty ? dir : parts.last;
+    final parent = parts.length > 1 ? '/${parts.sublist(0, parts.length - 1).join('/')}' : '/';
+    return (name: name, place: parent);
+  }
+  final inside = parts.sublist(rootLen);
+  if (inside.isEmpty) return (name: root, place: root);
+  // Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Audio → "WhatsApp"
+  if (inside.length >= 3 && inside[0] == 'Android' && inside[1] == 'media') {
+    final app = _mediaApps[inside[2]] ?? inside[2];
+    return (name: inside.length == 3 ? app : inside.last, place: app);
+  }
+  final above = inside.sublist(0, inside.length - 1);
+  // Deep folders keep the two nearest: "Phone › … › Snaptube › Audio"
+  final shown = above.length > 2 ? ['…', ...above.sublist(above.length - 2)] : above;
+  return (name: inside.last, place: [root, ...shown].join(' › '));
+}
+
+String _dirOf(String path) {
+  final i = path.lastIndexOf('/');
+  return i <= 0 ? '/' : path.substring(0, i);
+}
+
+/// Folders with songs, A–Z by name, then by place (two "Music" folders).
+List<FolderGroup> groupFolders(List<Track> tracks) {
+  final byDir = <String, List<Track>>{};
+  for (final t in tracks) {
+    if (t.isMissing) continue;
+    (byDir[_dirOf(t.path)] ??= []).add(t);
+  }
+  final out = [
+    for (final e in byDir.entries)
+      () {
+        final d = describeFolder(e.key);
+        final list = [...e.value]..sort((a, b) => normalizeName(a.title).compareTo(normalizeName(b.title)));
+        return FolderGroup(key: e.key, name: d.name, place: d.place, tracks: list);
+      }(),
+  ];
+  out.sort((a, b) {
+    final c = normalizeName(a.name).compareTo(normalizeName(b.name));
+    if (c != 0) return c;
+    final p = normalizeName(a.place).compareTo(normalizeName(b.place));
+    return p != 0 ? p : a.key.compareTo(b.key);
+  });
+  return out;
 }
 
 int _byDisc(Track a, Track b) {
@@ -154,4 +244,9 @@ final albumsProvider = Provider.autoDispose<List<AlbumGroup>?>((ref) {
 final artistsProvider = Provider.autoDispose<List<ArtistGroup>?>((ref) {
   final tracks = ref.watch(tracksProvider(_all)).value;
   return tracks == null ? null : groupArtists(tracks);
+});
+
+final foldersProvider = Provider.autoDispose<List<FolderGroup>?>((ref) {
+  final tracks = ref.watch(tracksProvider(_all)).value;
+  return tracks == null ? null : groupFolders(tracks);
 });

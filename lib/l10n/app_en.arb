@@ -359,6 +359,7 @@
   "sortSongsBy": "Sort songs by",
   "sortAlbumsBy": "Sort albums by",
   "sortArtistsBy": "Sort artists by",
+  "sortFoldersBy": "Sort folders by",
   "sortFavoritesBy": "Sort favorites by",
   "results": "Results",
   "nothingMatches": "Nothing matches \"{query}\"",
@@ -489,6 +490,7 @@
   "tabSongs": "Songs",
   "tabAlbums": "Albums",
   "tabArtists": "Artists",
+  "tabFolders": "Folders",
   "shuffleAll": "Shuffle All ({count})",
   "@shuffleAll": {
     "placeholders": {
@@ -563,6 +565,7 @@
   "noSongsFound": "No songs found",
   "noAlbums": "No albums yet",
   "noArtists": "No artists yet",
+  "noFolders": "No folders yet",
   "albumCount": "{count, plural, =1{1 album} other{{count} albums}}",
   "@albumCount": {
     "placeholders": {
@@ -573,11 +576,15 @@
   },
   "albumLabel": "ALBUM",
   "artistLabel": "ARTIST",
+  "folderLabel": "FOLDER",
   "moodLabel": "MOOD",
   "genreLabel": "GENRE",
   "smartGroupSubtitle": "Smart group • detected on this device",
   "notFoundAlbum": "This album is no longer in your library",
   "notFoundArtist": "This artist is no longer in your library",
+  "notFoundFolder": "This folder no longer has songs in your library",
+  "storagePhone": "Phone",
+  "storageSdCard": "SD card",
   "notFoundGroup": "This group is no longer in your library",
   "notFoundHint": "Its tracks may have been deleted or moved.",
   "name": "Name",

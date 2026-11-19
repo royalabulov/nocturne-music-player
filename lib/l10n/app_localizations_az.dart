@@ -603,6 +603,9 @@ class L10nAz extends L10n {
   String get sortArtistsBy => 'İfaçıları sırala';
 
   @override
+  String get sortFoldersBy => 'Qovluqları sırala';
+
+  @override
   String get sortFavoritesBy => 'Sevimliləri sırala';
 
   @override
@@ -782,6 +785,9 @@ class L10nAz extends L10n {
   String get tabArtists => 'İfaçılar';
 
   @override
+  String get tabFolders => 'Qovluqlar';
+
+  @override
   String shuffleAll(int count) {
     return 'Qarışdır ($count)';
   }
@@ -899,6 +905,9 @@ class L10nAz extends L10n {
   String get noArtists => 'Hələ ifaçı yoxdur';
 
   @override
+  String get noFolders => 'Hələ qovluq yoxdur';
+
+  @override
   String albumCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -915,6 +924,9 @@ class L10nAz extends L10n {
   String get artistLabel => 'İFAÇI';
 
   @override
+  String get folderLabel => 'QOVLUQ';
+
+  @override
   String get moodLabel => 'ƏHVAL';
 
   @override
@@ -928,6 +940,15 @@ class L10nAz extends L10n {
 
   @override
   String get notFoundArtist => 'Bu ifaçı artıq kitabxananızda yoxdur';
+
+  @override
+  String get notFoundFolder => 'Bu qovluqda artıq kitabxananızda mahnı yoxdur';
+
+  @override
+  String get storagePhone => 'Telefon';
+
+  @override
+  String get storageSdCard => 'SD kart';
 
   @override
   String get notFoundGroup => 'Bu qrup artıq kitabxananızda yoxdur';

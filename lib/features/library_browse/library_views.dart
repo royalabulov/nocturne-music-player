@@ -13,9 +13,9 @@ import 'library_groups.dart';
 import '../../l10n/l10n.dart';
 import '../../core/utils/display_names.dart';
 
-enum LibraryView { songs, albums, artists }
+enum LibraryView { songs, albums, artists, folders }
 
-/// Home → Library: Songs | Albums | Artists.
+/// Home → Library: Songs | Albums | Artists | Folders.
 class LibraryViewSwitcher extends StatelessWidget {
   const LibraryViewSwitcher({super.key, required this.value, required this.onChanged});
   final LibraryView value;
@@ -23,7 +23,12 @@ class LibraryViewSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labels = {LibraryView.songs: l10n.tabSongs, LibraryView.albums: l10n.tabAlbums, LibraryView.artists: l10n.tabArtists};
+    final labels = {
+      LibraryView.songs: l10n.tabSongs,
+      LibraryView.albums: l10n.tabAlbums,
+      LibraryView.artists: l10n.tabArtists,
+      LibraryView.folders: l10n.tabFolders,
+    };
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
       // The same 42 px bar; its tabs are 48 px to touch (they were 32)
@@ -168,6 +173,95 @@ class ArtistTile extends StatelessWidget {
             ),
           ),
           const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+        ],
+      ),
+    );
+  }
+}
+
+/// Folder list (sliver). All rows the same height.
+class FolderListSliver extends StatelessWidget {
+  const FolderListSliver({super.key, required this.folders});
+  final List<FolderGroup> folders;
+
+  @override
+  Widget build(BuildContext context) {
+    if (folders.isEmpty) {
+      return SliverToBoxAdapter(
+        child: EmptyState(icon: Icons.folder_outlined, title: l10n.noFolders),
+      );
+    }
+    return SliverList.builder(
+      itemCount: folders.length,
+      itemBuilder: (context, i) => Padding(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 0, AppSpacing.screenH, AppSpacing.sm),
+        child: FolderTile(folder: folders[i]),
+      ),
+    );
+  }
+}
+
+class FolderTile extends StatelessWidget {
+  const FolderTile({super.key, required this.folder});
+  final FolderGroup folder;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = folder;
+    return SolidCard(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      onTap: () => context.push(folderRoute(f.key)),
+      child: Row(
+        children: [
+          FolderArt(folder: f, size: 56),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(f.name, style: AppTypography.titleSm, maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(
+                  '${f.place} • ${l10n.trackCount(f.tracks.length)}',
+                  style: AppTypography.bodySm,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+        ],
+      ),
+    );
+  }
+}
+
+/// A folder's first cover with a small folder mark in its corner, so a folder doesn't read
+/// as an album.
+class FolderArt extends StatelessWidget {
+  const FolderArt({super.key, required this.folder, required this.size});
+  final FolderGroup folder;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final mark = size * .36;
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        children: [
+          AlbumArt(path: folder.coverPath, seed: folder.key.hashCode, size: size, radius: AppRadius.lg),
+          Positioned(
+            right: 3,
+            bottom: 3,
+            child: Container(
+              width: mark,
+              height: mark,
+              decoration: const BoxDecoration(color: AppColors.void_, shape: BoxShape.circle),
+              child: Icon(Icons.folder_rounded, size: mark * .6, color: AppColors.cyan),
+            ),
+          ),
         ],
       ),
     );

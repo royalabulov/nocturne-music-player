@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nocturne/features/library_browse/library_views.dart';
 import 'package:just_audio_platform_interface/just_audio_platform_interface.dart';
 import 'package:nocturne/app.dart';
 import 'package:nocturne/core/audio/nocturne_audio_handler.dart';
@@ -89,6 +90,20 @@ void main() {
           await settle();
         }
       }
+
+      // Home's fourth library tab: the four still fit in one bar, and the folder rows lay out
+      appRouter.go(Routes.home);
+      await settle();
+      // Home was left scrolled to the bottom: back up to the tab bar
+      for (var i = 0; i < 6 && find.text(t.tabFolders).evaluate().isEmpty; i++) {
+        await tester.dragFrom(const Offset(180, 300), const Offset(0, 500));
+        await settle();
+      }
+      await tester.ensureVisible(find.text(t.tabFolders));
+      await settle();
+      await tester.tap(find.text(t.tabFolders));
+      await settle();
+      expect(find.byType(FolderTile), findsWidgets);
 
       // Side menu: every row laid out, down to the last one. The sleep timer isn't in it: it is
       // set in Now Playing, where the song is (2026-11-19)

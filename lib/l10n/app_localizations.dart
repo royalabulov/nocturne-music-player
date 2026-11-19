@@ -1117,6 +1117,12 @@ abstract class L10n {
   /// **'Sort artists by'**
   String get sortArtistsBy;
 
+  /// No description provided for @sortFoldersBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort folders by'**
+  String get sortFoldersBy;
+
   /// No description provided for @sortFavoritesBy.
   ///
   /// In en, this message translates to:
@@ -1423,6 +1429,12 @@ abstract class L10n {
   /// **'Artists'**
   String get tabArtists;
 
+  /// No description provided for @tabFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders'**
+  String get tabFolders;
+
   /// No description provided for @shuffleAll.
   ///
   /// In en, this message translates to:
@@ -1597,6 +1609,12 @@ abstract class L10n {
   /// **'No artists yet'**
   String get noArtists;
 
+  /// No description provided for @noFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'No folders yet'**
+  String get noFolders;
+
   /// No description provided for @albumCount.
   ///
   /// In en, this message translates to:
@@ -1614,6 +1632,12 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'ARTIST'**
   String get artistLabel;
+
+  /// No description provided for @folderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'FOLDER'**
+  String get folderLabel;
 
   /// No description provided for @moodLabel.
   ///
@@ -1644,6 +1668,24 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'This artist is no longer in your library'**
   String get notFoundArtist;
+
+  /// No description provided for @notFoundFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder no longer has songs in your library'**
+  String get notFoundFolder;
+
+  /// No description provided for @storagePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get storagePhone;
+
+  /// No description provided for @storageSdCard.
+  ///
+  /// In en, this message translates to:
+  /// **'SD card'**
+  String get storageSdCard;
 
   /// No description provided for @notFoundGroup.
   ///
