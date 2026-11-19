@@ -11,6 +11,7 @@ import '../../domain/entities/audio_format.dart';
 import '../../domain/entities/track.dart';
 import 'cover_cache.dart';
 import 'image_size.dart';
+import 'mp3_stream.dart';
 
 /// Result of reading tags — the raw form before it becomes a Track.
 class TagInfo {
@@ -90,16 +91,18 @@ abstract final class TagReader {
       return null;
     }
 
-    final durationMs = m?.duration?.inMilliseconds ?? 0;
-    final format = formatOf(
-      path,
-      audioBytes: size - (m?.pictures.fold<int>(0, (sum, x) => sum + x.bytes.length) ?? 0),
-      durationMs: durationMs,
-    );
+    var durationMs = m?.duration?.inMilliseconds ?? 0;
+    // The package takes an MP3's TLEN on trust; a cut clip can carry the whole song's
+    if (AudioFormat.fromExtension(p.extension(path)) == AudioFormat.mp3) {
+      durationMs = Mp3Stream.read(file)?.reconcile(durationMs) ?? durationMs;
+    }
+    final audioBytes = size - (m?.pictures.fold<int>(0, (sum, x) => sum + x.bytes.length) ?? 0);
+    final format = formatOf(path, audioBytes: audioBytes, durationMs: durationMs);
     // In MP3 VBR the first frame's bitrate is misleading → compute the average bitrate
+    // (without the cover: on a short clip it doubled the number)
     int? bitrateKbps;
     if (!format.isLossless && durationMs > 0) {
-      bitrateKbps = (size * 8 / durationMs).round();
+      bitrateKbps = (audioBytes * 8 / durationMs).round();
     } else if (m?.bitrate != null) {
       bitrateKbps = (m!.bitrate! / 1000).round();
     }

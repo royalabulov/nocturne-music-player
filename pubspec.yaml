@@ -2,7 +2,7 @@ name: nocturne
 description: "Nocturne — offline music player."
 publish_to: 'none'
 
-version: 1.0.1+57
+version: 1.0.1+58
 
 environment:
   sdk: ^3.13.3
