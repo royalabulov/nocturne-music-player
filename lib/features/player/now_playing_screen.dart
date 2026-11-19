@@ -18,6 +18,7 @@ import '../../shared/album_art.dart';
 import '../../shared/cover_color.dart';
 import '../../shared/favorite_button.dart';
 import '../../shared/glow_play_button.dart';
+import '../../shared/cover_accent.dart';
 import '../tracks/track_actions_sheet.dart';
 import '../../shared/locate_track.dart';
 import '../../shared/tap_target.dart';
@@ -60,7 +61,9 @@ class NowPlayingScreen extends ConsumerWidget {
       }),
     );
 
-    return _PullDownToClose(
+    // The controls take the cover's colour (contrast-checked, CoverAccent)
+    return CoverAccentScope(
+      child: _PullDownToClose(
       child: Scaffold(
       backgroundColor: AppColors.void_,
       extendBody: true,
@@ -203,7 +206,9 @@ class NowPlayingScreen extends ConsumerWidget {
                           const SizedBox(height: AppSpacing.sm),
                           // Transport. Tooltips double as TalkBack labels; shuffle/repeat
                           // say their state, since only the colour shows it on screen.
-                          Row(
+                          Builder(builder: (context) {
+                            final accent = CoverAccent.of(context);
+                            return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               IconButton(
@@ -212,7 +217,7 @@ class NowPlayingScreen extends ConsumerWidget {
                                 iconSize: 22,
                                 icon: const Icon(Icons.shuffle_rounded),
                                 color: shuffle
-                                    ? AppColors.cyan
+                                    ? accent.line
                                     : AppColors.textSecondary,
                               ),
                               IconButton(
@@ -225,6 +230,7 @@ class NowPlayingScreen extends ConsumerWidget {
                               GlowPlayButton(
                                 size: 64,
                                 playing: playing,
+                                color: accent.fill,
                                 onTap: playing ? handler.pause : handler.play,
                               ),
                               IconButton(
@@ -249,10 +255,11 @@ class NowPlayingScreen extends ConsumerWidget {
                                 ),
                                 color: repeat == AudioServiceRepeatMode.none
                                     ? AppColors.textSecondary
-                                    : AppColors.cyan,
+                                    : accent.line,
                               ),
                             ],
-                          ),
+                          );
+                          }),
                         ],
                       ),
                     ),
@@ -262,6 +269,7 @@ class NowPlayingScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
       ),
       ),
     );
@@ -418,7 +426,7 @@ class _BottomBar extends ConsumerWidget {
                             TextSpan(
                               text: l10n.upNext,
                               style: AppTypography.labelSm.copyWith(
-                                color: AppColors.cyan,
+                                color: CoverAccent.of(context).line,
                               ),
                             ),
                             TextSpan(
@@ -542,7 +550,7 @@ class _LyricsButton extends ConsumerWidget {
       tooltip: show ? l10n.showCover : l10n.showLyrics,
       onPressed: ref.read(showLyricsProvider.notifier).toggle,
       icon: Icon(show ? Icons.lyrics_rounded : Icons.lyrics_outlined, size: 24),
-      color: show ? AppColors.cyan : AppColors.textSecondary,
+      color: show ? CoverAccent.of(context).line : AppColors.textSecondary,
     );
   }
 }
@@ -619,6 +627,9 @@ class _ScrubberState extends ConsumerState<_Scrubber> {
         // Thin line with a small dot; the dot grows only while dragging
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
+            activeTrackColor: CoverAccent.of(context).line,
+            thumbColor: CoverAccent.of(context).line,
+            overlayColor: CoverAccent.of(context).line.withValues(alpha: .16),
             trackHeight: 3,
             thumbShape: RoundSliderThumbShape(enabledThumbRadius: _dragValue == null ? 4 : 7),
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
@@ -670,8 +681,8 @@ class _CoverBackdrop extends ConsumerWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    stops: const [0, .6],
-                    colors: [color.withValues(alpha: .16), Colors.transparent],
+                    stops: const [0, .75],
+                    colors: [color.withValues(alpha: .24), Colors.transparent],
                   ),
                 ),
               ),
@@ -685,7 +696,7 @@ class _CoverBackdrop extends ConsumerWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
-                    colors: [color.withValues(alpha: .3), Colors.transparent],
+                    colors: [color.withValues(alpha: CoverAccent.backdropGlow), Colors.transparent],
                   ),
                 ),
               ),
