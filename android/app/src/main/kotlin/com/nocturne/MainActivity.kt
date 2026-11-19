@@ -38,7 +38,10 @@ class MainActivity : AudioServiceActivity(), EngineChannels.Window {
         super.onCreate(savedInstanceState)
         closeDuplicate(previous)
         // On recreate (rotation etc.) don't handle the same intent twice
-        if (savedInstanceState == null) collectOpened(intent)
+        if (savedInstanceState == null) {
+            collectOpened(intent)
+            collectShortcut(intent)
+        }
     }
 
     /// singleTask allows one window, but a task left empty in Recents (process killed by an
@@ -55,6 +58,16 @@ class MainActivity : AudioServiceActivity(), EngineChannels.Window {
         super.onNewIntent(intent)
         setIntent(intent)
         if (collectOpened(intent)) EngineChannels.current?.openedFilesArrived()
+        if (collectShortcut(intent)) EngineChannels.current?.shortcutArrived()
+    }
+
+    /// A long-press shortcut on the app icon (AppShortcuts): kept until Dart takes it.
+    private fun collectShortcut(intent: Intent?): Boolean {
+        val id = AppShortcuts.idOf(intent) ?: return false
+        PendingShortcut.set(id)
+        // Handle it once (so it doesn't come back when the app is reopened)
+        intent?.action = Intent.ACTION_MAIN
+        return true
     }
 
     /// VIEW (tap a file → "Open with") and SEND/SEND_MULTIPLE (Share) URIs.

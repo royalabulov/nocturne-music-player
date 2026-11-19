@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 import 'app.dart';
 import 'core/audio/audio_effects.dart';
 import 'core/audio/listen_tracker.dart';
+import 'core/audio/media_catalog.dart';
 import 'core/audio/nocturne_audio_handler.dart';
 import 'core/audio/sound_effect.dart';
 import 'core/audio/playback_memory.dart';
@@ -40,6 +41,7 @@ import 'features/library_scan/unplayable_track.dart';
 import 'core/audio/player_providers.dart';
 import 'features/settings/settings_controller.dart';
 import 'features/smart_groups/smart_groups.dart';
+import 'features/shortcuts/app_shortcuts.dart';
 import 'features/startup/startup_error_screen.dart';
 import 'l10n/l10n.dart';
 
@@ -110,6 +112,11 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
       ),
     );
 
+    // Android Auto may browse the library; other apps may not (BrowseGuard.kt)
+    final service = PlaybackServiceSource();
+    unawaited(service.guardBrowse());
+    AppLifecycleListener(onResume: () => unawaited(service.guardBrowse()));
+
     container = ProviderContainer(
       overrides: [
         audioHandlerProvider.overrideWithValue(handler),
@@ -143,6 +150,13 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
   if (databaseReset) {
     WidgetsBinding.instance.addPostFrameCallback((_) => showToast(l10n.databaseReset, error: true));
   }
+
+  // What Android Auto and Assistant browse and play (who may browse: BrowseGuard.kt)
+  handler.catalog = MediaCatalog(
+    library: container.read(libraryRepositoryProvider),
+    history: container.read(historyRepositoryProvider),
+    playlists: container.read(playlistRepositoryProvider),
+  );
 
   // Audio settings (EQ / crossfade / ReplayGain) are loaded from the DB and applied to the player.
   container.read(audioSettingsProvider);
@@ -196,6 +210,13 @@ Future<void> runNocturne({AudioSource Function(Track)? sourceBuilder, List<Overr
       .init(onResponse: (id, play) => _openFromReminder(container, handler, id, play: play))
       .then((_) => reminder.reschedule()));
   AppLifecycleListener(onPause: reminder.reschedule);
+
+  // Long press on the app icon: Shuffle all, Continue, Radio, Search. Set again on return (a
+  // language change shows then); a tap that started the app is carried out after the first frame.
+  if (!kIsWeb) {
+    final shortcuts = AppShortcutsController(container)..start();
+    AppLifecycleListener(onResume: () => unawaited(shortcuts.publish()));
+  }
 
   // Monthly backup copy (Download/Nocturne): when the app goes to the background, so it never
   // competes with what is on screen

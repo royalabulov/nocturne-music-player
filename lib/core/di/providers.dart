@@ -6,6 +6,7 @@ import '../../data/datasources/folder_source.dart';
 import '../../data/datasources/home_widget_source.dart';
 import '../../data/datasources/media_store_source.dart';
 import '../../data/datasources/playback_service_source.dart';
+import '../../data/datasources/shortcuts_source.dart';
 import '../../data/mappers/track_mapper.dart';
 import '../../data/repositories/analysis_repository_impl.dart';
 import '../../data/repositories/history_repository_impl.dart';
@@ -37,6 +38,9 @@ final playbackServiceProvider = Provider<PlaybackServiceSource>((_) => PlaybackS
 
 /// The home screen widgets (Android).
 final homeWidgetSourceProvider = Provider<HomeWidgetSource>((_) => HomeWidgetSource());
+
+/// The app icon's long-press shortcuts (Android).
+final shortcutsSourceProvider = Provider<ShortcutsSource>((_) => ShortcutsSource());
 
 /// Warmed up in main() so cover paths can be resolved synchronously.
 final coverCacheProvider = Provider<CoverCache>((_) => CoverCache());

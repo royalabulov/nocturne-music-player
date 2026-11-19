@@ -25,6 +25,9 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
     /// favorite presses (HomeWidgets).
     private val widgets = MethodChannel(messenger, "com.nocturne/home_widget")
 
+    /// Long-press shortcuts on the app icon (AppShortcuts): Dart sends them, taps come back.
+    private val shortcuts = MethodChannel(messenger, "com.nocturne/shortcuts")
+
     /// Tells Dart when a new song lands on the phone (download, copy). The Dart side collects
     /// the events (debounce) and runs one scan.
     private val audioObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -51,9 +54,24 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
                 else -> result.notImplemented()
             }
         }
+        shortcuts.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "set" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val items = (call.argument<List<Map<String, String>>>("items") ?: emptyList())
+                    runCatching { AppShortcuts.set(context, items) }
+                    result.success(null)
+                }
+                "take" -> result.success(PendingShortcut.take())
+                else -> result.notImplemented()
+            }
+        }
     }
 
     fun widgetAction(name: String) = widgets.invokeMethod("action", name)
+
+    /// A shortcut was tapped while the app runs: Dart takes it.
+    fun shortcutArrived() = shortcuts.invokeMethod("arrived", null)
 
     fun close() {
         context.contentResolver.unregisterContentObserver(audioObserver)
@@ -186,6 +204,8 @@ class EngineChannels(private val context: Context, messenger: BinaryMessenger) {
                 "stopped" -> result.success(PlaybackServiceControl.stopped())
                 "equalizerWorks" -> background(result) { EqualizerProbe.works(context) }
                 "reverbWorks" -> background(result) { SessionReverb.works(context) }
+                // Library browsing (Android Auto) only for the callers that need it
+                "guardBrowse" -> result.success(com.ryanheise.audioservice.BrowseGuard.install(context.packageName))
                 // On this thread: the same one every reverb is made and released on
                 "setReverb" -> result.success(
                     reverb.set(call.argument<Int>("session")!!, call.argument<Double>("amount")!!)
