@@ -101,6 +101,24 @@ void main() {
       }
     });
 
+    test('two files of one song (other ids, other artist tags) never play back to back', () {
+      // On the phone: "Şehinşah & Hidra - İmza" and a second download of it under another
+      // name came one after the other: they sound the same, so each was the other's best match
+      final songs = _songs(perStyle: 6);
+      final copies = [
+        for (final s in songs.where((s) => s.trackId % 100 < 3))
+          RadioSong(trackId: 5000 + s.trackId, artist: 'Uploader ${s.trackId}', embedding: s.embedding),
+      ];
+      final ids = [for (final s in [...songs, ...copies]) s.trackId];
+      final lib = RadioLibrary([...songs, ...copies]);
+      for (final seed in [1, 2, 3, 4, 5]) {
+        final order = [for (final i in smoothShuffleOrder(lib, ids, first: 0, random: Random(seed))!) ids[i]];
+        for (var i = 1; i < order.length; i++) {
+          expect(order[i] % 5000, isNot(order[i - 1] % 5000), reason: 'seed $seed, place $i');
+        }
+      }
+    });
+
     test('gives up when under half of the list is analyzed, or the list is too short', () {
       final songs = _songs();
       final lib = RadioLibrary(songs);

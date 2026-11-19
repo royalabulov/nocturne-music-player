@@ -60,7 +60,7 @@ void main() {
         'forgottenRemind', 'forgottenRemindDays', 'forgottenRemindTime', 'forgottenRemindPlanned',
         'resumeTrackId', 'resumePositionMs', 'playQueue', 'restorePending', 'listenTrackingSince',
         'lastScanAt', 'lastAutoBackupAt', 'tagReaderVersion', 'skippedFiles2', 'uploaderArtists',
-        'artistOverrides', 'developerMode', 'soundEffect', 'wrappedBannerHidden',
+        'artistOverrides', 'developerMode', 'soundEffect', 'wrappedBannerHidden', 'duplicatesIgnored',
       });
     });
   });

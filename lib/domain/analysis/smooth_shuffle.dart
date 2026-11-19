@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'duplicates.dart';
 import 'song_radio.dart';
 
 /// Smooth shuffle: a shuffled queue where each song sounds like the one before it.
@@ -89,11 +90,15 @@ List<int>? smoothShuffleOrder(
     for (var p = 0; p < k; p++) {
       final c = waiting[p];
       // The first song may not be analyzed: the second one is then drawn at random
-      var score = from == null ? 0.0 : _dot(from, vectors[c]!);
+      final sound = from == null ? 0.0 : _dot(from, vectors[c]!);
+      var score = sound;
       final toSong = lib.song(trackIds[c]);
       if (fromSong != null && toSong != null) score += transitionBonus(fromSong, toSong);
-      // The same song twice in the list: never right after itself while anything else waits
-      if (trackIds[c] == trackIds[current]) score -= 2;
+      // The same song twice in the list: never right after itself while anything else waits.
+      // Also two files of one song (a second download under another name, another artist
+      // tag): they sound the same, so they were each other's best match and played back to
+      // back (seen on the phone, 2026-11-19)
+      if (trackIds[c] == trackIds[current] || sound >= duplicateSoundMin) score -= 2;
       scored.add((p, score));
     }
     scored.sort((a, b) => b.$2.compareTo(a.$2));

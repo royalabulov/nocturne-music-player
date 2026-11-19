@@ -1289,5 +1289,42 @@
   },
   "menuForYou": "For you",
   "menuSound": "Sound",
-  "menuImportHint": "Add songs from anywhere on the phone"
+  "menuImportHint": "Add songs from anywhere on the phone",
+  "shortcutShuffle": "Shuffle all",
+  "shortcutShuffleLong": "Shuffle all your songs",
+  "shortcutContinue": "Continue",
+  "shortcutContinueLong": "Continue: {title}",
+  "@shortcutContinueLong": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutRadioLong": "Radio from your last song",
+  "shortcutSearchLong": "Search your music",
+  "shortcutNothingToContinue": "Nothing to continue yet: play a song first",
+  "menuDuplicates": "Find duplicates",
+  "menuDuplicatesHint": "The same song saved more than once",
+  "duplicatesHint": "Files that hold the same song. The best one is marked to keep; tap another file to keep that one instead.",
+  "duplicatesNone": "No duplicates found",
+  "duplicatesNoneHint": "Songs are compared by name and length, and by sound once they are analyzed.",
+  "duplicatesKeep": "Keep",
+  "duplicatesNotSame": "Not the same song",
+  "duplicatesFiles": "{count, plural, =1{1 file} other{{count} files}}",
+  "@duplicatesFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "duplicatesDelete": "{count, plural, =1{Delete 1 copy} other{Delete {count} copies}}",
+  "@duplicatesDelete": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
